@@ -160,13 +160,34 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                       ₹{grandTotal}
                     </div>
                   </div>
-                  <button 
-                    onClick={handleRequestBill}
-                    className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-gray-800 transition active:scale-95"
-                  >
-                    Request Bill
-                  </button>
+                  {!orders.some(o => o.status === 'billing') && (
+                    <button 
+                      onClick={handleRequestBill}
+                      className="bg-gray-900 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-gray-800 transition active:scale-95"
+                    >
+                      Request Bill
+                    </button>
+                  )}
                 </div>
+
+                {orders.some(o => o.status === 'billing') && (
+                  <div className="mt-6 border-t pt-6 text-center animate-in fade-in slide-in-from-bottom-4">
+                    <h3 className="font-bold text-gray-900 mb-4 text-lg">Pay Securely via UPI</h3>
+                    <div className="flex justify-center mb-6">
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=restaurant@upi&pn=Aryan%20Food%20Cafe&am=${grandTotal}&cu=INR`)}`} 
+                        alt="UPI QR Code" 
+                        className="rounded-xl border-4 border-gray-100 shadow-sm"
+                      />
+                    </div>
+                    <a 
+                      href={`upi://pay?pa=restaurant@upi&pn=Aryan%20Food%20Cafe&am=${grandTotal}&cu=INR`}
+                      className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg"
+                    >
+                      Pay via UPI App (Zero Fee)
+                    </a>
+                  </div>
+                )}
               </div>
             );
           })()}
