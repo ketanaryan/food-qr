@@ -141,6 +141,7 @@ export default function KitchenDashboard() {
   return (
     <>
       <NavBar />
+      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2d8bf42bd2.mp3?filename=notification-bell-109594.mp3" preload="auto" />
       <div className="min-h-screen bg-gray-50 p-6 pt-24 font-sans relative">
       
       {!isOnline && (
