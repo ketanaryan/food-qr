@@ -33,6 +33,10 @@ export async function POST(req: Request) {
     }
     rateLimitMap.set(rateLimitKey, now);
 
+    // Fetch dynamic menu from DB to validate prices securely
+    const { data: menuData } = await supabaseAdmin.from('menu').select('*');
+    const menuItemsList = menuData || [];
+
     // Calculate secure total amount
     let totalAmount = 0;
     const validatedItems = [];
@@ -54,14 +58,14 @@ export async function POST(req: Request) {
         continue;
       }
       
-      const menuDbItem = MENU_DATA.find((m) => String(m._id) === String(item.id));
+      const menuDbItem = menuItemsList.find((m) => String(m.id) === String(item.id));
       if (menuDbItem) {
         totalAmount += menuDbItem.price * item.qty;
         validatedItems.push({
           id: item.id,
-          name: menuDbItem.title,
+          name: menuDbItem.name,
           qty: item.qty,
-          image: menuDbItem.image,
+          image: menuDbItem.image_url,
           price: menuDbItem.price,
         });
       }

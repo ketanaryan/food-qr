@@ -7,17 +7,38 @@ import Footer from "../common/Footer"
 import { ReactLenis } from "lenis/react"
 import MenuSection from "./MenuSection"
 import ItemNotch from "./ItemNotch"
-import { getApi } from "@/utils/common"
-import { IMenu } from "@/types/menu"
-import { MENU_DATA } from "@/data/menu"
 import Link from "next/link"
 import toast from "react-hot-toast"
 import { Bell, ScrollText } from "lucide-react"
-
 import { supabase } from "@/lib/supabase"
+import { IMenu } from "@/types/menu"
 
 function MerchantPage({ merchantId, token }: { merchantId: string, token?: string }) {
-  const menu: IMenu[] = MENU_DATA;
+  const [menu, setMenu] = React.useState<IMenu[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchMenu = async () => {
+      const { data, error } = await supabase.from('menu').select('*').eq('is_available', true);
+      if (data) {
+        // Map database fields to IMenu interface if needed, or just use it directly
+        // IMenu has { id, name, description, price, originalPrice, image, section, isVeg }
+        const formattedMenu = data.map(item => ({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          price: item.price,
+          originalPrice: item.original_price,
+          image: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+          section: item.section,
+          isVeg: true // can add isVeg to DB later
+        }));
+        setMenu(formattedMenu);
+      }
+      setLoading(false);
+    };
+    fetchMenu();
+  }, []);
 
   const handleCallWaiter = async () => {
     toast.success("Waiter has been notified! They will be at your table shortly.");
@@ -55,6 +76,15 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
     // local cart init if needed
   },[])
 
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#F8F5F0] flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#A18D6D]"></div>
+        <p className="mt-4 text-[#A18D6D] font-bold">Loading Menu...</p>
+      </div>
+    );
+  }
 
   return (
     <>

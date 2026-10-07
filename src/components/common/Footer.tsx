@@ -73,6 +73,7 @@ function Footer() {
                         <Tooltip content="Do whatever you want, but never trouble your mother, father, or nation."><li className="hover:text-[#A18D6D] cursor-pointer">Terms of Service</li></Tooltip>
                         <Link href="/kitchen"><li className="hover:text-[#A18D6D] cursor-pointer mt-4 font-semibold opacity-50 hover:opacity-100">Staff Portal (Kitchen)</li></Link>
                         <Link href="/cashier"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Staff Portal (Cashier)</li></Link>
+                        <Link href="/admin/menu"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Menu Builder</li></Link>
                         <Link href="/admin/qr"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Print QR Codes</li></Link>
                     </ul>
                 </div>
