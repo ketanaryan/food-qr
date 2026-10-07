@@ -7,6 +7,8 @@ import NavBar from "@/components/common/NavBar"
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
+  const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -23,7 +25,17 @@ export default function CashierDashboard() {
 
     const channel = supabase
       .channel('cashier-orders')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        if (payload.eventType === 'UPDATE' && payload.new.status === 'billing') {
+           if (audioEnabled && audioRef.current) {
+             audioRef.current.play().catch(()=>console.log("Audio play failed"));
+             toast.error(`Table ${payload.new.table_number} requested the bill!`, {
+               duration: 6000,
+               icon: '🔔',
+               style: { background: '#ef4444', color: '#fff', fontWeight: 'bold' }
+             });
+           }
+        }
         fetchOrders()
       })
       .subscribe()
@@ -63,6 +75,7 @@ export default function CashierDashboard() {
   return (
     <>
       <NavBar />
+      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
       <div className="min-h-screen bg-gray-50 p-6 pt-24 md:p-12 md:pt-28">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -71,6 +84,19 @@ export default function CashierDashboard() {
             </h1>
             <p className="text-gray-500 mt-2">Manage payments and clear tables</p>
           </div>
+          <button
+            onClick={() => {
+              setAudioEnabled(!audioEnabled);
+              if (!audioEnabled && audioRef.current) {
+                audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+              }
+            }}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-white transition ${
+              audioEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600 animate-pulse"
+            }`}
+          >
+            {audioEnabled ? "🔔 Alerts On" : "🔕 Enable Alerts"}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
