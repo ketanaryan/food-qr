@@ -23,16 +23,19 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
       if (data) {
         // Map database fields to IMenu interface if needed, or just use it directly
         // IMenu has { id, name, description, price, originalPrice, image, section, isVeg }
-        const formattedMenu = data.map(item => ({
-          id: item.id,
-          name: item.name,
-          description: item.description || '',
+        const formattedMenu: IMenu[] = data.map(item => ({
+          _id: item.id,
+          merchantId: merchantId,
+          title: item.name,
+          description: item.description || '', // might be used by UI despite interface missing it
           price: item.price,
+          quantity: 0,
           originalPrice: item.original_price,
           image: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
           section: item.section,
-          isVeg: true // can add isVeg to DB later
-        }));
+          createdAt: new Date(),
+          updatedAt: new Date()
+        } as unknown as IMenu));
         setMenu(formattedMenu);
       }
       setLoading(false);
