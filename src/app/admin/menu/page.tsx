@@ -183,7 +183,7 @@ export default function MenuBuilder() {
                   {items.map(item => (
                     <tr key={item.id} className="border-b last:border-0 hover:bg-gray-50">
                       <td className="p-4 flex items-center gap-3">
-                        <img src={item.image_url || 'https://via.placeholder.com/150'} className="w-12 h-12 rounded-lg object-cover" />
+                        <img src={item.image_url || '/menu/default-food.jpg'} className="w-12 h-12 rounded-lg object-cover" />
                         <div>
                           <p className="font-bold text-gray-900">{item.name}</p>
                           <p className="text-xs text-gray-500 line-clamp-1">{item.description}</p>

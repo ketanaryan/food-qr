@@ -31,7 +31,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
           price: item.price,
           quantity: 0,
           originalPrice: item.original_price,
-          image: item.image_url || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+          image: item.image_url || '/menu/default-food.jpg',
           section: item.section,
           createdAt: new Date(),
           updatedAt: new Date()
