@@ -10,10 +10,10 @@ export const cards: MenuFeatures[] = [
   {
     title: ["Dynamic Menus for", "Modern", "Restaurants"],
     description:
-      "Create, update, and publish menus in real-time. Change prices, add dishes, or hide items instantly without reprinting or downtime.",
+      "Create, update, and publish menus in real-time. Change prices, add dishes, or hide items instantly via the admin portal.",
     featureList: [
       "Real-time menu updates",
-      "Works for cafes, dhabas & fine-dine",
+      "Upload dish photos instantly",
       "No app required for customers"
     ],
     image:
@@ -24,60 +24,44 @@ export const cards: MenuFeatures[] = [
   },
 
   {
-    title: ["Real-time", "Dashboard &", "Insights"],
+    title: ["0% Commission", "Direct UPI", "Payments"],
     description:
-      "Track orders, revenue, and performance live from a single dashboard. Make data-driven decisions without manual reports.",
+      "Bypass payment gateway fees completely. Customers scan your actual UPI QR code or use deep links to pay directly to your bank account.",
     featureList: [
-      "Live order tracking",
-      "Revenue & finance overview",
-      "Daily, weekly & monthly insights"
+      "Zero transaction fees",
+      "Direct bank settlements",
+      "Supports GPay, PhonePe, Paytm"
+    ],
+    image:
+      "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768664077/original-9f056d23aaba6d34bac3b1a2de7e7711_kcxddy.webp",
+    icon: CreditCard,
+    iconTitle: "UPI Payments",
+    iconSubTitle: "Zero Gateway Fees"
+  },
+
+  {
+    title: ["Live Kitchen &", "Cashier", "Portals"],
+    description:
+      "Keep your staff in sync. Kitchen gets instant audio alerts for new orders, and Cashiers get notified when tables request the bill or call a waiter.",
+    featureList: [
+      "Real-time audio alerts",
+      "Call Waiter feature",
+      "Seamless staff sync"
     ],
     image:
       "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768663740/0fa73dbd-3ac8-4492-b4dd-e1789e304c4f-cover_grmypr.png",
     icon: LayoutDashboard,
-    iconTitle: "Live Dashboard",
-    iconSubTitle: "Orders updating now"
-  },
-
-  {
-    title: ["Secure", "Owner", "Access"],
-    description:
-      "Enterprise-grade authentication keeps your restaurant data safe. Only authorized owners and staff can access sensitive controls.",
-    featureList: [
-      "Secure owner login",
-      "Role-based access control",
-      "Encrypted data protection"
-    ],
-    image:
-      "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768663841/95d27c15-c891-421f-a637-047de5216691-cover_ex6hju.png",
-    icon: ShieldCheck,
-    iconTitle: "Protected Access",
-    iconSubTitle: "Security enabled"
-  },
-
-  {
-    title: ["AI-powered", "Food", "Assistance"],
-    description:
-      "Let AI help customers discover dishes they love. Smart recommendations increase order value and improve customer satisfaction.",
-    featureList: [
-      "AI dish recommendations",
-      "Personalized suggestions",
-      "Boosts average order value"
-    ],
-    image:
-      "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768663918/d74ee50fcf9a9e22287f69a1613bdba2_v6tzcl.webp",
-    icon: Bot,
-    iconTitle: "AI Assistant",
-    iconSubTitle: "Smart suggestions"
+    iconTitle: "Staff Portals",
+    iconSubTitle: "Live syncing"
   },
 
   {
     title: ["QR Code", "Table", "Management"],
     description:
-      "Assign QR codes to each table and manage orders seamlessly. Perfect for dine-in, cafes, and high-footfall restaurants.",
+      "Assign unique QR codes to each table. Customers scan and order without waiting for a menu card. Perfect for busy cafes and dhabas.",
     featureList: [
-      "Table-wise QR codes",
-      "No waiter dependency",
+      "Table-wise tracking",
+      "Printable QR generation",
       "Faster order flow"
     ],
     image:
@@ -88,13 +72,13 @@ export const cards: MenuFeatures[] = [
   },
 
   {
-    title: ["Smooth", "Customer-side", "Menu"],
+    title: ["Premium", "Customer", "Experience"],
     description:
-      "Ultra-fast, mobile-first menu experience designed for customers. Smooth animations and instant loading on any device.",
+      "Ultra-fast, mobile-first menu experience designed for your guests. Beautiful grid layouts, real-time bill tracking, and intuitive checkout.",
     featureList: [
-      "Lightning-fast menu load",
-      "Mobile & tablet optimized",
-      "No app download required"
+      "Lightning-fast loading",
+      "Mobile-optimized grid",
+      "Live order tracking"
     ],
     image:
       "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768664039/Screenshot_2026-01-17_210340_pjxvcs.png",
@@ -104,29 +88,13 @@ export const cards: MenuFeatures[] = [
   },
 
   {
-    title: ["Instant", "Payments &", "Receipts"],
+    title: ["Live Sales &", "Analytics", "Dashboard"],
     description:
-      "Accept payments instantly via UPI, cards, or wallets. Generate digital receipts automatically after every order.",
+      "Understand your restaurant’s performance with live metrics. Track today's revenue, order volume, and your top-selling dishes instantly.",
     featureList: [
-      "UPI & card payments",
-      "Instant receipt generation",
-      "Payment status tracking"
-    ],
-    image:
-      "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768664077/original-9f056d23aaba6d34bac3b1a2de7e7711_kcxddy.webp",
-    icon: CreditCard,
-    iconTitle: "Payments Ready",
-    iconSubTitle: "Paid successfully"
-  },
-
-  {
-    title: ["Smart", "Reports &", "Analytics"],
-    description:
-      "Understand your restaurant’s performance with powerful analytics. Export reports and monitor trends effortlessly.",
-    featureList: [
-      "Sales & finance reports",
-      "Downloadable insights",
-      "Growth trend analysis"
+      "Live revenue tracking",
+      "Top-selling dish insights",
+      "Interactive sales trends"
     ],
     image:
       "https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768664206/1658314-full_qi7d5e.jpg",
