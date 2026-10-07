@@ -5,11 +5,13 @@ import { motion } from "framer-motion"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { useCartStore } from "@/lib/store"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 function ItemNotch() {
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
 
   const checkoutItems = useCartStore((state) => state.items)
 
@@ -32,7 +34,7 @@ function ItemNotch() {
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="fixed cursor-pointer bottom-6 left-1/2 z-50 -translate-x-1/2"
         onClick={() =>
-          router.push(`${pathname}/checkout`)
+          router.push(`${pathname}/checkout?token=${token}`)
         }
       >
         <div className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-xl ring-1 ring-black/5">

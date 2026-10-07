@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import CheckOutItem from "./CheckOutItem"
 import toast from "react-hot-toast"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useCartStore } from "@/lib/store"
 import { v4 as uuidv4 } from "uuid"
 
@@ -11,6 +11,8 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
   const checkout = useCartStore(state => state.items)
   const clearCheckout = useCartStore(state => state.clearCart)
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const token = searchParams.get('token');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
   const [idempotencyKey] = useState(uuidv4()); 
@@ -47,7 +49,7 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
 
       toast.success("Order placed successfully!");
       clearCheckout();
-      router.push(`/table/${merchantId}/orders`); // Go to new tracking page
+      router.push(`/table/${merchantId}/orders?token=${token}`); // Go to new tracking page
     } catch (e) {
       toast.error("Network error");
       setIsSubmitting(false);
@@ -79,9 +81,17 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
   return (
     <div className="relative min-h-screen bg-gray-50 px-6 pt-20">
 
-      <h1 className="mb-4 font-mono text-2xl text-zinc-950">
-        Checkout
-      </h1>
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="font-mono text-2xl text-zinc-950">
+          Checkout
+        </h1>
+        <button 
+          onClick={() => router.push(`/table/${merchantId}?token=${token}`)}
+          className="text-sm font-semibold text-blue-600"
+        >
+          Back to Menu
+        </button>
+      </div>
 
       {/* Items */}
       <div className="flex flex-col gap-3">

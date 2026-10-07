@@ -4,9 +4,12 @@ import { supabase } from "@/lib/supabase"
 import Link from "next/link"
 import { CheckCircle, Clock, Utensils } from "lucide-react"
 import toast from "react-hot-toast"
+import { useSearchParams } from "next/navigation"
 
 export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   const [orders, setOrders] = useState<any[]>([])
+  const searchParams = useSearchParams()
+  const token = searchParams.get('token')
 
   const [showReview, setShowReview] = useState(false)
 
@@ -79,7 +82,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           </a>
         </div>
         
-        <Link href={`/table/${tableId}`} className="text-gray-400 font-semibold underline underline-offset-4">
+        <Link href={`/table/${tableId}?token=${token}`} className="text-gray-400 font-semibold underline underline-offset-4">
           Return to Menu
         </Link>
       </div>
@@ -90,7 +93,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
     <div className="min-h-screen bg-gray-50 px-6 pt-20 pb-32">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold font-mono">Your Orders</h1>
-        <Link href={`/table/${tableId}`} className="text-sm font-semibold text-blue-600">Back to Menu</Link>
+        <Link href={`/table/${tableId}?token=${token}`} className="text-sm font-semibold text-blue-600">Back to Menu</Link>
       </div>
 
       {orders.filter(o => o.status !== 'completed').length === 0 ? (
