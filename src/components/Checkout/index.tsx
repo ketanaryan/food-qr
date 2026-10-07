@@ -134,8 +134,8 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
           )}
         </div>
 
-        <button disabled={isSubmitting} onClick={handlePay} className="w-full cursor-pointer rounded-xl bg-green-600 py-3 text-sm font-semibold text-white hover:bg-green-700 transition disabled:opacity-50">
-          {isSubmitting ? "Processing..." : `Place Order • ₹${discountedTotal}`}
+        <button disabled={isSubmitting} onClick={handlePay} className="w-full cursor-pointer rounded-xl bg-gray-900 py-4 text-base font-bold text-white hover:bg-gray-800 transition shadow-lg active:scale-95 disabled:opacity-50">
+          {isSubmitting ? "Sending to Kitchen..." : `Place Order • ₹${discountedTotal}`}
         </button>
       </div>
     </div>

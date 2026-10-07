@@ -12,9 +12,9 @@ function MenuSection({section,items}:{ section: string, items: IMenu[]}) {
         {section}
       </h2>
 
-      <div className="flex gap-4 overflow-x-auto px-3 pb-2 snap-x snap-mandatory scrollbar-hide">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-3 pb-2">
         {Array.isArray(items) && items?.map((item, idx) => (
-          <div key={idx} className="snap-start">
+          <div key={idx} className="w-full">
             <MenuItem item={item} />
           </div>
         ))}

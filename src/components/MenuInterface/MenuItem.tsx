@@ -32,7 +32,7 @@ function MenuItem({ item }: { item: IMenu }) {
   }
 
   return (
-    <div className="w-40 sm:w-44 md:w-48 rounded-2xl bg-white p-3 shadow-sm hover:shadow-md transition">
+    <div className="w-full rounded-2xl bg-white p-3 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_-4px_rgba(6,81,237,0.15)] transition-all border border-gray-50 flex flex-col h-full">
 
       <div className="relative h-28 w-full rounded-xl overflow-hidden">
         <Image
@@ -50,16 +50,22 @@ function MenuItem({ item }: { item: IMenu }) {
         )}
       </div>
 
-      <div className="mt-2 space-y-1">
+      <div className="mt-3 flex flex-col flex-grow space-y-1.5">
         <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
           {item.title}
         </h3>
 
-        <p className="text-xs text-gray-500">
-          1 pc • {item.quantity} g
-        </p>
+        {item.description ? (
+          <p className="text-xs text-gray-500 line-clamp-2 leading-snug">
+            {item.description}
+          </p>
+        ) : (
+          <p className="text-xs text-gray-500">
+            Fresh & Delicious
+          </p>
+        )}
 
-        <div className="mt-2 flex items-center justify-between">
+        <div className="mt-auto pt-3 flex items-center justify-between">
           <div className="flex flex-col">
             {item.originalPrice && (
               <span className="text-xs line-through text-gray-500">

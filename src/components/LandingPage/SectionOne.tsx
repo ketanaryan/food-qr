@@ -92,12 +92,16 @@ export default function SectionOne() {
               className="mt-16 pt-8 border-t border-white/10 flex justify-center lg:justify-start gap-12"
             >
               <div className="text-center lg:text-left">
-                <p className="text-white text-xl lg:text-2xl font-bold italic tracking-tighter">Instant</p>
-                <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium">Activation</p>
+                <p className="text-white text-xl lg:text-2xl font-bold italic tracking-tighter">0%</p>
+                <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium">Gateway Fees</p>
               </div>
               <div className="text-center lg:text-left">
-                <p className="text-white text-xl lg:text-2xl font-bold italic tracking-tighter">Zero</p>
-                <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium">Monthly Fees</p>
+                <p className="text-white text-xl lg:text-2xl font-bold italic tracking-tighter">Direct</p>
+                <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium">UPI Payments</p>
+              </div>
+              <div className="text-center lg:text-left">
+                <p className="text-white text-xl lg:text-2xl font-bold italic tracking-tighter">Live</p>
+                <p className="text-zinc-500 text-[10px] uppercase tracking-[0.2em] font-medium">Analytics</p>
               </div>
             </motion.div>
           </div>
