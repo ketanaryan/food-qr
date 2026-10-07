@@ -108,6 +108,15 @@ export default function SectionTwo() {
     const containerRef = useRef<HTMLElement>(null)
     
 
+    const [isMobile, setIsMobile] = React.useState(true);
+    
+    React.useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 1024);
+        checkMobile(); // Check immediately on mount
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end end"]
@@ -125,14 +134,26 @@ export default function SectionTwo() {
         mass: 0.9
     })
 
+    if (isMobile) {
+        return (
+            <section id="feature" className="relative bg-[#F8F5F0] rounded-t-4xl py-12 flex flex-col gap-12 overflow-hidden z-10">
+                <div className="absolute -z-10 inset-0 bg-black/80 pointer-events-none" />
+                {cards.map((data, i) => (
+                    <div key={i} className="w-full shrink-0">
+                        <FeatureCard feature={data} />
+                    </div>
+                ))}
+            </section>
+        );
+    }
     
     return (
         <section
             id="feature"
             ref={containerRef}
-            className="relative h-[300vh] bg-[#F8F5F0] rounded-t-4xl"
+            className="relative h-[300vh] bg-[#F8F5F0] rounded-t-4xl z-10"
         >
-            <div className="absolute -z-10 inset-0 bg-black/60 lg:bg-transparent lg:bg-gradient-to-r lg:from-black/90 lg:via-black/30 lg:to-transparent pointer-events-none" />
+            <div className="absolute -z-10 inset-0 lg:bg-transparent lg:bg-gradient-to-r lg:from-black/90 lg:via-black/30 lg:to-transparent pointer-events-none" />
             <div className="sticky top-0 h-screen overflow-hidden flex items-center">
                 <motion.ul
                     style={{ x }}

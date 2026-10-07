@@ -7,7 +7,7 @@ import { MenuFeatures } from '@/types/MenuFeatures'
 function FeatureCard({ feature }: { feature: MenuFeatures }) {
     const Icon = feature.icon
     return (
-        <div className="relative w-screen shrink-0 mt-18 md:mt=0 px-6 md:px-20 flex items-center justify-center">
+        <div className="relative w-full shrink-0 mt-18 md:mt-0 px-6 md:px-20 flex items-center justify-center">
             <div className="max-w-7xl w-full">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
