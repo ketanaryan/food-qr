@@ -137,7 +137,6 @@ export default function SectionTwo() {
     if (isMobile) {
         return (
             <section id="feature" className="relative bg-[#F8F5F0] rounded-t-4xl py-12 flex flex-col gap-12 overflow-hidden z-10">
-                <div className="absolute -z-10 inset-0 bg-black/80 pointer-events-none" />
                 {cards.map((data, i) => (
                     <div key={i} className="w-full shrink-0">
                         <FeatureCard feature={data} />
