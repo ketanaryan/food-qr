@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { Bell, Clock, CheckCircle } from "lucide-react";
+import NavBar from "@/components/common/NavBar";
 
 type Order = {
   id: number;
@@ -138,7 +139,9 @@ export default function KitchenDashboard() {
   const columns = ["received", "preparing", "ready", "served"] as const;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 pt-24 font-sans relative">
+    <>
+      <NavBar />
+      <div className="min-h-screen bg-gray-50 p-6 pt-24 font-sans relative">
       
       {!isOnline && (
         <div className="fixed top-16 left-0 right-0 bg-red-600 text-white text-center py-2 font-bold z-40 shadow-md">
@@ -278,5 +281,6 @@ export default function KitchenDashboard() {
         })}
       </div>
     </div>
+    </>
   );
 }

@@ -10,9 +10,7 @@ function NavBar() {
   const [open, setOpen] = useState(false)
 
   const links = [
-    { name: "Home", href: "/" },
-    { name: "Kitchen", href: "/kitchen" },
-    { name: "Cashier", href: "/cashier" }
+    { name: "Home", href: "/" }
   ]
 
   return (

@@ -25,31 +25,13 @@ function Footer() {
                     </p>
 
                     <div className="flex items-center gap-3 pt-2">
-                        <Tooltip content="Instagram">
-                            <a href="https://www.instagram.com/raj_s.e?igsh=YjZqZmVsd3kwNWsx" className="text-[#5e5240] hover:text-[#A18D6D] transition">
-                                <Icon icon="ri:instagram-line" width="22" />
-                            </a>
-                        </Tooltip>
-
-                        <Tooltip content="Facebook">
-                            <a href="https://www.facebook.com/share/1BeSWL4QxY/" className="text-[#5e5240] hover:text-[#A18D6D] transition">
-                                <Icon icon="ri:facebook-line" width="22" />
-                            </a>
-                        </Tooltip>
-
-                        <Tooltip content="LinkedIn">
-                            <a href="https://www.linkedin.com/in/raj-sharma-23447527b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" className="text-[#5e5240] hover:text-[#A18D6D] transition">
-                                <Icon icon="ri:linkedin-line" width="22" />
-                            </a>
-                        </Tooltip>
-
                         <Tooltip content="GitHub">
-                            <a href="https://github.com/softenrj" className="text-[#5e5240] hover:text-[#A18D6D] transition">
+                            <a href="https://github.com/ketanaryan" className="text-[#5e5240] hover:text-[#A18D6D] transition">
                                 <Icon icon="ri:github-line" width="22" />
                             </a>
                         </Tooltip>
                     </div>
-                    <a href="mailto:rjsharmase@gmail.com" className="italic from-accent-foreground">rajsharmase@gmail.com</a>
+                    <a href="mailto:iamketan3@gmail.com" className="italic from-accent-foreground">iamketan3@gmail.com</a>
                 </div>
 
                 {/* Product */}
@@ -89,13 +71,16 @@ function Footer() {
                         <li onClick={() => scrollToSection('faq')} className="hover:text-[#A18D6D] cursor-pointer">FAQs</li>
                         <li className="hover:text-[#A18D6D] cursor-pointer">Privacy Policy</li>
                         <Tooltip content="Do whatever you want, but never trouble your mother, father, or nation."><li className="hover:text-[#A18D6D] cursor-pointer">Terms of Service</li></Tooltip>
+                        <Link href="/kitchen"><li className="hover:text-[#A18D6D] cursor-pointer mt-4 font-semibold opacity-50 hover:opacity-100">Staff Portal (Kitchen)</li></Link>
+                        <Link href="/cashier"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Staff Portal (Cashier)</li></Link>
+                        <Link href="/admin/qr"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Print QR Codes</li></Link>
                     </ul>
                 </div>
             </div>
 
             {/* Bottom bar */}
-            <div className="border-t border-[#e8e1d6] py-4 px-6 text-center text-xs text-[#7a6f5b]">
-                © {new Date().getFullYear()} Aryan Food App. All rights reserved.
+            <div className="border-t border-[#e8e1d6] py-4 px-6 flex justify-between items-center text-xs text-[#7a6f5b]">
+                <span>© {new Date().getFullYear()} Aryan Food App. All rights reserved.</span>
             </div>
         </footer>
     )
