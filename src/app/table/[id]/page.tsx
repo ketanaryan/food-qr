@@ -19,7 +19,7 @@ async function page({params, searchParams}: {params: Promise<{id: string}>, sear
     }
 
   return (
-    <MenuInterface merchantId={id} />
+    <MenuInterface merchantId={id} token={search.token} />
   )
 }
 

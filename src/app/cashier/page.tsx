@@ -8,7 +8,13 @@ import NavBar from "@/components/common/NavBar"
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioEnabledRef = React.useRef(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+
+  // Sync state to ref
+  useEffect(() => {
+    audioEnabledRef.current = audioEnabled;
+  }, [audioEnabled]);
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -27,7 +33,7 @@ export default function CashierDashboard() {
       .channel('cashier-orders')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
         if (payload.eventType === 'UPDATE' && payload.new.status === 'billing') {
-           if (audioEnabled && audioRef.current) {
+           if (audioEnabledRef.current && audioRef.current) {
              audioRef.current.play().catch(()=>console.log("Audio play failed"));
              toast.error(`Table ${payload.new.table_number} requested the bill!`, {
                duration: 6000,
@@ -40,7 +46,24 @@ export default function CashierDashboard() {
       })
       .subscribe()
 
-    return () => { supabase.removeChannel(channel) }
+    const alertChannel = supabase
+      .channel('cashier-alerts')
+      .on('broadcast', { event: 'waiter_called' }, (payload) => {
+        if (audioEnabledRef.current && audioRef.current) {
+           audioRef.current.play().catch(()=>console.log("Audio play failed"));
+        }
+        toast.success(`Table ${payload.payload.table} is calling a Waiter!`, {
+           duration: 8000,
+           icon: '🙋‍♂️',
+           style: { background: '#3b82f6', color: '#fff', fontWeight: 'bold' }
+        });
+      })
+      .subscribe()
+
+    return () => { 
+      supabase.removeChannel(channel)
+      supabase.removeChannel(alertChannel)
+    }
   }, [])
 
   // Group by table

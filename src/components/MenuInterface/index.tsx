@@ -14,12 +14,27 @@ import Link from "next/link"
 import toast from "react-hot-toast"
 import { Bell, ScrollText } from "lucide-react"
 
-function MerchantPage({ merchantId }: { merchantId: string }) {
+import { supabase } from "@/lib/supabase"
+
+function MerchantPage({ merchantId, token }: { merchantId: string, token?: string }) {
   const menu: IMenu[] = MENU_DATA;
 
-  const handleCallWaiter = () => {
+  const handleCallWaiter = async () => {
     toast.success("Waiter has been notified! They will be at your table shortly.");
-    // In a real app, this would ping Supabase Realtime to alert the kitchen/waiter dashboard
+    const channel = supabase.channel('cashier-alerts');
+    channel.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        channel.send({
+          type: 'broadcast',
+          event: 'waiter_called',
+          payload: { table: merchantId },
+        });
+      }
+    });
+    // Remove the channel after sending so we don't leak memory
+    setTimeout(() => {
+      supabase.removeChannel(channel);
+    }, 2000);
   }
 
   const menuItem = React.useMemo(() => {

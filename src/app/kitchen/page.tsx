@@ -17,8 +17,13 @@ type Order = {
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const audioEnabledRef = useRef(false);
   const [isOnline, setIsOnline] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    audioEnabledRef.current = audioEnabled;
+  }, [audioEnabled]);
 
   useEffect(() => {
     // We'll create an audio element dynamically or use a ref to an existing one.
@@ -69,7 +74,7 @@ export default function KitchenDashboard() {
         (payload) => {
           if (payload.eventType === "INSERT") {
             setOrders((prev) => [payload.new as Order, ...prev]);
-            if (audioEnabled && audioRef.current) {
+            if (audioEnabledRef.current && audioRef.current) {
               audioRef.current.play().catch((e) => console.log("Audio play failed:", e));
             }
           } else if (payload.eventType === "UPDATE") {
@@ -141,7 +146,6 @@ export default function KitchenDashboard() {
   return (
     <>
       <NavBar />
-      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_2d8bf42bd2.mp3?filename=notification-bell-109594.mp3" preload="auto" />
       <div className="min-h-screen bg-gray-50 p-6 pt-24 font-sans relative">
       
       {!isOnline && (
