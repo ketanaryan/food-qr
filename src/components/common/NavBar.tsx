@@ -16,7 +16,7 @@ function NavBar() {
   ]
 
   return (
-    <header className="fixed top-0 z-50 w-full border-b bg-white/70 backdrop-blur-md">
+    <header className="fixed top-0 z-50 w-full border-b bg-white/70 backdrop-blur-md print:hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
 

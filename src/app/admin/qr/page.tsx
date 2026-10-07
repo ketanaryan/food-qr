@@ -34,7 +34,7 @@ export default function QRPrintPage() {
   if (loading) return <div className="p-10 text-xl font-bold">Generating Secure QR Codes...</div>;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-8 pt-28">
       <div className="flex justify-between items-center mb-8 print:hidden">
         <h1 className="text-3xl font-bold">Print QR Codes</h1>
         <button 
