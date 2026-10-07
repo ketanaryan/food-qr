@@ -72,13 +72,24 @@ export default function MenuBuilder() {
       return;
     }
 
+    // Get auth token to pass to API
+    const authHeader = `Basic ${btoa("admin:aryan123")}`;
+
     if (editingId === "new") {
-      const { error } = await supabase.from("menu").insert([formData]);
-      if (error) toast.error("Failed to add item");
+      const res = await fetch("/api/admin/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": authHeader },
+        body: JSON.stringify({ action: "insert", data: formData })
+      });
+      if (!res.ok) toast.error("Failed to add item");
       else toast.success("Item added!");
     } else {
-      const { error } = await supabase.from("menu").update(formData).eq("id", editingId);
-      if (error) toast.error("Failed to update item");
+      const res = await fetch("/api/admin/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": authHeader },
+        body: JSON.stringify({ action: "update", id: editingId, data: formData })
+      });
+      if (!res.ok) toast.error("Failed to update item");
       else toast.success("Item updated!");
     }
     
@@ -89,8 +100,13 @@ export default function MenuBuilder() {
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this item?")) return;
-    const { error } = await supabase.from("menu").delete().eq("id", id);
-    if (error) toast.error("Failed to delete item");
+    const authHeader = `Basic ${btoa("admin:aryan123")}`;
+    const res = await fetch("/api/admin/menu", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": authHeader },
+      body: JSON.stringify({ action: "delete", id })
+    });
+    if (!res.ok) toast.error("Failed to delete item");
     else {
       toast.success("Item deleted!");
       fetchMenu();
