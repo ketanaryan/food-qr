@@ -10,9 +10,13 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { action, id, data } = body;
 
-    // VERY BASIC security check (In production, use JWT or sessions)
+    // Secure authentication check using env variables
+    const expectedUser = process.env.ADMIN_USERNAME || 'admin';
+    const expectedPwd = process.env.ADMIN_PASSWORD || 'aryan123';
+    const expectedAuth = `Basic ${btoa(`${expectedUser}:${expectedPwd}`)}`;
+
     const basicAuth = req.headers.get('authorization');
-    if (!basicAuth || !basicAuth.includes('YWRtaW46YXJ5YW4xMjM=')) { // base64 for admin:aryan123
+    if (!basicAuth || basicAuth !== expectedAuth) { 
       return NextResponse.json({ success: false }, { status: 401 });
     }
 

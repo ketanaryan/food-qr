@@ -13,14 +13,16 @@ export function middleware(req: NextRequest) {
       // Basic auth string is base64 encoded "username:password"
       const [user, pwd] = atob(authValue).split(':')
 
-      // Use a hardcoded password for MVP (in production, use env variables)
-      if (user === 'admin' && pwd === 'aryan123') {
+      const expectedUser = process.env.ADMIN_USERNAME || 'admin';
+      const expectedPwd = process.env.ADMIN_PASSWORD || 'aryan123';
+
+      if (user === expectedUser && pwd === expectedPwd) {
         return NextResponse.next()
       }
     }
     
     // If not authenticated, prompt for password
-    return new NextResponse('Authentication required. Username: admin, Password: aryan123', {
+    return new NextResponse('Authentication required.', {
       status: 401,
       headers: { 'WWW-Authenticate': 'Basic realm="Secure Admin Area"' }
     })
