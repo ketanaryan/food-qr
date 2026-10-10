@@ -1,7 +1,7 @@
-import MerchantPage from "@/components/MenuInterface"
+import RestaurantLanding from "@/components/RestaurantLanding"
 
 export default function Home() {
   return (
-    <MerchantPage merchantId="1" />
+    <RestaurantLanding />
   );
 }
