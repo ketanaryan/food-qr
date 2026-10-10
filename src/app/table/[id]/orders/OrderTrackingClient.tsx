@@ -74,7 +74,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
              {[1,2,3,4,5].map(i => <span key={i} className="text-4xl text-yellow-400">★</span>)}
           </div>
           <a 
-            href="https://maps.app.goo.gl/1" 
+            href="https://www.google.com/search?q=Hotel+White+Bliss+Nashik" 
             target="_blank"
             className="block w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition"
           >
