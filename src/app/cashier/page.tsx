@@ -146,6 +146,22 @@ export default function CashierDashboard() {
       </html>
     `);
     printWindow.document.close();
+  const sendWhatsAppBill = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
+    const phone = window.prompt("Enter customer WhatsApp number (e.g. 9876543210):");
+    if (!phone) return;
+    
+    // Validate phone briefly (remove spaces, check length)
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) return toast.error("Invalid phone number");
+
+    let itemsText = groupOrders.map(order => {
+      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
+      return items.map((it:any) => `${it.qty}x ${it.name} - ₹${it.price * it.qty}`).join('%0A');
+    }).join('%0A');
+
+    const billText = `🧾 *HOTEL WHITE BLISS* 🧾%0APremium Fine Dining%0A------------------------%0A*Table ${tableNumber}*%0ADate: ${new Date().toLocaleDateString()}%0A%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService Charge (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
+    
+    window.open(`https://wa.me/91${cleanPhone}?text=${billText}`, '_blank');
   }
 
   return (
@@ -228,20 +244,26 @@ export default function CashierDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mb-2">
                       <button 
                         onClick={() => printReceipt(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 text-sm"
                       >
-                        Print Bill
+                        🖨️ Print
                       </button>
                       <button 
-                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id))}
-                        className="flex-[2] flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition active:scale-95"
+                        onClick={() => sendWhatsAppBill(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition active:scale-95 text-sm"
                       >
-                        <CheckCircle size={20}/> Mark as Paid
+                        💬 WhatsApp
                       </button>
                     </div>
+                    <button 
+                      onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id))}
+                      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95"
+                    >
+                      <CheckCircle size={20}/> Mark as Paid & Clear
+                    </button>
                   </>
                 );
               })()}
