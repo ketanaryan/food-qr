@@ -93,6 +93,8 @@ export default function CashierDashboard() {
     } catch(e) {
       toast.error("Failed to mark as paid");
     }
+  }
+
   const printReceipt = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
     const printWindow = window.open('', '', 'width=400,height=600');
     if (!printWindow) return toast.error('Please allow popups to print receipts');
