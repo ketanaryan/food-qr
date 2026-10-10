@@ -3,7 +3,7 @@
 import React, { useEffect, useState, use } from "react";
 import { supabase } from "@/lib/supabase";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 export default function BillViewer({ params }: { params: Promise<{ ids: string }> }) {
   const unwrappedParams = use(params);
@@ -67,7 +67,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         ]);
       });
 
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 50,
         head: [['Item', 'Qty', 'Rate', 'Amount']],
         body: tableBody,
