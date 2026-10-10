@@ -65,7 +65,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           <CheckCircle size={48} />
         </div>
         <h1 className="text-3xl font-black text-gray-900 mb-2">Payment Successful!</h1>
-        <p className="text-gray-500 mb-10 text-lg">Thank you for dining with Aryan Food App.</p>
+        <p className="text-gray-500 mb-10 text-lg">Thank you for dining with Hotel White Bliss.</p>
 
         <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl w-full max-w-sm mb-6 shadow-sm">
           <h2 className="font-bold text-blue-900 mb-2 text-xl">How was your food?</h2>
@@ -175,13 +175,13 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                     <h3 className="font-bold text-gray-900 mb-4 text-lg">Pay Securely via UPI</h3>
                     <div className="flex justify-center mb-6">
                       <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=restaurant@upi&pn=Aryan%20Food%20Cafe&am=${grandTotal}&cu=INR`)}`} 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=restaurant@upi&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR`)}`} 
                         alt="UPI QR Code" 
                         className="rounded-xl border-4 border-gray-100 shadow-sm"
                       />
                     </div>
                     <a 
-                      href={`upi://pay?pa=restaurant@upi&pn=Aryan%20Food%20Cafe&am=${grandTotal}&cu=INR`}
+                      href={`upi://pay?pa=restaurant@upi&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR`}
                       className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg"
                     >
                       Pay via UPI App (Zero Fee)

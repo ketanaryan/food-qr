@@ -99,7 +99,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
           <div className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 z-0">
               <Image
-                src="https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768652991/2148200773_slxpzw.jpg"
+                src="/hotel-white-bliss.jpg"
                 alt="Hero background"
                 fill
                 priority
@@ -131,7 +131,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
               </p>
 
               <h1 className="text-4xl md:text-6xl font-playfair font-bold text-white">
-                Explore Our Menus
+                Hotel White Bliss
               </h1>
 
               <p className="mt-3 text-lg text-white/80">

@@ -12,13 +12,13 @@ export default function Index() {
     return (
         <ReactLenis root>
             <div className="min-h-screen w-full flex flex-col justify-center">
-                <div className="fixed inset-0 -z-10">
+                <div className="fixed inset-0 -z-10 bg-black">
                     <Image
-                        src="https://res.cloudinary.com/dcyn3ewpv/image/upload/v1768652991/2148200773_slxpzw.jpg"
+                        src="/hotel-white-bliss.jpg"
                         alt="Hero background"
                         fill
                         priority
-                        className="object-cover object-center"
+                        className="object-cover object-center opacity-80"
                     />
                 </div>
 

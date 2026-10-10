@@ -15,8 +15,8 @@ function Footer() {
 
                 {/* Brand */}
                 <div className="flex flex-col gap-4">
-                    <Link href="/" className="text-2xl font-bold tracking-tight">
-                        <span className="text-[#A18D6D]">Aryan</span> Food App
+                    <Link href="/" className="font-playfair text-2xl font-bold tracking-tight text-[#1E1B16]">
+                        Hotel <span className="text-[#A18D6D]">White Bliss</span>
                     </Link>
 
                     <p className="text-[#5e5240] text-sm leading-relaxed">
@@ -82,7 +82,7 @@ function Footer() {
 
             {/* Bottom bar */}
             <div className="border-t border-[#e8e1d6] py-4 px-6 flex justify-between items-center text-xs text-[#7a6f5b]">
-                <span>© {new Date().getFullYear()} Aryan Food App. All rights reserved.</span>
+                <span>© {new Date().getFullYear()} Hotel White Bliss. All rights reserved.</span>
             </div>
         </footer>
     )

@@ -41,7 +41,7 @@ export default function SectionOne() {
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 px-4 py-1.5 backdrop-blur-md">
                 <Sparkles className="w-4 h-4 text-orange-400" />
                 <span className="text-[10px] lg:text-sm font-bold tracking-widest text-white uppercase">
-                  The New Standard for Dhabas
+                  Welcome to Hotel White Bliss
                 </span>
               </div>
             </motion.div>

@@ -19,7 +19,7 @@ function NavBar() {
         <div className="flex h-16 items-center justify-between">
 
           <Link href="/" className="text-xl font-bold tracking-tight">
-            <span className="text-[#A18D6D]">Aryan</span> Food App
+            Hotel <span className="text-[#A18D6D]">White Bliss</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
