@@ -16,8 +16,8 @@ type Order = {
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const audioEnabledRef = useRef(false);
+  const [audioEnabled, setAudioEnabled] = useState(true); // Enabled by default
+  const audioEnabledRef = useRef(true);
   const [isOnline, setIsOnline] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
