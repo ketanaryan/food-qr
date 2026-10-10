@@ -7,7 +7,7 @@ import { Badge } from "../ui/badge"
 import { useCartStore } from "@/lib/store"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
-function ItemNotch() {
+function ItemNotch({ merchantId, isPosMode }: { merchantId?: string, isPosMode?: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -25,6 +25,14 @@ function ItemNotch() {
   const visibleItems = checkoutItems.slice(0, 2)
   const extraCount = checkoutItems.length - visibleItems.length
 
+  const handleCheckoutClick = () => {
+    if (isPosMode && merchantId) {
+      router.push(`/pos/checkout?table=${merchantId}`)
+    } else {
+      router.push(`${pathname}/checkout?token=${token || ''}`)
+    }
+  }
+
   return (
     <>
       <motion.div
@@ -33,9 +41,7 @@ function ItemNotch() {
         exit={{ y: 30, opacity: 0, scale: 0.9 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         className="fixed cursor-pointer bottom-6 left-1/2 z-50 -translate-x-1/2"
-        onClick={() =>
-          router.push(`${pathname}/checkout?token=${token}`)
-        }
+        onClick={handleCheckoutClick}
       >
         <div className="flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-xl ring-1 ring-black/5">
 

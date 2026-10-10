@@ -153,7 +153,7 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
         </div>
       </ReactLenis>
 
-      <ItemNotch />
+      <ItemNotch merchantId={merchantId} isPosMode={isPosMode} />
     </>
   )
 }

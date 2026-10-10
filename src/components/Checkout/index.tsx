@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useCartStore } from "@/lib/store"
 import { v4 as uuidv4 } from "uuid"
 
-function CheckoutPage({ merchantId }: { merchantId: string }) {
+function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, isPosMode?: boolean }) {
   const checkout = useCartStore(state => state.items)
   const clearCheckout = useCartStore(state => state.clearCart)
   const router = useRouter();
@@ -49,7 +49,12 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
 
       toast.success("Order placed successfully!");
       clearCheckout();
-      router.push(`/table/${merchantId}/orders?token=${token}`); // Go to new tracking page
+      
+      if (isPosMode) {
+        router.push('/pos');
+      } else {
+        router.push(`/table/${merchantId}/orders?token=${token || ''}`);
+      }
     } catch (e) {
       toast.error("Network error");
       setIsSubmitting(false);
@@ -86,7 +91,13 @@ function CheckoutPage({ merchantId }: { merchantId: string }) {
           Checkout
         </h1>
         <button 
-          onClick={() => router.push(`/table/${merchantId}?token=${token}`)}
+          onClick={() => {
+            if (isPosMode) {
+              router.push('/pos')
+            } else {
+              router.push(`/table/${merchantId}?token=${token || ''}`)
+            }
+          }}
           className="text-sm font-semibold text-blue-600"
         >
           Back to Menu
