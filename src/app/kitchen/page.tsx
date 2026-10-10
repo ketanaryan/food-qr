@@ -77,9 +77,15 @@ export default function KitchenDashboard() {
             if (audioEnabledRef.current) {
               try {
                 const newOrder = payload.new as Order;
-                let itemsArray = [];
-                try { itemsArray = JSON.parse(newOrder.items); } catch(e) {}
+                let itemsArray: any[] = [];
+                try { 
+                  itemsArray = typeof newOrder.items === 'string' 
+                    ? JSON.parse(newOrder.items) 
+                    : newOrder.items;
+                } catch(e) {}
                 
+                if (!Array.isArray(itemsArray)) itemsArray = [];
+
                 const dishCounts = itemsArray
                   .filter((i:any) => i.id !== 'NOTE')
                   .map((i:any) => `${i.qty} ${i.name}`)
@@ -90,19 +96,24 @@ export default function KitchenDashboard() {
                 
                 const textToSpeak = `New order. ${tableNameStr}. ${dishCounts}.`;
                 
+                // Clear any stuck speech
+                window.speechSynthesis.cancel();
+                
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                // Make it slightly slower for clarity
-                utterance.rate = 0.9;
+                utterance.volume = 1.0; // Max Volume
+                utterance.rate = 0.85; // Slightly slower
                 
                 const voices = window.speechSynthesis.getVoices();
-                // Prefer Indian English voice for desi dish names
-                const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
-                if (indianVoice) utterance.voice = indianVoice;
+                if (voices && voices.length > 0) {
+                  const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                  if (indianVoice) utterance.voice = indianVoice;
+                }
                 
                 if (audioRef.current) {
+                   audioRef.current.volume = 1.0;
                    audioRef.current.play().then(() => {
                      // Wait a bit for the beep to finish
-                     setTimeout(() => window.speechSynthesis.speak(utterance), 1500);
+                     setTimeout(() => window.speechSynthesis.speak(utterance), 1200);
                    }).catch(() => {
                      window.speechSynthesis.speak(utterance);
                    });
@@ -111,7 +122,10 @@ export default function KitchenDashboard() {
                 }
               } catch (err) {
                 console.error("Speech error", err);
-                if (audioRef.current) audioRef.current.play().catch(()=>{});
+                if (audioRef.current) {
+                  audioRef.current.volume = 1.0;
+                  audioRef.current.play().catch(()=>{});
+                }
               }
             }
           } else if (payload.eventType === "UPDATE") {
