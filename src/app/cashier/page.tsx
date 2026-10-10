@@ -168,10 +168,10 @@ export default function CashierDashboard() {
     const orderIds = groupOrders.map((o: any) => o.id).join('-');
     const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${cleanUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\nThank you for dining with us! 🙏`;
     
     // Direct synchronous user action bypassing blockers
-    window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     
     setWaModal({ isOpen: false, data: null });
     setWaPhone('');
