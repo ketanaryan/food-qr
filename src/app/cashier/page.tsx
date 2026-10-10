@@ -128,7 +128,7 @@ export default function CashierDashboard() {
             <p style="margin:5px 0; font-size:12px;">Premium Fine Dining</p>
             <p style="margin:5px 0 15px; font-size:12px;">Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
           </div>
-          <h3 class="text-center">Table ${tableNumber}</h3>
+          <h3 class="text-center">${tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`}</h3>
           <div class="divider"></div>
           
           ${itemsHtml}
@@ -165,7 +165,8 @@ export default function CashierDashboard() {
     doc.setFont("helvetica", "normal");
     doc.text("Premium Fine Dining", 105, 28, { align: "center" });
     doc.text(`Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 34, { align: "center" });
-    doc.text(`Table No: ${tableNumber}`, 105, 40, { align: "center" });
+    const formattedTableName = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table No: ${tableNumber}`;
+    doc.text(formattedTableName, 105, 40, { align: "center" });
 
     // Table Data
     const tableBody = groupOrders.flatMap(order => {
@@ -244,7 +245,8 @@ export default function CashierDashboard() {
     if (phone) {
       const cleanPhone = phone.replace(/\D/g, '');
       if (cleanPhone.length >= 10) {
-        const text = `🧾 *HOTEL WHITE BLISS* 🧾%0AHere is the bill for Table ${tableNumber}.%0A%0A*Grand Total: ₹${grandTotal}*%0A%0A(Please find the attached PDF). Thank you!`;
+        const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
+        const text = `🧾 *HOTEL WHITE BLISS* 🧾%0AHere is the bill for ${tableNameDisplay}.%0A%0A*Grand Total: ₹${grandTotal}*%0A%0A(Please find the attached PDF). Thank you!`;
         window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
       }
     }
@@ -281,7 +283,9 @@ export default function CashierDashboard() {
           {Object.values(tableGroups).map((group: any) => (
             <div key={group.table} className={`bg-white rounded-2xl shadow-sm border p-6 ${group.requestedBill ? 'ring-2 ring-orange-400 shadow-orange-100' : 'border-gray-200'}`}>
               <div className="flex justify-between items-center border-b pb-4 mb-4">
-                <h2 className="text-2xl font-bold">Table {group.table}</h2>
+                <h2 className="text-2xl font-bold">
+                  {group.table.match(/^(Swiggy|Zomato|Takeaway)/i) ? group.table : `Table ${group.table}`}
+                </h2>
                 {group.requestedBill && <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">Bill Requested</span>}
               </div>
               

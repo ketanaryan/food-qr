@@ -15,22 +15,58 @@ export default function POSPage() {
         <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-[#e8e1d6]">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-playfair font-bold text-[#1E1B16] mb-2">Staff POS</h1>
-            <p className="text-sm text-[#6F624E]">Select a table to punch in an order for walk-in customers.</p>
+            <p className="text-sm text-[#6F624E]">Select a table or order type to punch in.</p>
           </div>
           
-          <div className="grid grid-cols-4 gap-3">
-            {Array.from({length: 20}, (_, i) => i + 1).map(num => (
+          <div className="mb-6">
+            <h2 className="text-sm font-bold text-[#1E1B16] uppercase tracking-wider mb-3">Dine-In Tables</h2>
+            <div className="grid grid-cols-4 gap-3">
+              {Array.from({length: 20}, (_, i) => i + 1).map(num => (
+                <button
+                  key={num}
+                  onClick={() => {
+                    clearCart();
+                    setSelectedTable(String(num));
+                  }}
+                  className="h-14 rounded-xl border-2 border-[#e8e1d6] flex flex-col items-center justify-center hover:border-[#A18D6D] hover:bg-[#F8F5F0] hover:text-[#1E1B16] transition-colors text-[#6F624E] font-bold text-lg"
+                >
+                  {num}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-sm font-bold text-[#1E1B16] uppercase tracking-wider mb-3">Delivery & Takeaway</h2>
+            <div className="grid grid-cols-3 gap-3">
               <button
-                key={num}
                 onClick={() => {
                   clearCart();
-                  setSelectedTable(String(num));
+                  setSelectedTable(`Swiggy-${Math.floor(1000 + Math.random() * 9000)}`);
                 }}
-                className="h-16 rounded-xl border-2 border-[#e8e1d6] flex flex-col items-center justify-center hover:border-[#A18D6D] hover:bg-[#F8F5F0] hover:text-[#1E1B16] transition-colors text-[#6F624E] font-bold text-lg"
+                className="h-14 rounded-xl bg-orange-100 text-orange-600 flex flex-col items-center justify-center hover:bg-orange-200 transition-colors font-bold text-sm border-2 border-orange-200"
               >
-                {num}
+                Swiggy
               </button>
-            ))}
+              <button
+                onClick={() => {
+                  clearCart();
+                  setSelectedTable(`Zomato-${Math.floor(1000 + Math.random() * 9000)}`);
+                }}
+                className="h-14 rounded-xl bg-red-100 text-red-600 flex flex-col items-center justify-center hover:bg-red-200 transition-colors font-bold text-sm border-2 border-red-200"
+              >
+                Zomato
+              </button>
+              <button
+                onClick={() => {
+                  clearCart();
+                  setSelectedTable(`Takeaway-${Math.floor(1000 + Math.random() * 9000)}`);
+                }}
+                className="h-14 rounded-xl bg-blue-100 text-blue-600 flex flex-col items-center justify-center hover:bg-blue-200 transition-colors font-bold text-sm border-2 border-blue-200"
+              >
+                Takeaway
+              </button>
+            </div>
           </div>
         </div>
       </div>
