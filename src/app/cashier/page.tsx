@@ -228,24 +228,27 @@ export default function CashierDashboard() {
     const fileName = `Hotel_White_Bliss_Bill_${tableNameDisplay.replace(' ', '_')}.pdf`;
     doc.save(fileName);
     
-    // 2. Upload to Supabase to get a public URL (The Jugaad!)
+    // 2. Upload to Supabase using Backend API (to bypass RLS)
     const toastId = toast.loading("Generating secure PDF link...");
     try {
       const pdfBlob = doc.output('blob');
-      const storageFileName = `bills/${Date.now()}_${fileName}`;
+      const storageFileName = `${Date.now()}_${fileName}`;
       
-      const { error } = await supabase.storage
-        .from('menu-images') // Reusing existing public bucket
-        .upload(storageFileName, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: false
-        });
+      const formData = new FormData();
+      formData.append('file', pdfBlob);
+      formData.append('fileName', storageFileName);
 
-      if (error) throw error;
+      const authHeader = `Basic ${btoa("admin:aryan123")}`;
+      const res = await fetch('/api/admin/upload-bill', {
+        method: 'POST',
+        headers: { 'Authorization': authHeader },
+        body: formData
+      });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('menu-images')
-        .getPublicUrl(storageFileName);
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || "Upload failed");
+
+      const publicUrl = data.publicUrl;
 
       const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${publicUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
       
@@ -255,6 +258,8 @@ export default function CashierDashboard() {
     } catch (err) {
       console.error(err);
       toast.dismiss(toastId);
+      toast.error("Failed to generate PDF link. Sending text bill instead.");
+      
       // Fallback to purely text bill if upload fails
       let itemsText = groupOrders.map(order => {
         const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
