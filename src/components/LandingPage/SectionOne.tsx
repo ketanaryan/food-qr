@@ -68,6 +68,7 @@ export default function SectionOne() {
             >
               <motion.div className="w-full sm:w-auto" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                 <Link
+                  prefetch={false}
                   href="/kitchen"
                   className="group w-full inline-flex items-center justify-center gap-3 rounded-full bg-orange-600 px-10 py-4 text-white font-bold shadow-xl shadow-orange-900/20 transition-all hover:bg-orange-500"
                 >
