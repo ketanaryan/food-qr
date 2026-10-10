@@ -14,7 +14,7 @@ export default function CashierDashboard() {
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   
   // WhatsApp Modal State
-  const [waModal, setWaModal] = useState<{isOpen: boolean, data: any}>({isOpen: false, data: null});
+  const [waModal, setWaModal] = useState<{isOpen: boolean, data: any, paymentMethod: 'CASH' | 'UPI' | null}>({isOpen: false, data: null, paymentMethod: null});
   const [waPhone, setWaPhone] = useState('');
 
   // Sync state to ref
@@ -157,7 +157,7 @@ export default function CashierDashboard() {
   }
 
   const handleSendWa = () => {
-    if (!waModal.data) return;
+    if (!waModal.data || !waModal.paymentMethod) return;
     const { tableNumber, groupOrders, grandTotal } = waModal.data;
     
     const cleanPhone = waPhone.replace(/\D/g, '');
@@ -168,12 +168,24 @@ export default function CashierDashboard() {
     const orderIds = groupOrders.map((o: any) => o.id).join('-');
     const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\n⭐ *Rate your experience on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: PAID VIA ${waModal.paymentMethod}\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\n⭐ *Rate your experience on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
     
     // Direct synchronous user action bypassing blockers
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     
-    setWaModal({ isOpen: false, data: null });
+    // Mark as Paid
+    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod);
+    
+    setWaModal({ isOpen: false, data: null, paymentMethod: null });
+    setWaPhone('');
+  }
+
+  const handleSkipWa = () => {
+    if (!waModal.data || !waModal.paymentMethod) return;
+    const { tableNumber, groupOrders } = waModal.data;
+    // Mark as Paid without WA
+    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod);
+    setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
   }
 
@@ -262,29 +274,23 @@ export default function CashierDashboard() {
                     <div className="flex gap-2 mb-2">
                       <button 
                         onClick={() => printReceipt(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 text-sm"
+                        className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 text-sm"
                       >
-                        🖨️ Print
-                      </button>
-                      <button 
-                        onClick={() => setWaModal({ isOpen: true, data: { tableNumber: group.table, groupOrders: group.orders, subtotal, gst, serviceCharge, grandTotal } })}
-                        className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition active:scale-95 text-sm"
-                      >
-                        💬 WhatsApp
+                        🖨️ Print KOT / Bill
                       </button>
                     </div>
                     <div className="flex gap-2">
                       <button 
-                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id), 'CASH')}
-                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95 text-sm"
+                        onClick={() => setWaModal({ isOpen: true, data: { tableNumber: group.table, groupOrders: group.orders, subtotal, gst, serviceCharge, grandTotal }, paymentMethod: 'CASH' })}
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95 text-sm shadow-sm"
                       >
-                        💵 Cash
+                        💵 Paid via Cash
                       </button>
                       <button 
-                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id), 'UPI')}
-                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition active:scale-95 text-sm"
+                        onClick={() => setWaModal({ isOpen: true, data: { tableNumber: group.table, groupOrders: group.orders, subtotal, gst, serviceCharge, grandTotal }, paymentMethod: 'UPI' })}
+                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition active:scale-95 text-sm shadow-sm"
                       >
-                        📱 UPI
+                        📱 Paid via UPI
                       </button>
                     </div>
                   </>
@@ -305,11 +311,11 @@ export default function CashierDashboard() {
           <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="bg-[#25D366] p-4 text-white text-center">
               <h3 className="font-bold text-lg">Send WhatsApp Bill</h3>
-              <p className="text-white/80 text-sm">Table {waModal.data?.tableNumber}</p>
+              <p className="text-white/80 text-sm">Table {waModal.data?.tableNumber} • Paid via {waModal.paymentMethod}</p>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-gray-700 mb-2">Customer Phone Number</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Customer Phone Number (Optional)</label>
                 <input 
                   type="tel" 
                   autoFocus
@@ -320,18 +326,24 @@ export default function CashierDashboard() {
                   onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
                 />
               </div>
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => { setWaModal({ isOpen: false, data: null }); setWaPhone(''); }}
-                  className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition"
-                >
-                  Cancel
-                </button>
+              <div className="flex flex-col gap-3 pt-2">
                 <button 
                   onClick={handleSendWa}
-                  className="flex-1 bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition"
+                  className="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition shadow-md"
                 >
-                  Send Bill
+                  Send Bill & Clear Table
+                </button>
+                <button 
+                  onClick={handleSkipWa}
+                  className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition"
+                >
+                  Skip WA & Clear Table
+                </button>
+                <button 
+                  onClick={() => { setWaModal({ isOpen: false, data: null, paymentMethod: null }); setWaPhone(''); }}
+                  className="w-full bg-transparent text-gray-400 font-bold py-2 rounded-xl hover:text-gray-600 transition text-sm underline"
+                >
+                  Cancel (Go Back)
                 </button>
               </div>
             </div>
