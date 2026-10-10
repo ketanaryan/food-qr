@@ -12,6 +12,7 @@ import toast from "react-hot-toast"
 import { Bell, ScrollText } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import { IMenu } from "@/types/menu"
+import { motion } from "framer-motion"
 
 function MerchantPage({ merchantId, token }: { merchantId: string, token?: string }) {
   const [menu, setMenu] = React.useState<IMenu[]>([]);
