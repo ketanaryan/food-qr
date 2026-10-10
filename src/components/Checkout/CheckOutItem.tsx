@@ -3,6 +3,7 @@
 import { CartItem, useCartStore } from "@/lib/store"
 import Image from "next/image"
 import React from "react"
+import { Trash2 } from "lucide-react"
 
 function CheckOutItem({ item }: { item: CartItem }) {
   const removeItem = useCartStore(s => s.removeItem)
@@ -37,16 +38,25 @@ function CheckOutItem({ item }: { item: CartItem }) {
 
       {/* Content */}
       <div className="flex flex-1 flex-col justify-between">
-        <div>
-          <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
-            {item.title}
-          </h3>
-          <p className="mt-1 text-xs text-gray-500">
-            1 pc • {item.quantity} g
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+              {item.title}
+            </h3>
+            <p className="mt-1 text-xs text-gray-500">
+              1 pc • {item.quantity} g
+            </p>
+          </div>
+          <button 
+            onClick={() => removeItem(String(item._id))}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+            title="Remove item"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-2">
           <span className="text-sm font-semibold text-gray-900">
             ₹{item.price * qty}
           </span>
