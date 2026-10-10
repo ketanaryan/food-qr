@@ -36,5 +36,8 @@ export const config = {
     '/kitchen/:path*',
     '/cashier/:path*',
     '/admin/:path*',
+    '/pos/:path*',
+    '/api/orders/update/:path*',
+    '/api/admin/:path*'
   ],
 }
