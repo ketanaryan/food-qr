@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import NavBar from "@/components/common/NavBar";
 import { supabase } from "@/lib/supabase";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Edit2, Image as ImageIcon, Save, X } from "lucide-react";
@@ -115,8 +114,7 @@ export default function MenuBuilder() {
 
   return (
     <>
-      <NavBar />
-      <div className="min-h-screen bg-gray-50 p-6 pt-28">
+      <div className="min-h-screen bg-gray-50 p-6 lg:p-10">
         <div className="max-w-5xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>

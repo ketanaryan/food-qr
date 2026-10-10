@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import NavBar from "@/components/common/NavBar";
 import { supabase } from "@/lib/supabase";
 import { TrendingUp, Users, DollarSign, Activity } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -87,8 +86,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <NavBar />
-      <div className="min-h-screen bg-gray-50 p-6 pt-28">
+      <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
