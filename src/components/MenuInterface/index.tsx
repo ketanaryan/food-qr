@@ -106,7 +106,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
                 priority
                 className="object-cover scale-105"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
+              {/* <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" /> */}
             </div>
 
             {/* Quick Actions */}
@@ -127,22 +127,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
             </div>
 
             <div className="relative z-10 w-full px-8 md:px-16 flex flex-col items-center text-center">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 1, ease: "easeOut" }}
-              >
-                <span className="block text-[#A18D6D] text-xs md:text-sm font-bold tracking-[0.3em] uppercase mb-4">
-                  Welcome to
-                </span>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl font-playfair text-white font-medium tracking-wide drop-shadow-xl">
-                  White Bliss
-                </h1>
-                <div className="mt-6 w-12 h-[1px] bg-[#A18D6D] mx-auto"></div>
-                <p className="mt-6 text-white/80 font-light tracking-wide text-sm md:text-base max-w-md mx-auto">
-                  An exquisite culinary journey awaits you.
-                </p>
-              </motion.div>
+              {/* Text removed because the background image already contains the hotel name */}
             </div>
           </div>
 
