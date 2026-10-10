@@ -11,19 +11,42 @@ import toast from "react-hot-toast"
 export default function RestaurantLanding() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleReservation = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleReservation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
     
-    // Simulate network request
-    setTimeout(() => {
+    const formData = new FormData(e.target as HTMLFormElement);
+    const data = {
+      name: formData.get('name'),
+      phone: formData.get('phone'),
+      email: formData.get('email'),
+      guests: formData.get('guests'),
+      date: formData.get('date'),
+      time: formData.get('time')
+    };
+
+    try {
+      const res = await fetch('/api/reserve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      
+      if (result.success) {
+        toast.success("Reservation Request Sent! We will confirm shortly via WhatsApp.", {
+          duration: 5000,
+          position: 'bottom-center'
+        });
+        (e.target as HTMLFormElement).reset();
+      } else {
+        toast.error("Failed to send reservation request.");
+      }
+    } catch(err) {
+      toast.error("An error occurred. Please try again.");
+    } finally {
       setIsSubmitting(false)
-      toast.success("Reservation Confirmed! We look forward to hosting you.", {
-        duration: 5000,
-        position: 'bottom-center'
-      })
-      ;(e.target as HTMLFormElement).reset()
-    }, 1500)
+    }
   }
 
   return (
@@ -209,18 +232,18 @@ export default function RestaurantLanding() {
 
           <form className="space-y-6" onSubmit={handleReservation}>
             <div>
-              <input required type="text" placeholder="Full Name" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="name" required type="text" placeholder="Full Name" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <input required type="tel" placeholder="Phone" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
-              <input required type="email" placeholder="Email" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="phone" required type="tel" placeholder="Phone" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="email" required type="email" placeholder="Email" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div>
-              <input required type="number" placeholder="Number of Guests" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="guests" required type="number" placeholder="Number of Guests" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <input required type="date" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
-              <input required type="time" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="date" required type="date" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
+              <input name="time" required type="time" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <button 
               type="submit"
