@@ -34,45 +34,40 @@ function Footer() {
                     <a href="mailto:iamketan3@gmail.com" className="italic from-accent-foreground">iamketan3@gmail.com</a>
                 </div>
 
-                {/* Product */}
+                {/* Links */}
                 <div>
                     <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
-                        Product
+                        Quick Links
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li onClick={() => scrollToSection('feature')} className="hover:text-[#A18D6D] cursor-pointer">Features</li>
-                        <Tooltip content="Its All free Bro!"><li className="hover:text-[#A18D6D] cursor-pointer">Pricing</li></Tooltip>
-                        <li onClick={() => scrollToSection('home')} className="hover:text-[#A18D6D] cursor-pointer">Hone</li>
-                        <Tooltip content="Nope"><li className="hover:text-[#A18D6D] cursor-pointer">Updates</li></Tooltip>
-                    </ul>
-                </div>
-
-                {/* Company */}
-                <div>
-                    <Tooltip content="Not yet! 😁">
-                        <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
-                        Company
-                    </h3>
-                    </Tooltip>
-                    <ul className="space-y-2 text-sm text-[#5e5240]">
+                        <li className="hover:text-[#A18D6D] cursor-pointer">Menu</li>
+                        <li className="hover:text-[#A18D6D] cursor-pointer">Reservations</li>
                         <li className="hover:text-[#A18D6D] cursor-pointer">About Us</li>
-                        <li className="hover:text-[#A18D6D] cursor-pointer">Careers</li>
-                        <li className="hover:text-[#A18D6D] cursor-pointer">Blog</li>
                         <li className="hover:text-[#A18D6D] cursor-pointer">Contact</li>
                     </ul>
                 </div>
 
-                {/* Support */}
+                {/* Info */}
                 <div>
                     <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
-                        Support
+                        Visit Us
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li onClick={() => scrollToSection('faq')} className="hover:text-[#A18D6D] cursor-pointer">FAQs</li>
-                        <li className="hover:text-[#A18D6D] cursor-pointer">Privacy Policy</li>
-                        <Tooltip content="Do whatever you want, but never trouble your mother, father, or nation."><li className="hover:text-[#A18D6D] cursor-pointer">Terms of Service</li></Tooltip>
-                        <Link prefetch={false} href="/kitchen"><li className="hover:text-[#A18D6D] cursor-pointer mt-4 font-semibold opacity-50 hover:opacity-100">Staff Portal (Kitchen)</li></Link>
-                        <Link prefetch={false} href="/cashier"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Staff Portal (Cashier)</li></Link>
+                        <li>Amrut Garden</li>
+                        <li>Dnyaneshwar Nagar, Pathardi Phata</li>
+                        <li>Nashik, Maharashtra 422009</li>
+                        <li className="pt-2 font-medium">Open: 8:00 AM - 11:00 PM</li>
+                    </ul>
+                </div>
+
+                {/* Staff */}
+                <div>
+                    <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
+                        Staff Only
+                    </h3>
+                    <ul className="space-y-2 text-sm text-[#5e5240]">
+                        <Link prefetch={false} href="/kitchen"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Portal</li></Link>
+                        <Link prefetch={false} href="/cashier"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Cashier Portal</li></Link>
                         <Link prefetch={false} href="/admin/menu"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Menu Builder</li></Link>
                         <Link prefetch={false} href="/admin/dashboard"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Sales Dashboard</li></Link>
                         <Link prefetch={false} href="/admin/qr"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Print QR Codes</li></Link>

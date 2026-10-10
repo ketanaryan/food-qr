@@ -1,11 +1,7 @@
-import LandingPage from "@/components/LandingPage"
-import NavBar from "@/components/common/NavBar"
+import MerchantPage from "@/components/MenuInterface"
 
 export default function Home() {
   return (
-    <>
-      <NavBar />
-      <LandingPage />
-    </>
+    <MerchantPage merchantId="1" />
   );
 }
