@@ -225,52 +225,14 @@ export default function CashierDashboard() {
     const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
     
     // 1. Download locally as backup
-    const fileName = `Hotel_White_Bliss_Bill_${tableNameDisplay.replace(' ', '_')}.pdf`;
-    doc.save(fileName);
+    // 2. Generate direct web link that generates the PDF on the fly!
+    const orderIds = groupOrders.map(o => o.id).join('-');
+    const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
+
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${cleanUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
     
-    // 2. Upload to Supabase using Backend API (to bypass RLS)
-    const toastId = toast.loading("Generating secure PDF link...");
-    try {
-      const pdfBlob = doc.output('blob');
-      const storageFileName = `${Date.now()}_${fileName}`;
-      
-      const formData = new FormData();
-      formData.append('file', pdfBlob);
-      formData.append('fileName', storageFileName);
-
-      const authHeader = `Basic ${btoa("admin:aryan123")}`;
-      const res = await fetch('/api/admin/upload-bill', {
-        method: 'POST',
-        headers: { 'Authorization': authHeader },
-        body: formData
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || "Upload failed");
-
-      // Generate a clean, branded URL that redirects to the Supabase PDF
-      const cleanUrl = `${window.location.origin}/api/bill/${storageFileName}`;
-
-      const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${cleanUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
-      
-      toast.dismiss(toastId);
-      window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
-      
-    } catch (err) {
-      console.error(err);
-      toast.dismiss(toastId);
-      toast.error("Failed to generate PDF link. Sending text bill instead.");
-      
-      // Fallback to purely text bill if upload fails
-      let itemsText = groupOrders.map(order => {
-        const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
-        return items.map((it:any) => `${it.qty} x ${it.name} = ₹${it.price * it.qty}`).join('%0A');
-      }).join('%0A');
-
-      const fallbackText = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
-      
-      window.open(`https://wa.me/91${cleanPhone}?text=${fallbackText}`, '_blank');
-    }
+    window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+    toast.success("Opening WhatsApp!");
   }
 
   return (
