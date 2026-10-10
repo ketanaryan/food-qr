@@ -10,15 +10,29 @@ export function generateTableToken(tableNumber: string) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const table = searchParams.get('table');
+  const countStr = searchParams.get('count');
+
+  const protocol = req.headers.get('x-forwarded-proto') || 'http';
+  const host = req.headers.get('host') || 'localhost:3000';
+
+  if (countStr) {
+    const count = parseInt(countStr);
+    const tables = [];
+    for (let i = 1; i <= count; i++) {
+      const token = generateTableToken(i.toString());
+      tables.push({
+        table: i,
+        qrUrl: `${protocol}://${host}/table/${i}?token=${token}`
+      });
+    }
+    return NextResponse.json({ success: true, tables });
+  }
 
   if (!table) {
     return NextResponse.json({ success: false, message: 'Table number required' }, { status: 400 });
   }
 
   const token = generateTableToken(table);
-  // Generate the full URL for the QR code
-  const protocol = req.headers.get('x-forwarded-proto') || 'http';
-  const host = req.headers.get('host') || 'localhost:3000';
   const qrUrl = `${protocol}://${host}/table/${table}?token=${token}`;
 
   return NextResponse.json({ success: true, table, token, qrUrl });

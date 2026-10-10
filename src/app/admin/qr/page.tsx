@@ -6,43 +6,63 @@ import { QRCode } from 'react-qrcode-logo';
 export default function QRPrintPage() {
   const [tables, setTables] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tableCount, setTableCount] = useState(15);
   const [domain, setDomain] = useState('');
 
   useEffect(() => {
-    // Get the base domain (e.g. http://localhost:3000 or https://your-app.vercel.app)
     setDomain(window.location.origin);
-    
-    // Fetch 10 tables from the secure API
-    const fetchTables = async () => {
-      try {
-        const urls = [];
-        for (let i = 1; i <= 10; i++) {
-          const res = await fetch(`/api/admin/tables?table=${i}`);
-          const data = await res.json();
-          if (data.qrUrl) urls.push({ table: i, url: data.qrUrl });
-        }
-        setTables(urls);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTables();
+    fetchTables(tableCount);
   }, []);
 
-  if (loading) return <div className="p-10 text-xl font-bold">Generating Secure QR Codes...</div>;
+  const fetchTables = async (count: number) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/tables?count=${count}`);
+      const data = await res.json();
+      if (data.tables) setTables(data.tables);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerate = () => {
+    fetchTables(tableCount);
+  };
+
+  if (loading && tables.length === 0) return <div className="p-10 text-xl font-bold">Generating Secure QR Codes...</div>;
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 lg:p-10">
-      <div className="flex justify-between items-center mb-8 print:hidden">
-        <h1 className="text-3xl font-bold">Print QR Codes</h1>
-        <button 
-          onClick={() => window.print()}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700"
-        >
-          Print Now (Ctrl + P)
-        </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 print:hidden gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Print QR Codes</h1>
+          <p className="text-gray-500">Generate secure table-specific ordering codes.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-4 bg-white p-2 rounded-xl shadow-sm border w-full md:w-auto">
+          <label className="font-bold text-gray-700 pl-2 text-sm">Tables:</label>
+          <input 
+            type="number" 
+            min="1" 
+            max="100" 
+            value={tableCount} 
+            onChange={(e) => setTableCount(Number(e.target.value))}
+            className="border-2 border-gray-200 rounded-lg p-2 w-20 font-bold focus:border-[#A18D6D] outline-none"
+          />
+          <button 
+            onClick={handleGenerate}
+            className="bg-gray-900 text-white px-4 py-2 rounded-lg font-bold hover:bg-gray-800 text-sm"
+          >
+            Generate
+          </button>
+          <button 
+            onClick={() => window.print()}
+            className="bg-[#A18D6D] text-white px-4 py-2 rounded-lg font-bold hover:bg-[#8A785D] text-sm"
+          >
+            Print (Ctrl + P)
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-8 print:grid-cols-2 print:gap-4">
