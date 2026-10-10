@@ -122,12 +122,14 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                 <div></div>
               )}
               
-              <Link 
-                href={`/table/${merchantId}/orders`}
-                className="flex items-center gap-2 bg-[#A18D6D] text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:bg-[#8b795d] transition-all"
-              >
-                <ScrollText size={16} /> My Orders
-              </Link>
+              {!isPosMode && (
+                <Link 
+                  href={token ? `/table/${merchantId}/orders?token=${token}` : `/table/${merchantId}/orders`}
+                  className="flex items-center gap-2 bg-[#A18D6D] text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:bg-[#8b795d] transition-all"
+                >
+                  <ScrollText size={16} /> My Orders
+                </Link>
+              )}
             </div>
 
             <div className="relative z-10 w-full px-8 md:px-16 flex flex-col items-center text-center">
