@@ -82,7 +82,7 @@ export default function CashierDashboard() {
     return acc;
   }, {})
 
-  const markPaid = async (tableNumber: string, orderIds: number[]) => {
+  const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI') => {
     // Optimistic UI
     setOrders(prev => prev.filter(o => o.table_number !== tableNumber))
     
@@ -91,7 +91,7 @@ export default function CashierDashboard() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds, status: 'completed' })
+        body: JSON.stringify({ orderIds, status: 'completed', paymentMethod })
       });
       const data = await res.json();
       if (!data.success) throw new Error();
@@ -273,12 +273,20 @@ export default function CashierDashboard() {
                         💬 WhatsApp
                       </button>
                     </div>
-                    <button 
-                      onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id))}
-                      className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95"
-                    >
-                      <CheckCircle size={20}/> Mark as Paid & Clear
-                    </button>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id), 'CASH')}
+                        className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition active:scale-95 text-sm"
+                      >
+                        💵 Cash
+                      </button>
+                      <button 
+                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id), 'UPI')}
+                        className="flex-1 flex items-center justify-center gap-2 bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700 transition active:scale-95 text-sm"
+                      >
+                        📱 UPI
+                      </button>
+                    </div>
                   </>
                 );
               })()}

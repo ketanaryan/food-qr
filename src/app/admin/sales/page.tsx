@@ -180,31 +180,46 @@ export default function SalesReport() {
                   <th className="p-4 font-bold">Order ID</th>
                   <th className="p-4 font-bold">Table</th>
                   <th className="p-4 font-bold">Amount</th>
+                  <th className="p-4 font-bold">Payment</th>
                   <th className="p-4 font-bold">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {loading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
+                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
                 ) : (
-                  orders.map((o) => (
-                    <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
-                      <td className="p-4">
-                        <div className="font-bold text-gray-800">{new Date(o.created_at).toLocaleDateString()}</div>
-                        <div className="text-xs text-gray-500">{new Date(o.created_at).toLocaleTimeString()}</div>
-                      </td>
-                      <td className="p-4 text-gray-500 font-mono text-xs">#{o.id}</td>
-                      <td className="p-4 font-bold">{o.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? o.table_number : `Table ${o.table_number}`}</td>
-                      <td className="p-4 font-bold text-gray-900">₹{o.grand_total}</td>
-                      <td className="p-4">
-                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
-                          {o.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
+                  orders.map((o) => {
+                    let pMethod = 'UNKNOWN';
+                    try {
+                      const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+                      const paymentObj = Array.isArray(parsed) ? parsed.find(i => i.id === 'PAYMENT_METHOD') : null;
+                      if (paymentObj) pMethod = paymentObj.method;
+                    } catch(e) {}
+
+                    return (
+                      <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
+                        <td className="p-4">
+                          <div className="font-bold text-gray-800">{new Date(o.created_at).toLocaleDateString()}</div>
+                          <div className="text-xs text-gray-500">{new Date(o.created_at).toLocaleTimeString()}</div>
+                        </td>
+                        <td className="p-4 text-gray-500 font-mono text-xs">#{o.id}</td>
+                        <td className="p-4 font-bold">{o.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? o.table_number : `Table ${o.table_number}`}</td>
+                        <td className="p-4 font-bold text-gray-900">₹{o.grand_total}</td>
+                        <td className="p-4">
+                          {pMethod === 'UPI' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">📱 UPI</span>}
+                          {pMethod === 'CASH' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">💵 CASH</span>}
+                          {pMethod === 'UNKNOWN' && <span className="text-gray-400 text-xs font-bold">-</span>}
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
+                            {o.status}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>
