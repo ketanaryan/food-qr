@@ -12,6 +12,10 @@ export default function CashierDashboard() {
   const [audioEnabled, setAudioEnabled] = useState(false);
   const audioEnabledRef = React.useRef(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  
+  // WhatsApp Modal State
+  const [waModal, setWaModal] = useState<{isOpen: boolean, data: any}>({isOpen: false, data: null});
+  const [waPhone, setWaPhone] = useState('');
 
   // Sync state to ref
   useEffect(() => {
@@ -152,87 +156,25 @@ export default function CashierDashboard() {
     printWindow.document.close();
   }
 
-  const sendWhatsAppBill = async (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
-    // 1. Generate the PDF
-    const doc = new jsPDF();
+  const handleSendWa = () => {
+    if (!waModal.data) return;
+    const { tableNumber, groupOrders, grandTotal } = waModal.data;
     
-    // Header
-    doc.setFontSize(22);
-    doc.setFont("helvetica", "bold");
-    doc.text("HOTEL WHITE BLISS", 105, 20, { align: "center" });
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("Premium Fine Dining", 105, 28, { align: "center" });
-    doc.text(`Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 34, { align: "center" });
-    const formattedTableName = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table No: ${tableNumber}`;
-    doc.text(formattedTableName, 105, 40, { align: "center" });
-
-    // Table Data
-    const tableBody = groupOrders.flatMap(order => {
-      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
-      return items.map((it:any) => [
-        `${it.name}`,
-        it.qty.toString(),
-        `Rs. ${it.price}`,
-        `Rs. ${it.price * it.qty}`
-      ]);
-    });
-
-    autoTable(doc, {
-      startY: 50,
-      head: [['Item', 'Qty', 'Rate', 'Amount']],
-      body: tableBody,
-      theme: 'plain',
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240] },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { halign: 'center' },
-        2: { halign: 'right' },
-        3: { halign: 'right' }
-      }
-    });
-
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    
-    // Totals
-    doc.setFontSize(10);
-    doc.text("Subtotal:", 140, finalY);
-    doc.text(`Rs. ${subtotal}`, 190, finalY, { align: 'right' });
-    
-    doc.text("GST (5%):", 140, finalY + 7);
-    doc.text(`Rs. ${gst}`, 190, finalY + 7, { align: 'right' });
-    
-    doc.text("Service Charge (5%):", 140, finalY + 14);
-    doc.text(`Rs. ${serviceCharge}`, 190, finalY + 14, { align: 'right' });
-    
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("GRAND TOTAL:", 130, finalY + 24);
-    doc.text(`Rs. ${grandTotal}`, 190, finalY + 24, { align: 'right' });
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "italic");
-    doc.text("Thank you for dining with us!", 105, finalY + 40, { align: "center" });
-
-    const phone = window.prompt("Enter customer WhatsApp number (e.g. 9876543210):");
-    if (!phone) return;
-    
-    const cleanPhone = phone.replace(/\D/g, '');
+    const cleanPhone = waPhone.replace(/\D/g, '');
     if (cleanPhone.length < 10) return toast.error("Invalid phone number");
 
     const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
     
-    // 1. Download locally as backup
-    // 2. Generate direct web link that generates the PDF on the fly!
-    const orderIds = groupOrders.map(o => o.id).join('-');
+    const orderIds = groupOrders.map((o: any) => o.id).join('-');
     const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
     const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${cleanUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
     
+    // Direct synchronous user action bypassing blockers
     window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
-    toast.success("Opening WhatsApp!");
+    
+    setWaModal({ isOpen: false, data: null });
+    setWaPhone('');
   }
 
   return (
@@ -325,7 +267,7 @@ export default function CashierDashboard() {
                         🖨️ Print
                       </button>
                       <button 
-                        onClick={() => sendWhatsAppBill(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
+                        onClick={() => setWaModal({ isOpen: true, data: { tableNumber: group.table, groupOrders: group.orders, subtotal, gst, serviceCharge, grandTotal } })}
                         className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition active:scale-95 text-sm"
                       >
                         💬 WhatsApp
@@ -349,6 +291,45 @@ export default function CashierDashboard() {
           )}
         </div>
       </div>
+
+      {waModal.isOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="bg-[#25D366] p-4 text-white text-center">
+              <h3 className="font-bold text-lg">Send WhatsApp Bill</h3>
+              <p className="text-white/80 text-sm">Table {waModal.data?.tableNumber}</p>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">Customer Phone Number</label>
+                <input 
+                  type="tel" 
+                  autoFocus
+                  placeholder="e.g. 9876543210"
+                  value={waPhone}
+                  onChange={(e) => setWaPhone(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl p-3 font-bold text-gray-800 focus:border-[#25D366] focus:ring-0 outline-none transition-colors"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
+                />
+              </div>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => { setWaModal({ isOpen: false, data: null }); setWaPhone(''); }}
+                  className="flex-1 bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleSendWa}
+                  className="flex-1 bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition"
+                >
+                  Send Bill
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
