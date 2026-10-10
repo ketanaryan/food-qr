@@ -1,13 +1,31 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import NavBar from "../common/NavBar"
 import Footer from "../common/Footer"
+import toast from "react-hot-toast"
 
 export default function RestaurantLanding() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleReservation = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    // Simulate network request
+    setTimeout(() => {
+      setIsSubmitting(false)
+      toast.success("Reservation Confirmed! The Admin has been notified.", {
+        duration: 5000,
+        position: 'bottom-center'
+      })
+      ;(e.target as HTMLFormElement).reset()
+    }, 1500)
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <NavBar />
@@ -16,8 +34,8 @@ export default function RestaurantLanding() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <Image
-            src="/hotel-white-bliss.jpg"
-            alt="Hotel White Bliss Hero"
+            src="/hero-bg.jpg"
+            alt="Beautiful Cafe Interior"
             fill
             priority
             className="object-cover"
@@ -57,6 +75,38 @@ export default function RestaurantLanding() {
               Reserve Your Table
             </a>
           </motion.div>
+        </div>
+      </section>
+
+      {/* ABOUT SECTION (Displaying their Hotel image) */}
+      <section id="about" className="py-20 md:py-32 px-4 bg-[#F8F5F0]">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
+          <div className="w-full md:w-1/2 relative h-[400px] md:h-[500px] rounded-sm overflow-hidden shadow-xl">
+            <Image 
+              src="/hotel-white-bliss.jpg" 
+              alt="Hotel White Bliss Entrance" 
+              fill 
+              className="object-cover"
+            />
+          </div>
+          <div className="w-full md:w-1/2 flex flex-col items-start">
+            <h2 className="text-3xl md:text-4xl font-playfair text-[#1E1B16] uppercase tracking-widest mb-6">
+              Welcome to White Bliss
+            </h2>
+            <div className="w-12 h-[2px] bg-[#A18D6D] mb-8"></div>
+            <p className="text-gray-600 leading-relaxed mb-6 font-light">
+              Located in the heart of the city, Hotel White Bliss offers an unparalleled dining experience. Our chefs craft globally inspired dishes using locally sourced ingredients, serving them in an environment designed for both intimacy and celebration.
+            </p>
+            <p className="text-gray-600 leading-relaxed mb-8 font-light">
+              Whether you are stopping by for a quick coffee, a family dinner, or celebrating a special occasion, our doors are always open to provide you with moments you will cherish forever.
+            </p>
+            <a 
+              href="#gallery"
+              className="inline-block border border-[#1E1B16] text-[#1E1B16] px-8 py-3 font-medium hover:bg-[#1E1B16] hover:text-white transition-colors duration-300 tracking-wide uppercase text-sm"
+            >
+              See Our Story
+            </a>
+          </div>
         </div>
       </section>
 
@@ -157,22 +207,26 @@ export default function RestaurantLanding() {
             </p>
           </div>
 
-          <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+          <form className="space-y-6" onSubmit={handleReservation}>
             <div>
-              <input type="text" placeholder="Full Name" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="text" placeholder="Full Name" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <input type="tel" placeholder="Phone" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
-              <input type="email" placeholder="Email" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="tel" placeholder="Phone" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="email" placeholder="Email" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div>
-              <input type="number" placeholder="Number of Person" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="number" placeholder="Number of Person" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div>
-              <input type="datetime-local" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="datetime-local" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
-            <button className="w-full md:w-auto border border-[#1E1B16] text-[#1E1B16] px-8 py-3 mt-4 text-sm tracking-widest uppercase hover:bg-[#1E1B16] hover:text-white transition-colors">
-              Book A Table
+            <button 
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full md:w-auto border border-[#1E1B16] text-[#1E1B16] px-8 py-3 mt-4 text-sm tracking-widest uppercase hover:bg-[#1E1B16] hover:text-white transition-colors disabled:opacity-50"
+            >
+              {isSubmitting ? "Booking..." : "Book A Table"}
             </button>
           </form>
         </div>
