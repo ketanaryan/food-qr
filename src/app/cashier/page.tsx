@@ -168,7 +168,7 @@ export default function CashierDashboard() {
     const orderIds = groupOrders.map((o: any) => o.id).join('-');
     const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\nThank you for dining with us! 🙏`;
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\n⭐ *Rate your experience on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
     
     // Direct synchronous user action bypassing blockers
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
