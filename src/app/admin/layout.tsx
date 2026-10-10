@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, Menu } from "lucide-react";
+import { LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, Menu, BarChart } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -12,6 +12,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const links = [
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Sales Report", href: "/admin/sales", icon: BarChart },
     { name: "Menu Builder", href: "/admin/menu", icon: MenuIcon },
     { name: "Print QRs", href: "/admin/qr", icon: QrCode },
   ];
