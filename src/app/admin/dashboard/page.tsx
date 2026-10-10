@@ -40,12 +40,17 @@ export default function Dashboard() {
         sales += Number(o.total_amount);
         
         // Count items
-        if (o.items && Array.isArray(o.items)) {
-          o.items.forEach((item: any) => {
-            if (item.name && item.id !== 'NOTE') {
-              itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
+        if (o.items) {
+          try {
+            const itemsArray = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+            if (Array.isArray(itemsArray)) {
+              itemsArray.forEach((item: any) => {
+                if (item.name && item.id !== 'NOTE') {
+                  itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
+                }
+              });
             }
-          });
+          } catch(e) {}
         }
       });
 
