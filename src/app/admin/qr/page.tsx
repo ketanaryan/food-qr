@@ -72,14 +72,14 @@ export default function QRPrintPage() {
             <p className="text-sm text-gray-500 mb-4">Scan to order</p>
             <div className="p-2 border-4 border-gray-100 rounded-xl mb-4">
               <QRCode 
-                value={t.url}
+                value={t.qrUrl || ""}
                 size={180}
                 qrStyle="dots"
                 eyeRadius={10}
                 fgColor="#000000"
               />
             </div>
-            <p className="text-xs font-mono text-gray-400 break-all w-full px-2">{t.url.substring(0,40)}...</p>
+            <p className="text-xs font-mono text-gray-400 break-all w-full px-2">{t.qrUrl ? t.qrUrl.substring(0,40) : ""}...</p>
           </div>
         ))}
       </div>
