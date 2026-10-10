@@ -74,8 +74,45 @@ export default function KitchenDashboard() {
         (payload) => {
           if (payload.eventType === "INSERT") {
             setOrders((prev) => [payload.new as Order, ...prev]);
-            if (audioEnabledRef.current && audioRef.current) {
-              audioRef.current.play().catch((e) => console.log("Audio play failed:", e));
+            if (audioEnabledRef.current) {
+              try {
+                const newOrder = payload.new as Order;
+                let itemsArray = [];
+                try { itemsArray = JSON.parse(newOrder.items); } catch(e) {}
+                
+                const dishCounts = itemsArray
+                  .filter((i:any) => i.id !== 'NOTE')
+                  .map((i:any) => `${i.qty} ${i.name}`)
+                  .join(", ");
+                  
+                const tableNameMatch = newOrder.table_number.match(/^(Swiggy|Zomato|Takeaway)/i);
+                const tableNameStr = tableNameMatch ? newOrder.table_number : `Table ${newOrder.table_number}`;
+                
+                const textToSpeak = `New order. ${tableNameStr}. ${dishCounts}.`;
+                
+                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                // Make it slightly slower for clarity
+                utterance.rate = 0.9;
+                
+                const voices = window.speechSynthesis.getVoices();
+                // Prefer Indian English voice for desi dish names
+                const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                if (indianVoice) utterance.voice = indianVoice;
+                
+                if (audioRef.current) {
+                   audioRef.current.play().then(() => {
+                     // Wait a bit for the beep to finish
+                     setTimeout(() => window.speechSynthesis.speak(utterance), 1500);
+                   }).catch(() => {
+                     window.speechSynthesis.speak(utterance);
+                   });
+                } else {
+                   window.speechSynthesis.speak(utterance);
+                }
+              } catch (err) {
+                console.error("Speech error", err);
+                if (audioRef.current) audioRef.current.play().catch(()=>{});
+              }
             }
           } else if (payload.eventType === "UPDATE") {
             setOrders((prev) =>
