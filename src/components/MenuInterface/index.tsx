@@ -132,10 +132,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
           </div>
 
           {/* MENU */}
-          <div className="relative -top-12 rounded-t-4xl bg-[#F8F5F0] p-8">
-            <h1 className="mb-6 text-center text-3xl md:text-6xl font-serif font-bold text-slate-950">
-              What's your Mood
-            </h1>
+          <div className="relative -top-12 rounded-t-4xl bg-[#F8F5F0] p-8 min-h-screen">
 
             {Array.from(menuItem.entries()).map(([section, items]) => (
               <MenuSection

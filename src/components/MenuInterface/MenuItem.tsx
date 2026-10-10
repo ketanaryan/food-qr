@@ -32,47 +32,47 @@ function MenuItem({ item }: { item: IMenu }) {
   }
 
   return (
-    <div className="w-full rounded-2xl bg-white p-3 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] hover:shadow-[0_8px_30px_-4px_rgba(6,81,237,0.15)] transition-all border border-gray-50 flex flex-col h-full">
-
-      <div className="relative h-28 w-full rounded-xl overflow-hidden">
+    <div className="w-full rounded-[24px] bg-white p-3 shadow-sm hover:shadow-xl transition-shadow duration-300 border border-[#e8e1d6] flex flex-col h-full group">
+      
+      <div className="relative h-40 md:h-48 w-full rounded-xl overflow-hidden">
         <Image
-          alt="Menu item"
+          alt={item.title}
           fill
           crossOrigin="anonymous"
           src={item.image}
-          className="object-cover"
+          className="object-cover transition-transform duration-700 group-hover:scale-105"
         />
 
-        {discount && (
-          <span className="absolute top-1 left-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 px-3 py-1 text-xs font-semibold text-white">
+        {discount && discount > 0 && (
+          <span className="absolute top-2 left-2 rounded-md bg-black/70 backdrop-blur-md px-3 py-1 text-xs font-medium tracking-widest text-[#F8F5F0] uppercase">
             {discount}% OFF
           </span>
         )}
       </div>
 
-      <div className="mt-3 flex flex-col flex-grow space-y-1.5">
-        <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
+      <div className="mt-4 flex flex-col flex-grow px-2 pb-2 space-y-2">
+        <h3 className="text-lg md:text-xl font-playfair font-bold text-[#1E1B16] leading-tight">
           {item.title}
         </h3>
 
         {item.description ? (
-          <p className="text-xs text-gray-500 line-clamp-2 leading-snug">
+          <p className="text-sm text-[#6F624E] line-clamp-2 leading-relaxed font-light">
             {item.description}
           </p>
         ) : (
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-[#6F624E] font-light italic opacity-70">
             Fresh & Delicious
           </p>
         )}
 
-        <div className="mt-auto pt-3 flex items-center justify-between">
+        <div className="mt-auto pt-4 flex items-center justify-between">
           <div className="flex flex-col">
             {item.originalPrice && (
-              <span className="text-xs line-through text-gray-500">
+              <span className="text-xs line-through text-[#a39784] font-medium">
                 ₹{item.originalPrice}
               </span>
             )}
-            <span className="text-sm font-semibold text-gray-900">
+            <span className="text-lg font-semibold text-[#1E1B16]">
               ₹{item.price}
             </span>
           </div>
@@ -80,22 +80,22 @@ function MenuItem({ item }: { item: IMenu }) {
           {qty === 0 ? (
             <button
               onClick={() => handleUpdate(1)}
-              className="rounded-lg border border-green-600 px-3 py-1 text-xs font-semibold text-green-600 hover:bg-green-50"
+              className="rounded-full border border-[#A18D6D] px-6 py-2 text-xs font-bold tracking-widest text-[#A18D6D] hover:bg-[#A18D6D] hover:text-white transition-colors"
             >
               ADD
             </button>
           ) : (
-            <div className="flex items-center gap-3 rounded-lg border border-green-600 px-2 py-1 text-green-600">
+            <div className="flex items-center gap-4 rounded-full border border-[#A18D6D] bg-[#F8F5F0] px-3 py-1.5 text-[#1E1B16] shadow-sm">
               <button
                 onClick={() => handleUpdate(qty-1)}
-                className="text-sm font-bold"
+                className="text-lg font-medium w-5 h-5 flex items-center justify-center hover:text-[#A18D6D]"
               >
                 −
               </button>
-              <span className="text-xs font-semibold">{qty}</span>
+              <span className="text-sm font-semibold w-4 text-center">{qty}</span>
               <button
                 onClick={() => handleUpdate(qty+1)}
-                className="text-sm font-bold"
+                className="text-lg font-medium w-5 h-5 flex items-center justify-center hover:text-[#A18D6D]"
               >
                 +
               </button>
