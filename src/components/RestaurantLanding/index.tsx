@@ -18,7 +18,7 @@ export default function RestaurantLanding() {
     // Simulate network request
     setTimeout(() => {
       setIsSubmitting(false)
-      toast.success("Reservation Confirmed! The Admin has been notified.", {
+      toast.success("Reservation Confirmed! We look forward to hosting you.", {
         duration: 5000,
         position: 'bottom-center'
       })
@@ -216,10 +216,11 @@ export default function RestaurantLanding() {
               <input required type="email" placeholder="Email" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <div>
-              <input required type="number" placeholder="Number of Person" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="number" placeholder="Number of Guests" min="1" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-800 placeholder-gray-400 focus:outline-none focus:border-[#A18D6D]" />
             </div>
-            <div>
-              <input required type="datetime-local" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-400 focus:outline-none focus:border-[#A18D6D]" />
+            <div className="grid grid-cols-2 gap-6">
+              <input required type="date" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
+              <input required type="time" className="w-full bg-transparent border-b border-gray-300 py-2 text-gray-500 focus:outline-none focus:border-[#A18D6D]" />
             </div>
             <button 
               type="submit"
