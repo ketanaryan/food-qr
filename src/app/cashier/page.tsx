@@ -9,8 +9,8 @@ import autoTable from "jspdf-autotable"
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
-  const [audioEnabled, setAudioEnabled] = useState(true); // Enabled by default
-  const audioEnabledRef = React.useRef(true);
+  const [audioEnabled, setAudioEnabled] = useState(false); // Must be false for mobile security policy
+  const audioEnabledRef = React.useRef(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   
   // WhatsApp Modal State

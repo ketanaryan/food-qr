@@ -16,8 +16,8 @@ type Order = {
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [audioEnabled, setAudioEnabled] = useState(true); // Enabled by default
-  const audioEnabledRef = useRef(true);
+  const [audioEnabled, setAudioEnabled] = useState(false); // Must be false so user explicitly clicks to unlock audio context on mobile
+  const audioEnabledRef = useRef(false);
   const [isOnline, setIsOnline] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
