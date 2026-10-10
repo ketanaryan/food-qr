@@ -66,6 +66,7 @@ function Footer() {
                         Staff Only
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
+                        <Link prefetch={false} href="/pos"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Waitress POS</li></Link>
                         <Link prefetch={false} href="/kitchen"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Portal</li></Link>
                         <Link prefetch={false} href="/cashier"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Cashier Portal</li></Link>
                         <Link prefetch={false} href="/admin/menu"><li className="hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Menu Builder</li></Link>
