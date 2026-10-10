@@ -14,7 +14,7 @@ import { supabase } from "@/lib/supabase"
 import { IMenu } from "@/types/menu"
 import { motion } from "framer-motion"
 
-function MerchantPage({ merchantId, token }: { merchantId: string, token?: string }) {
+function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: string, token?: string, isPosMode?: boolean }) {
   const [menu, setMenu] = React.useState<IMenu[]>([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -94,7 +94,7 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
     <>
       <ReactLenis root>
         <div className="min-h-screen bg-[#F8F5F0]">
-          <NavBar />
+          {!isPosMode && <NavBar />}
 
           {/* PREMIUM HERO */}
           <div className="relative min-h-[85vh] flex items-end justify-center pb-32 overflow-hidden">
@@ -111,12 +111,16 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
 
             {/* Quick Actions */}
             <div className="absolute top-24 left-6 right-6 z-20 flex justify-between items-center">
-              <button 
-                onClick={handleCallWaiter}
-                className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white/20 transition-all"
-              >
-                <Bell size={16} /> Call Waiter
-              </button>
+              {!isPosMode ? (
+                <button 
+                  onClick={handleCallWaiter}
+                  className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white/20 transition-all"
+                >
+                  <Bell size={16} /> Call Waiter
+                </button>
+              ) : (
+                <div></div>
+              )}
               
               <Link 
                 href={`/table/${merchantId}/orders`}

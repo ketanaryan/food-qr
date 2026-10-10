@@ -35,7 +35,7 @@ export default function POSPage() {
   return (
     <div className="relative">
       {/* Admin overriding banner */}
-      <div className="sticky top-0 z-[100] w-full bg-[#1E1B16] text-white px-4 py-2 flex items-center justify-between text-sm shadow-md">
+      <div className="fixed top-0 left-0 w-full z-[100] bg-[#1E1B16] text-white px-4 py-2 flex items-center justify-between text-sm shadow-md">
         <div className="flex items-center gap-2 font-medium tracking-widest text-[#A18D6D]">
           <CheckCircle2 size={16} /> 
           <span>WAITRESS MODE - TABLE {selectedTable}</span>
@@ -48,8 +48,8 @@ export default function POSPage() {
         </button>
       </div>
 
-      <div className="h-screen overflow-y-auto">
-        <MenuInterface merchantId={selectedTable} />
+      <div className="pt-10">
+        <MenuInterface merchantId={selectedTable} isPosMode={true} />
       </div>
     </div>
   )
