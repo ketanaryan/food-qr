@@ -248,9 +248,10 @@ export default function CashierDashboard() {
       const data = await res.json();
       if (!res.ok || !data.success) throw new Error(data.message || "Upload failed");
 
-      const publicUrl = data.publicUrl;
+      // Generate a clean, branded URL that redirects to the Supabase PDF
+      const cleanUrl = `${window.location.origin}/api/bill/${storageFileName}`;
 
-      const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${publicUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
+      const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${cleanUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
       
       toast.dismiss(toastId);
       window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
