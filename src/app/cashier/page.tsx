@@ -4,6 +4,8 @@ import { supabase } from "@/lib/supabase"
 import { Receipt, CheckCircle, CreditCard, Clock } from "lucide-react"
 import toast from "react-hot-toast"
 import NavBar from "@/components/common/NavBar"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
@@ -150,22 +152,102 @@ export default function CashierDashboard() {
     printWindow.document.close();
   }
 
-  const sendWhatsAppBill = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
-    const phone = window.prompt("Enter customer WhatsApp number (e.g. 9876543210):");
-    if (!phone) return;
+  const sendWhatsAppBill = async (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
+    // 1. Generate the PDF
+    const doc = new jsPDF();
     
-    // Validate phone briefly (remove spaces, check length)
-    const cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) return toast.error("Invalid phone number");
+    // Header
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("HOTEL WHITE BLISS", 105, 20, { align: "center" });
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text("Premium Fine Dining", 105, 28, { align: "center" });
+    doc.text(`Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, 105, 34, { align: "center" });
+    doc.text(`Table No: ${tableNumber}`, 105, 40, { align: "center" });
 
-    let itemsText = groupOrders.map(order => {
+    // Table Data
+    const tableBody = groupOrders.flatMap(order => {
       const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
-      return items.map((it:any) => `${it.qty}x ${it.name} - ₹${it.price * it.qty}`).join('%0A');
-    }).join('%0A');
+      return items.map((it:any) => [
+        `${it.name}`,
+        it.qty.toString(),
+        `Rs. ${it.price}`,
+        `Rs. ${it.price * it.qty}`
+      ]);
+    });
 
-    const billText = `🧾 *HOTEL WHITE BLISS* 🧾%0APremium Fine Dining%0A------------------------%0A*Table ${tableNumber}*%0ADate: ${new Date().toLocaleDateString()}%0A%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService Charge (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
+    autoTable(doc, {
+      startY: 50,
+      head: [['Item', 'Qty', 'Rate', 'Amount']],
+      body: tableBody,
+      theme: 'plain',
+      styles: { fontSize: 10, cellPadding: 3 },
+      headStyles: { fontStyle: 'bold', fillColor: [240, 240, 240] },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { halign: 'center' },
+        2: { halign: 'right' },
+        3: { halign: 'right' }
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
     
-    window.open(`https://wa.me/91${cleanPhone}?text=${billText}`, '_blank');
+    // Totals
+    doc.setFontSize(10);
+    doc.text("Subtotal:", 140, finalY);
+    doc.text(`Rs. ${subtotal}`, 190, finalY, { align: 'right' });
+    
+    doc.text("GST (5%):", 140, finalY + 7);
+    doc.text(`Rs. ${gst}`, 190, finalY + 7, { align: 'right' });
+    
+    doc.text("Service Charge (5%):", 140, finalY + 14);
+    doc.text(`Rs. ${serviceCharge}`, 190, finalY + 14, { align: 'right' });
+    
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("GRAND TOTAL:", 130, finalY + 24);
+    doc.text(`Rs. ${grandTotal}`, 190, finalY + 24, { align: 'right' });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    doc.text("Thank you for dining with us!", 105, finalY + 40, { align: "center" });
+
+    const pdfBlob = doc.output('blob');
+    const fileName = `Hotel_White_Bliss_Bill_Table_${tableNumber}.pdf`;
+    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+
+    // 2. Try native mobile sharing first
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({
+          title: `Bill - Table ${tableNumber}`,
+          text: `Here is your bill for Table ${tableNumber} from Hotel White Bliss. Thank you for dining with us!`,
+          files: [file],
+        });
+        return; // Success!
+      } catch (err) {
+        console.log("Native share cancelled or failed", err);
+        // fallback to desktop flow
+      }
+    }
+
+    // 3. Fallback for Desktop (Download PDF & Open WhatsApp Web)
+    const phone = window.prompt("Native sharing unavailable on Desktop.\n\nEnter WhatsApp Number to open Web Chat (e.g. 9876543210):");
+    
+    // Always download the PDF so they can drag and drop it
+    doc.save(fileName);
+    toast.success("Bill downloaded! You can now drag and drop it into WhatsApp.");
+
+    if (phone) {
+      const cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length >= 10) {
+        const text = `🧾 *HOTEL WHITE BLISS* 🧾%0AHere is the bill for Table ${tableNumber}.%0A%0A*Grand Total: ₹${grandTotal}*%0A%0A(Please find the attached PDF). Thank you!`;
+        window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+      }
+    }
   }
 
   return (
