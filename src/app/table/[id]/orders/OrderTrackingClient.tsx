@@ -182,10 +182,25 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                     </div>
                     <a 
                       href={`upi://pay?pa=restaurant@upi&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR`}
-                      className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg"
+                      className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg mb-6"
                     >
                       Pay via UPI App (Zero Fee)
                     </a>
+                    
+                    <div className="border-t pt-6">
+                      <p className="text-gray-500 font-medium mb-4">How was your food?</p>
+                      <a 
+                        href="https://www.google.com/search?q=Hotel+White+Bliss+Nashik" 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex flex-col items-center justify-center gap-2 bg-white border-2 border-gray-100 text-gray-800 py-4 rounded-xl font-bold hover:border-yellow-400 hover:shadow-md transition active:scale-95"
+                      >
+                        <div className="flex gap-1 text-yellow-400">
+                          {'★'.repeat(5)}
+                        </div>
+                        Rate us on Google
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
