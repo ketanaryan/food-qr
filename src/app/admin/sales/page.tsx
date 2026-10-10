@@ -58,7 +58,14 @@ export default function SalesReport() {
       setOrders(data);
       
       let rev = 0;
-      data.forEach(o => rev += Number(o.total_amount || 0));
+      data.forEach(o => {
+        const subtotal = Number(o.total_amount || 0);
+        const gst = Math.round(subtotal * 0.05);
+        const serviceCharge = Math.round(subtotal * 0.05);
+        const grandTotal = subtotal + gst + serviceCharge;
+        o.grand_total = grandTotal; // Set it on the object for rendering
+        rev += grandTotal;
+      });
       setTotalRevenue(rev);
       setTotalOrders(data.length);
     }
@@ -85,7 +92,7 @@ export default function SalesReport() {
       // Escape quotes for CSV
       itemsStr = `"${itemsStr.replace(/"/g, '""')}"`;
       
-      csvContent += `${dateStr},${timeStr},${o.table_number},${o.id},${o.total_amount},${o.status},${itemsStr}\n`;
+      csvContent += `${dateStr},${timeStr},${o.table_number},${o.id},${o.grand_total},${o.status},${itemsStr}\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -190,7 +197,7 @@ export default function SalesReport() {
                       </td>
                       <td className="p-4 text-gray-500 font-mono text-xs">#{o.id}</td>
                       <td className="p-4 font-bold">{o.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? o.table_number : `Table ${o.table_number}`}</td>
-                      <td className="p-4 font-bold text-gray-900">₹{o.total_amount}</td>
+                      <td className="p-4 font-bold text-gray-900">₹{o.grand_total}</td>
                       <td className="p-4">
                         <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
                           {o.status}

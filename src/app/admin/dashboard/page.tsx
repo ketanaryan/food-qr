@@ -45,7 +45,12 @@ export default function Dashboard() {
       let itemsCount: Record<string, number> = {};
 
       todaysOrders.forEach(o => {
-        sales += Number(o.total_amount);
+        const subtotal = Number(o.total_amount || 0);
+        const gst = Math.round(subtotal * 0.05);
+        const serviceCharge = Math.round(subtotal * 0.05);
+        const grandTotal = subtotal + gst + serviceCharge;
+        
+        sales += grandTotal;
         
         if (o.items) {
           try {
@@ -89,9 +94,14 @@ export default function Dashboard() {
       }
 
       orders.forEach(o => {
+        const subtotal = Number(o.total_amount || 0);
+        const gst = Math.round(subtotal * 0.05);
+        const serviceCharge = Math.round(subtotal * 0.05);
+        const grandTotal = subtotal + gst + serviceCharge;
+
         const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { weekday: 'short' });
         if (daysMap[dateStr] !== undefined) {
-          daysMap[dateStr] += Number(o.total_amount);
+          daysMap[dateStr] += grandTotal;
         }
       });
 
@@ -103,7 +113,14 @@ export default function Dashboard() {
       setChartData(finalChartData);
       
       // 3. Recent Orders
-      setRecentOrders(orders.slice(0, 5));
+      // Add grand total to each order for rendering
+      const recent = orders.slice(0, 5).map(o => {
+        const subtotal = Number(o.total_amount || 0);
+        const gst = Math.round(subtotal * 0.05);
+        const serviceCharge = Math.round(subtotal * 0.05);
+        return { ...o, grand_total: subtotal + gst + serviceCharge };
+      });
+      setRecentOrders(recent);
     }
     setLoading(false);
   };
@@ -172,7 +189,7 @@ export default function Dashboard() {
                          <p className="text-xs text-gray-500">{timeStr}</p>
                        </div>
                        <div className="text-right">
-                         <p className="font-bold text-green-600">₹{order.total_amount}</p>
+                         <p className="font-bold text-green-600">₹{order.grand_total}</p>
                          <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-gray-200 text-gray-600 rounded-md">
                            {order.status}
                          </span>
