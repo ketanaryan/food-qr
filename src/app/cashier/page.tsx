@@ -93,6 +93,59 @@ export default function CashierDashboard() {
     } catch(e) {
       toast.error("Failed to mark as paid");
     }
+  const printReceipt = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
+    const printWindow = window.open('', '', 'width=400,height=600');
+    if (!printWindow) return toast.error('Please allow popups to print receipts');
+    
+    const itemsHtml = groupOrders.map(order => {
+      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
+      return items.map((it:any) => `
+        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;">
+          <span>${it.qty}x ${it.name}</span>
+          <span>Rs. ${it.price * it.qty}</span>
+        </div>
+      `).join('');
+    }).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Receipt - Table ${tableNumber}</title>
+          <style>
+            body { font-family: monospace; padding: 20px; color: #000; width: 300px; margin: 0 auto; }
+            .text-center { text-align: center; }
+            .divider { border-bottom: 1px dashed #000; margin: 15px 0; }
+            .flex-between { display: flex; justify-content: space-between; margin-bottom: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="text-center">
+            <h2 style="margin:0;">HOTEL WHITE BLISS</h2>
+            <p style="margin:5px 0; font-size:12px;">Premium Fine Dining</p>
+            <p style="margin:5px 0 15px; font-size:12px;">Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+          </div>
+          <h3 class="text-center">Table ${tableNumber}</h3>
+          <div class="divider"></div>
+          
+          ${itemsHtml}
+          
+          <div class="divider"></div>
+          <div class="flex-between"><span>Subtotal</span><span>Rs. ${subtotal}</span></div>
+          <div class="flex-between"><span>GST (5%)</span><span>Rs. ${gst}</span></div>
+          <div class="flex-between"><span>Service Charge (5%)</span><span>Rs. ${serviceCharge}</span></div>
+          <div class="divider"></div>
+          <div class="flex-between" style="font-weight:bold; font-size:18px;">
+            <span>TOTAL</span><span>Rs. ${grandTotal}</span>
+          </div>
+          <div class="divider"></div>
+          <div class="text-center" style="font-size:12px;">Thank you for dining with us!</div>
+          <script>
+            window.onload = () => { window.print(); window.close(); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 
   return (
@@ -155,33 +208,43 @@ export default function CashierDashboard() {
                 const grandTotal = subtotal + gst + serviceCharge;
 
                 return (
-                  <div className="bg-blue-50 p-4 rounded-xl mb-4 space-y-2 text-sm text-blue-900">
-                    <div className="flex justify-between font-medium">
-                      <span>Subtotal</span>
-                      <span>₹{subtotal}</span>
+                  <>
+                    <div className="bg-blue-50 p-4 rounded-xl mb-4 space-y-2 text-sm text-blue-900">
+                      <div className="flex justify-between font-medium">
+                        <span>Subtotal</span>
+                        <span>₹{subtotal}</span>
+                      </div>
+                      <div className="flex justify-between font-medium opacity-80">
+                        <span>GST (5%)</span>
+                        <span>₹{gst}</span>
+                      </div>
+                      <div className="flex justify-between font-medium opacity-80">
+                        <span>Service Charge (5%)</span>
+                        <span>₹{serviceCharge}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 mt-2 border-t border-blue-200">
+                        <span className="font-bold text-blue-950">Grand Total</span>
+                        <span className="text-2xl font-bold text-blue-700">₹{grandTotal}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between font-medium opacity-80">
-                      <span>GST (5%)</span>
-                      <span>₹{gst}</span>
+                    
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => printReceipt(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95"
+                      >
+                        Print Bill
+                      </button>
+                      <button 
+                        onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id))}
+                        className="flex-[2] flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition active:scale-95"
+                      >
+                        <CheckCircle size={20}/> Mark as Paid
+                      </button>
                     </div>
-                    <div className="flex justify-between font-medium opacity-80">
-                      <span>Service Charge (5%)</span>
-                      <span>₹{serviceCharge}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 mt-2 border-t border-blue-200">
-                      <span className="font-bold text-blue-950">Grand Total</span>
-                      <span className="text-2xl font-bold text-blue-700">₹{grandTotal}</span>
-                    </div>
-                  </div>
+                  </>
                 );
               })()}
-
-              <button 
-                onClick={() => markPaid(group.table, group.orders.map((o:any)=>o.id))}
-                className="w-full flex items-center justify-center gap-2 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700 transition active:scale-95"
-              >
-                <CheckCircle size={20}/> Mark as Paid & Clear
-              </button>
             </div>
           ))}
           {Object.keys(tableGroups).length === 0 && (
