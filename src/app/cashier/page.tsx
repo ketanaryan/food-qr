@@ -216,40 +216,30 @@ export default function CashierDashboard() {
     doc.setFont("helvetica", "italic");
     doc.text("Thank you for dining with us!", 105, finalY + 40, { align: "center" });
 
-    const pdfBlob = doc.output('blob');
-    const fileName = `Hotel_White_Bliss_Bill_Table_${tableNumber}.pdf`;
-    const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-
-    // 2. Try native mobile sharing first
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({
-          title: `Bill - Table ${tableNumber}`,
-          text: `Here is your bill for Table ${tableNumber} from Hotel White Bliss. Thank you for dining with us!`,
-          files: [file],
-        });
-        return; // Success!
-      } catch (err) {
-        console.log("Native share cancelled or failed", err);
-        // fallback to desktop flow
-      }
-    }
-
-    // 3. Fallback for Desktop (Download PDF & Open WhatsApp Web)
-    const phone = window.prompt("Native sharing unavailable on Desktop.\n\nEnter WhatsApp Number to open Web Chat (e.g. 9876543210):");
+    const phone = window.prompt("Enter customer WhatsApp number (e.g. 9876543210):");
+    if (!phone) return;
     
-    // Always download the PDF so they can drag and drop it
-    doc.save(fileName);
-    toast.success("Bill downloaded! You can now drag and drop it into WhatsApp.");
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) return toast.error("Invalid phone number");
 
-    if (phone) {
-      const cleanPhone = phone.replace(/\D/g, '');
-      if (cleanPhone.length >= 10) {
-        const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
-        const text = `🧾 *HOTEL WHITE BLISS* 🧾%0AHere is the bill for ${tableNameDisplay}.%0A%0A*Grand Total: ₹${grandTotal}*%0A%0A(Please find the attached PDF). Thank you!`;
-        window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
-      }
-    }
+    // Generate Text Bill for wa.me (since PDF can't be attached via URL)
+    let itemsText = groupOrders.map(order => {
+      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
+      return items.map((it:any) => `${it.qty} x ${it.name} = ₹${it.price * it.qty}`).join('%0A');
+    }).join('%0A');
+
+    const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
+    
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
+    
+    // Automatically download the PDF as a backup/attachment option
+    const fileName = `Hotel_White_Bliss_Bill_${tableNameDisplay.replace(' ', '_')}.pdf`;
+    doc.save(fileName);
+    
+    // Open the exact WhatsApp chat (works for unsaved numbers!)
+    window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+    
+    toast.success("Opening WhatsApp... You can also attach the downloaded PDF!");
   }
 
   return (
