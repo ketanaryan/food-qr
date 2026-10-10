@@ -148,6 +148,8 @@ export default function CashierDashboard() {
       </html>
     `);
     printWindow.document.close();
+  }
+
   const sendWhatsAppBill = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
     const phone = window.prompt("Enter customer WhatsApp number (e.g. 9876543210):");
     if (!phone) return;
