@@ -101,12 +101,30 @@ export default function KitchenDashboard() {
                 
                 const utterance = new SpeechSynthesisUtterance(textToSpeak);
                 utterance.volume = 1.0; // Max Volume
-                utterance.rate = 0.85; // Slightly slower
+                utterance.rate = 0.9; 
+                utterance.pitch = 1.2; // Slightly higher pitch for a more pleasant female tone
                 
                 const voices = window.speechSynthesis.getVoices();
                 if (voices && voices.length > 0) {
-                  const indianVoice = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
-                  if (indianVoice) utterance.voice = indianVoice;
+                  const femaleVoices = voices.filter(v => 
+                    v.name.toLowerCase().includes('female') || 
+                    v.name.includes('Zira') || 
+                    v.name.includes('Samantha') || 
+                    v.name.includes('Google UK English Female') || 
+                    v.name.includes('Google US English') ||
+                    v.name.includes('Rishi') === false // Avoid common male voices
+                  );
+                  
+                  const indianFemale = femaleVoices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                  
+                  if (indianFemale) {
+                    utterance.voice = indianFemale;
+                  } else if (femaleVoices.length > 0) {
+                    utterance.voice = femaleVoices[0];
+                  } else {
+                    const fallback = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                    if (fallback) utterance.voice = fallback;
+                  }
                 }
                 
                 if (audioRef.current) {
@@ -253,12 +271,11 @@ export default function KitchenDashboard() {
 
               <div className="flex flex-col gap-4">
                 {colOrders.map((order) => {
-                  let items = [];
+                  let items: any[] = [];
                   try {
-                    items = JSON.parse(order.items);
-                  } catch (e) {
-                    items = [];
-                  }
+                    items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                  } catch (e) {}
+                  if (!Array.isArray(items)) items = [];
 
                   return (
                     <div
