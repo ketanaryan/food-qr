@@ -1,35 +1,26 @@
 import fs from 'fs';
-import https from 'https';
 
-const download = (url, dest) => {
-  return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
-    https.get(url, (response) => {
-      response.pipe(file);
-      file.on('finish', () => {
-        file.close(resolve);
-      });
-    }).on('error', (err) => {
-      fs.unlink(dest, () => reject(err));
-    });
-  });
+const images = {
+  'crispy-corn.jpg': 'https://images.unsplash.com/photo-1596662951482-0c4ba74a6df6?q=80&w=600&auto=format&fit=crop',
+  'gulab-jamun.jpg': 'https://images.unsplash.com/photo-1551024601-bec78aea704b?q=80&w=600&auto=format&fit=crop',
+  'masala-chaas.jpg': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?q=80&w=600&auto=format&fit=crop',
+  'oreo-shake.jpg': 'https://images.unsplash.com/photo-1553177595-4de2bb0842b9?q=80&w=600&auto=format&fit=crop',
+  'paneer-tikka.jpg': 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?q=80&w=600&auto=format&fit=crop'
 };
 
-async function run() {
-  console.log('Downloading images...');
-  
-  // Mutton Biryani
-  await download('https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Biryani_of_Lahore.jpg/640px-Biryani_of_Lahore.jpg', 'public/menu/mutton-biryani.jpg');
-  
-  // Dal Makhani
-  await download('https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Dal_Makhani.jpg/640px-Dal_Makhani.jpg', 'public/menu/dal-makhani.jpg');
-  
-  // Gulab Jamun
-  await download('https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Gulab_jamun_%28Dessert%29.jpg/640px-Gulab_jamun_%28Dessert%29.jpg', 'public/menu/gulab-jamun.jpg');
-  
-  // Masala Chaas (using a lassi image)
-  await download('https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Mint_Lassi.JPG/640px-Mint_Lassi.JPG', 'public/menu/masala-chaas.jpg');
-
-  console.log('Done downloading!');
+async function downloadImages() {
+  for (const [filename, url] of Object.entries(images)) {
+    console.log(`Downloading ${filename}...`);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const buffer = await response.arrayBuffer();
+      fs.writeFileSync(`public/menu/${filename}`, Buffer.from(buffer));
+      console.log(`Saved ${filename} (${buffer.byteLength} bytes)`);
+    } catch (err) {
+      console.error(`Failed to download ${filename}:`, err);
+    }
+  }
 }
-run();
+
+downloadImages();
