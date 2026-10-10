@@ -3,9 +3,11 @@
 import React, { useState } from "react"
 import MenuInterface from "@/components/MenuInterface"
 import { Users, LogOut, CheckCircle2 } from "lucide-react"
+import { useCartStore } from "@/lib/store"
 
 export default function POSPage() {
   const [selectedTable, setSelectedTable] = useState<string | null>(null)
+  const clearCart = useCartStore((state) => state.clearCart)
   
   if (!selectedTable) {
     return (
@@ -20,7 +22,10 @@ export default function POSPage() {
             {Array.from({length: 20}, (_, i) => i + 1).map(num => (
               <button
                 key={num}
-                onClick={() => setSelectedTable(String(num))}
+                onClick={() => {
+                  clearCart();
+                  setSelectedTable(String(num));
+                }}
                 className="h-16 rounded-xl border-2 border-[#e8e1d6] flex flex-col items-center justify-center hover:border-[#A18D6D] hover:bg-[#F8F5F0] hover:text-[#1E1B16] transition-colors text-[#6F624E] font-bold text-lg"
               >
                 {num}
@@ -41,7 +46,10 @@ export default function POSPage() {
           <span>WAITRESS MODE - TABLE {selectedTable}</span>
         </div>
         <button 
-          onClick={() => setSelectedTable(null)}
+          onClick={() => {
+            clearCart();
+            setSelectedTable(null);
+          }}
           className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 px-3 py-1 rounded"
         >
           <LogOut size={14} /> Exit POS
