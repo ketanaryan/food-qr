@@ -222,24 +222,49 @@ export default function CashierDashboard() {
     const cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length < 10) return toast.error("Invalid phone number");
 
-    // Generate Text Bill for wa.me (since PDF can't be attached via URL)
-    let itemsText = groupOrders.map(order => {
-      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
-      return items.map((it:any) => `${it.qty} x ${it.name} = ₹${it.price * it.qty}`).join('%0A');
-    }).join('%0A');
-
     const tableNameDisplay = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`;
     
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
-    
-    // Automatically download the PDF as a backup/attachment option
+    // 1. Download locally as backup
     const fileName = `Hotel_White_Bliss_Bill_${tableNameDisplay.replace(' ', '_')}.pdf`;
     doc.save(fileName);
     
-    // Open the exact WhatsApp chat (works for unsaved numbers!)
-    window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
-    
-    toast.success("Opening WhatsApp... You can also attach the downloaded PDF!");
+    // 2. Upload to Supabase to get a public URL (The Jugaad!)
+    const toastId = toast.loading("Generating secure PDF link...");
+    try {
+      const pdfBlob = doc.output('blob');
+      const storageFileName = `bills/${Date.now()}_${fileName}`;
+      
+      const { error } = await supabase.storage
+        .from('menu-images') // Reusing existing public bucket
+        .upload(storageFileName, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('menu-images')
+        .getPublicUrl(storageFileName);
+
+      const text = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0A📄 *View & Download your Proper PDF Bill here:*%0A${publicUrl}%0A------------------------%0AThank you for dining with us! 🙏`;
+      
+      toast.dismiss(toastId);
+      window.open(`https://wa.me/91${cleanPhone}?text=${text}`, '_blank');
+      
+    } catch (err) {
+      console.error(err);
+      toast.dismiss(toastId);
+      // Fallback to purely text bill if upload fails
+      let itemsText = groupOrders.map(order => {
+        const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
+        return items.map((it:any) => `${it.qty} x ${it.name} = ₹${it.price * it.qty}`).join('%0A');
+      }).join('%0A');
+
+      const fallbackText = `🧾 *HOTEL WHITE BLISS* 🧾%0A------------------------%0A${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}%0A------------------------%0A${itemsText}%0A------------------------%0ASubtotal: ₹${subtotal}%0AGST (5%): ₹${gst}%0AService (5%): ₹${serviceCharge}%0A------------------------%0A*GRAND TOTAL: ₹${grandTotal}*%0A------------------------%0AThank you for dining with us! 🙏`;
+      
+      window.open(`https://wa.me/91${cleanPhone}?text=${fallbackText}`, '_blank');
+    }
   }
 
   return (
