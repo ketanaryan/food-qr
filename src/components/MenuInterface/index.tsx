@@ -95,48 +95,53 @@ function MerchantPage({ merchantId, token }: { merchantId: string, token?: strin
         <div className="min-h-screen bg-[#F8F5F0]">
           <NavBar />
 
-          {/* HERO */}
-          <div className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
+          {/* PREMIUM HERO */}
+          <div className="relative min-h-[85vh] flex items-end justify-center pb-32 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <Image
                 src="/hotel-white-bliss.jpg"
-                alt="Hero background"
+                alt="Hotel White Bliss"
                 fill
                 priority
                 className="object-cover scale-105"
               />
-              <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/50 to-black/80" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
             </div>
 
             {/* Quick Actions */}
-            <div className="absolute top-24 left-6 right-6 z-20 flex justify-between">
+            <div className="absolute top-24 left-6 right-6 z-20 flex justify-between items-center">
               <button 
                 onClick={handleCallWaiter}
-                className="flex items-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-white/20 transition"
+                className="flex items-center gap-2 bg-black/40 backdrop-blur-md border border-white/20 text-white px-5 py-2.5 rounded-full text-sm font-medium hover:bg-white/20 transition-all"
               >
-                <Bell size={16} /> Waiter
+                <Bell size={16} /> Call Waiter
               </button>
               
               <Link 
                 href={`/table/${merchantId}/orders`}
-                className="flex items-center gap-2 bg-white text-gray-900 px-4 py-2 rounded-full text-sm font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:bg-gray-100 transition"
+                className="flex items-center gap-2 bg-[#A18D6D] text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg hover:bg-[#8b795d] transition-all"
               >
-                <ScrollText size={16} /> Orders
+                <ScrollText size={16} /> My Orders
               </Link>
             </div>
 
-            <div className="relative z-10 text-center px-6 max-w-3xl">
-              <p className="mb-4 inline-block rounded-full bg-white/10 px-5 py-2 text-sm tracking-wide text-white backdrop-blur-md">
-                Curated • Fresh • Crafted
-              </p>
-
-              <h1 className="text-4xl md:text-6xl font-playfair font-bold text-white">
-                Hotel White Bliss
-              </h1>
-
-              <p className="mt-3 text-lg text-white/80">
-                Discover handcrafted dishes made with premium ingredients and bold flavors.
-              </p>
+            <div className="relative z-10 w-full px-8 md:px-16 flex flex-col items-center text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 1, ease: "easeOut" }}
+              >
+                <span className="block text-[#A18D6D] text-xs md:text-sm font-bold tracking-[0.3em] uppercase mb-4">
+                  Welcome to
+                </span>
+                <h1 className="text-5xl md:text-7xl lg:text-8xl font-playfair text-white font-medium tracking-wide drop-shadow-xl">
+                  White Bliss
+                </h1>
+                <div className="mt-6 w-12 h-[1px] bg-[#A18D6D] mx-auto"></div>
+                <p className="mt-6 text-white/80 font-light tracking-wide text-sm md:text-base max-w-md mx-auto">
+                  An exquisite culinary journey awaits you.
+                </p>
+              </motion.div>
             </div>
           </div>
 
