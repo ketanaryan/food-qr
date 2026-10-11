@@ -5,13 +5,33 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
+// Simple in-memory rate limiting map for reservations
+const reserveRateLimit = new Map<string, number>();
+
 export async function POST(req: Request) {
   try {
-    const { name, phone, email, guests, date, time } = await req.json();
+    const body = await req.json();
+    const { name, phone, email, guests, date, time } = body;
 
-    if (!name || !phone || !guests || !date || !time) {
-      return NextResponse.json({ success: false, message: 'Invalid reservation data' }, { status: 400 });
+    // Input sanitization
+    const cleanName = String(name || '').trim().slice(0, 80);
+    const cleanPhone = String(phone || '').replace(/\D/g, '').slice(-10);
+    const cleanEmail = String(email || '').trim().slice(0, 100);
+    const cleanDate = String(date || '').trim().slice(0, 25);
+    const cleanTime = String(time || '').trim().slice(0, 25);
+    const cleanGuests = Math.min(50, Math.max(1, parseInt(String(guests)) || 1));
+
+    if (!cleanName || cleanPhone.length !== 10 || !cleanDate || !cleanTime) {
+      return NextResponse.json({ success: false, message: 'Please provide a valid name, 10-digit phone number, date, and time.' }, { status: 400 });
     }
+
+    // Rate limiting: 1 reservation per phone number every 30 seconds
+    const now = Date.now();
+    const lastRequest = reserveRateLimit.get(cleanPhone);
+    if (lastRequest && now - lastRequest < 30000) {
+      return NextResponse.json({ success: false, message: 'A reservation request was recently received. Please wait a moment.' }, { status: 429 });
+    }
+    reserveRateLimit.set(cleanPhone, now);
 
     const orderNumber = Math.floor(1000 + Math.random() * 9000);
 
@@ -21,7 +41,7 @@ export async function POST(req: Request) {
       total_amount: 0,
       order_number: orderNumber,
       items: [
-        { id: 'RESERVATION_DETAILS', name, phone, email, guests, date, time }
+        { id: 'RESERVATION_DETAILS', name: cleanName, phone: cleanPhone, email: cleanEmail, guests: cleanGuests, date: cleanDate, time: cleanTime }
       ]
     }]);
 

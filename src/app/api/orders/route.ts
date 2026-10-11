@@ -14,7 +14,9 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { table_number, items } = body;
 
-    if (!table_number || !items || !Array.isArray(items) || items.length === 0) {
+    const cleanTableNumber = String(table_number || '').trim().slice(0, 30);
+
+    if (!cleanTableNumber || !items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
     }
 
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
     }
 
     const idempotencyKey = req.headers.get('idempotency-key');
-    const rateLimitKey = idempotencyKey || table_number;
+    const rateLimitKey = idempotencyKey || cleanTableNumber;
     
     // Very basic rate limiting based on table_number or idempotency key
     const now = Date.now();
@@ -77,7 +79,7 @@ export async function POST(req: Request) {
 
     // Use admin client to bypass RLS for inserts
     const { data, error } = await supabaseAdmin.from('orders').insert({
-      table_number,
+      table_number: cleanTableNumber,
       status: 'received',
       items: JSON.stringify(validatedItems),
       total_amount: totalAmount,
