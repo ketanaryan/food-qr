@@ -20,8 +20,21 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "Hotel White Bliss",
-  description: "Instant QR menus for modern restaurants. No app downloads required. Just scan, order, and enjoy.",
+  metadataBase: new URL('https://food-qr-gilt.vercel.app'),
+  title: "Hotel White Bliss | Luxury Fine Dining & Restaurant",
+  description: "Experience luxury fine dining and authentic delicacies at Hotel White Bliss, Pathardi Phata, Nashik. Scan QR, order food, and make table reservations.",
+  openGraph: {
+    title: "Hotel White Bliss | Luxury Fine Dining & Restaurant",
+    description: "Experience authentic culinary excellence at Hotel White Bliss, Nashik.",
+    images: [
+      {
+        url: "/hotel-white-bliss.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Hotel White Bliss",
+      },
+    ],
+  },
 }
 
 export default function RootLayout({
