@@ -101,68 +101,262 @@ export default function CashierDashboard() {
     }
   }
 
-  const printReceipt = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number) => {
-    const printWindow = window.open('', '', 'width=400,height=600');
+  const printReceipt = (tableNumber: string, groupOrders: any[], subtotal: number, gst: number, serviceCharge: number, grandTotal: number, paymentMethod?: string) => {
+    const printWindow = window.open('', '', 'width=420,height=700');
     if (!printWindow) return toast.error('Please allow popups to print receipts');
-    
-    const itemsHtml = groupOrders.map(order => {
-      const items = JSON.parse(order.items || '[]').filter((i:any)=>i.id!=='NOTE');
-      return items.map((it:any) => `
-        <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 4px;">
-          <span>${it.qty}x ${it.name}</span>
-          <span>Rs. ${it.price * it.qty}</span>
-        </div>
-      `).join('');
-    }).join('');
+
+    // Date formatting: DD/MM/YY hh:mm A (e.g. 17/08/26 01:12 PM)
+    const now = new Date();
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = String(now.getFullYear()).slice(-2);
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12;
+    const formattedDate = `${day}/${month}/${year} ${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+
+    // Invoice No
+    const firstOrder = groupOrders[0];
+    const orderNum = firstOrder?.order_number || firstOrder?.id || 101;
+    const invoiceNo = `HWB-${String(orderNum).padStart(4, '0')}`;
+
+    // Order type & Location
+    const isDelivery = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i);
+    const orderType = isDelivery ? tableNumber : 'Dine-in';
+    const location = isDelivery ? 'Counter' : (tableNumber.toLowerCase().includes('table') ? tableNumber : `Table ${tableNumber}`);
+
+    // Items table rows
+    const itemsRows = groupOrders.flatMap(order => {
+      let parsed: any[] = [];
+      try { parsed = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; } catch(e) {}
+      if (!Array.isArray(parsed)) parsed = [];
+      return parsed.filter((it: any) => it.id !== 'NOTE');
+    }).map((it: any) => `
+      <tr>
+        <td style="padding: 3px 0; text-align: left; word-break: break-word;">${it.name}</td>
+        <td style="padding: 3px 0; text-align: center;">${it.qty}</td>
+        <td style="padding: 3px 0; text-align: right;">${it.price}</td>
+        <td style="padding: 3px 0; text-align: right; font-weight: 600;">${it.price * it.qty}</td>
+      </tr>
+    `).join('');
+
+    // Tax breakdown: CGST 2.5% + SGST 2.5%
+    const cgst = (subtotal * 0.025).toFixed(2);
+    const sgst = (subtotal * 0.025).toFixed(2);
+    const exactTax = Number(cgst) + Number(sgst);
+    const exactSum = subtotal + exactTax + (serviceCharge || 0);
+    const roundOff = (grandTotal - exactSum).toFixed(2);
+
+    // Payment display
+    const paidLabel = paymentMethod ? `PAID • ${paymentMethod}` : 'DUE / PENDING';
 
     printWindow.document.write(`
+      <!DOCTYPE html>
       <html>
         <head>
-          <title>Receipt - Table ${tableNumber}</title>
+          <title>Invoice ${invoiceNo} - ${location}</title>
           <style>
-            body { font-family: monospace; padding: 20px; color: #000; width: 300px; margin: 0 auto; }
+            @page { margin: 0; size: 80mm auto; }
+            * { box-sizing: border-box; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, monospace;
+              color: #000;
+              width: 76mm;
+              max-width: 320px;
+              margin: 0 auto;
+              padding: 12px 8px;
+              font-size: 12px;
+              line-height: 1.35;
+            }
             .text-center { text-align: center; }
-            .divider { border-bottom: 1px dashed #000; margin: 15px 0; }
-            .flex-between { display: flex; justify-content: space-between; margin-bottom: 5px; }
+            .text-right { text-align: right; }
+            .text-left { text-align: left; }
+            .bold { font-weight: bold; }
+            .divider {
+              border-bottom: 1px dashed #222;
+              margin: 7px 0;
+            }
+            .header-title {
+              font-size: 17px;
+              font-weight: 800;
+              letter-spacing: 0.5px;
+              margin: 0 0 3px 0;
+            }
+            .header-sub {
+              font-size: 10.5px;
+              color: #333;
+              margin: 1.5px 0;
+              line-height: 1.25;
+            }
+            .meta-grid {
+              width: 100%;
+              font-size: 11px;
+              margin: 4px 0;
+            }
+            .meta-grid td {
+              padding: 1.5px 0;
+            }
+            .items-table {
+              width: 100%;
+              border-collapse: collapse;
+              font-size: 11.5px;
+              margin: 3px 0;
+            }
+            .items-table th {
+              font-size: 10.5px;
+              font-weight: bold;
+              text-transform: uppercase;
+              padding: 4px 0;
+              border-top: 1px dashed #222;
+              border-bottom: 1px dashed #222;
+            }
+            .calc-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 11.5px;
+              padding: 1.5px 0;
+            }
+            .total-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 15px;
+              font-weight: 900;
+              padding: 3px 0;
+            }
+            .footer-text {
+              font-size: 11.5px;
+              font-weight: bold;
+              margin: 6px 0 2px 0;
+            }
+            .powered-by {
+              font-size: 9.5px;
+              color: #666;
+              margin-top: 2px;
+            }
+            .qr-box {
+              text-align: center;
+              margin: 8px 0;
+              padding: 6px;
+              border: 1px dashed #999;
+              border-radius: 6px;
+            }
           </style>
         </head>
         <body>
+          <!-- Brand Header -->
           <div class="text-center">
-            <h2 style="margin:0;">HOTEL WHITE BLISS</h2>
-            <p style="margin:5px 0; font-size:12px;">Premium Fine Dining</p>
-            <p style="margin:5px 0 15px; font-size:12px;">Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+            <div class="header-title">Hotel White Bliss</div>
+            <div class="header-sub">Amrut Garden, Pathardi Phata, Nashik, Maharashtra 422009</div>
+            <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
+            <div class="header-sub">Contact: 7499934257</div>
           </div>
-          <h3 class="text-center">${tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`}</h3>
+
           <div class="divider"></div>
-          
-          ${itemsHtml}
-          
+
+          <!-- Metadata -->
+          <table class="meta-grid">
+            <tr>
+              <td class="text-left" style="color:#555; width:35%;">Invoice No</td>
+              <td class="text-right bold">${invoiceNo}</td>
+            </tr>
+            <tr>
+              <td class="text-left" style="color:#555;">Date</td>
+              <td class="text-right">${formattedDate}</td>
+            </tr>
+            <tr>
+              <td class="text-left" style="color:#555;">Type</td>
+              <td class="text-right">${orderType}</td>
+            </tr>
+            <tr>
+              <td class="text-left" style="color:#555;">Location</td>
+              <td class="text-right bold">${location}</td>
+            </tr>
+          </table>
+
+          <!-- Items Table -->
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th class="text-left" style="width: 48%;">Item</th>
+                <th class="text-center" style="width: 14%;">Qty</th>
+                <th class="text-right" style="width: 18%;">Rate</th>
+                <th class="text-right" style="width: 20%;">Amt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemsRows}
+            </tbody>
+          </table>
+
           <div class="divider"></div>
-          <div class="flex-between"><span>Subtotal</span><span>Rs. ${subtotal}</span></div>
-          <div class="flex-between"><span>GST (5%)</span><span>Rs. ${gst}</span></div>
-          <div class="flex-between"><span>Service Charge (5%)</span><span>Rs. ${serviceCharge}</span></div>
-          <div class="divider"></div>
-          <div class="flex-between" style="font-weight:bold; font-size:18px;">
-            <span>TOTAL</span><span>Rs. ${grandTotal}</span>
+
+          <!-- Financial Breakdown -->
+          <div class="calc-row">
+            <span>Subtotal</span>
+            <span>₹${subtotal}</span>
           </div>
+          <div class="calc-row">
+            <span>CGST (2.5%)</span>
+            <span>₹${cgst}</span>
+          </div>
+          <div class="calc-row">
+            <span>SGST (2.5%)</span>
+            <span>₹${sgst}</span>
+          </div>
+          ${serviceCharge > 0 ? `
+          <div class="calc-row">
+            <span>Service Charge (5%)</span>
+            <span>₹${serviceCharge}</span>
+          </div>` : ''}
+          ${Number(roundOff) !== 0 ? `
+          <div class="calc-row" style="color:#666;">
+            <span>Round Off</span>
+            <span>${roundOff}</span>
+          </div>` : ''}
+
           <div class="divider"></div>
-          
-          <div style="text-align: center; margin: 15px 0;">
-            <p style="font-size: 11px; font-weight: bold; margin: 0 0 8px 0; letter-spacing: 0.5px;">SCAN TO PAY VIA UPI</p>
+
+          <!-- Total -->
+          <div class="total-row">
+            <span>TOTAL</span>
+            <span>₹${grandTotal}</span>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Payment Status (from OrderSeva layout) -->
+          <div class="text-center bold" style="font-size: 13px; margin: 4px 0 1px 0; letter-spacing: 0.5px;">
+            ${paidLabel}
+          </div>
+          <div class="text-center" style="font-size: 9.5px; color: #666; margin-bottom: 6px;">
+            Taxes as applicable
+          </div>
+
+          <!-- Dynamic UPI QR -->
+          ${paymentMethod !== 'CASH' ? `
+          <div class="qr-box">
+            <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">SCAN TO PAY VIA UPI</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableNumber}%20Bill`)}" 
-              width="150" 
-              height="150" 
-              style="margin: 0 auto; display: block; border: 1px solid #ddd; padding: 4px;" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              width="130" 
+              height="130" 
+              style="margin: 0 auto; display: block;" 
               alt="UPI QR Code" 
             />
-            <p style="font-size: 12px; font-weight: bold; margin: 8px 0 2px 0;">Rs. ${grandTotal}</p>
-            <p style="font-size: 10px; color: #555; margin: 0;">GPay / PhonePe / Paytm</p>
+            <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${grandTotal}</div>
+            <div style="font-size: 9px; color: #666;">Google Pay / PhonePe / Paytm</div>
           </div>
-          
           <div class="divider"></div>
-          <div class="text-center" style="font-size:12px;">Thank you for dining with us!</div>
+          ` : ''}
+
+          <!-- Footer -->
+          <div class="text-center">
+            <div class="footer-text">Thank you! Please visit again!</div>
+            <div class="powered-by">powered by BlissPOS</div>
+          </div>
+
           <script>
             const img = document.getElementById('qrImg');
             let printed = false;
@@ -175,10 +369,10 @@ export default function CashierDashboard() {
             if (img && !img.complete) {
               img.onload = doPrint;
               img.onerror = doPrint;
-              setTimeout(doPrint, 2000); // safety fallback
+              setTimeout(doPrint, 1800);
             } else {
               window.onload = doPrint;
-              setTimeout(doPrint, 1000);
+              setTimeout(doPrint, 800);
             }
           </script>
         </body>
@@ -362,7 +556,20 @@ export default function CashierDashboard() {
                   onClick={handleSendWa}
                   className="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition shadow-md"
                 >
-                  Send Bill & Clear Table
+                  💬 Send Bill on WA & Clear Table
+                </button>
+                <button 
+                  onClick={() => {
+                    if (!waModal.data) return;
+                    const { tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal } = waModal.data;
+                    printReceipt(tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal, waModal.paymentMethod || undefined);
+                    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod || 'CASH');
+                    setWaModal({ isOpen: false, data: null, paymentMethod: null });
+                    setWaPhone('');
+                  }}
+                  className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition shadow-sm text-sm"
+                >
+                  🖨️ Print Receipt & Clear Table
                 </button>
                 <button 
                   onClick={handleSkipWa}

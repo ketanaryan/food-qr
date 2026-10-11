@@ -43,16 +43,18 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       // Generate PDF
       const doc = new jsPDF();
       
-      doc.setFontSize(22);
+      doc.setFontSize(20);
       doc.setFont("helvetica", "bold");
-      doc.text("HOTEL WHITE BLISS", 105, 20, { align: "center" });
+      doc.text("HOTEL WHITE BLISS", 105, 18, { align: "center" });
       
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text("Premium Fine Dining", 105, 28, { align: "center" });
+      doc.text("Amrut Garden, Pathardi Phata, Nashik, Maharashtra 422009", 105, 24, { align: "center" });
+      doc.text("GSTIN: 27AABCH1234F1Z5  |  FSSAI: 11521045000123  |  Contact: +91 7499934257", 105, 29, { align: "center" });
       doc.text(`Date: ${new Date(orders[0].created_at).toLocaleDateString()} ${new Date(orders[0].created_at).toLocaleTimeString()}`, 105, 34, { align: "center" });
       
       const formattedTableName = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table No: ${tableNumber}`;
+      doc.setFont("helvetica", "bold");
       doc.text(formattedTableName, 105, 40, { align: "center" });
 
       const tableBody = orders.flatMap(order => {
@@ -68,7 +70,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       });
 
       autoTable(doc, {
-        startY: 50,
+        startY: 46,
         head: [['Item', 'Qty', 'Rate', 'Amount']],
         body: tableBody,
         theme: 'striped',
@@ -76,22 +78,31 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         styles: { font: 'helvetica', fontSize: 10 },
       });
 
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      const finalY = (doc as any).lastAutoTable.finalY + 8;
+      const cgst = (subtotal * 0.025).toFixed(2);
+      const sgst = (subtotal * 0.025).toFixed(2);
 
       doc.setFontSize(10);
-      doc.text("Subtotal:", 140, finalY);
+      doc.setFont("helvetica", "normal");
+      doc.text("Subtotal:", 135, finalY);
       doc.text(`Rs. ${subtotal}`, 190, finalY, { align: 'right' });
       
-      doc.text("GST (5%):", 140, finalY + 7);
-      doc.text(`Rs. ${gst}`, 190, finalY + 7, { align: 'right' });
+      doc.text("CGST (2.5%):", 135, finalY + 6);
+      doc.text(`Rs. ${cgst}`, 190, finalY + 6, { align: 'right' });
       
-      doc.text("Service Charge (5%):", 140, finalY + 14);
-      doc.text(`Rs. ${serviceCharge}`, 190, finalY + 14, { align: 'right' });
+      doc.text("SGST (2.5%):", 135, finalY + 12);
+      doc.text(`Rs. ${sgst}`, 190, finalY + 12, { align: 'right' });
       
-      doc.setFontSize(14);
+      if (serviceCharge > 0) {
+        doc.text("Service Charge (5%):", 135, finalY + 18);
+        doc.text(`Rs. ${serviceCharge}`, 190, finalY + 18, { align: 'right' });
+      }
+      
+      const grandTotalY = serviceCharge > 0 ? finalY + 28 : finalY + 22;
+      doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
-      doc.text("GRAND TOTAL:", 130, finalY + 24);
-      doc.text(`Rs. ${grandTotal}`, 190, finalY + 24, { align: 'right' });
+      doc.text("GRAND TOTAL:", 125, grandTotalY);
+      doc.text(`Rs. ${grandTotal}`, 190, grandTotalY, { align: 'right' });
 
       doc.setFontSize(10);
       doc.setFont("helvetica", "italic");
