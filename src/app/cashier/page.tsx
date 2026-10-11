@@ -146,9 +146,40 @@ export default function CashierDashboard() {
             <span>TOTAL</span><span>Rs. ${grandTotal}</span>
           </div>
           <div class="divider"></div>
+          
+          <div style="text-align: center; margin: 15px 0;">
+            <p style="font-size: 11px; font-weight: bold; margin: 0 0 8px 0; letter-spacing: 0.5px;">SCAN TO PAY VIA UPI</p>
+            <img 
+              id="qrImg"
+              src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableNumber}%20Bill`)}" 
+              width="150" 
+              height="150" 
+              style="margin: 0 auto; display: block; border: 1px solid #ddd; padding: 4px;" 
+              alt="UPI QR Code" 
+            />
+            <p style="font-size: 12px; font-weight: bold; margin: 8px 0 2px 0;">Rs. ${grandTotal}</p>
+            <p style="font-size: 10px; color: #555; margin: 0;">GPay / PhonePe / Paytm</p>
+          </div>
+          
+          <div class="divider"></div>
           <div class="text-center" style="font-size:12px;">Thank you for dining with us!</div>
           <script>
-            window.onload = () => { window.print(); window.close(); }
+            const img = document.getElementById('qrImg');
+            let printed = false;
+            const doPrint = () => {
+              if (printed) return;
+              printed = true;
+              window.print();
+              window.close();
+            };
+            if (img && !img.complete) {
+              img.onload = doPrint;
+              img.onerror = doPrint;
+              setTimeout(doPrint, 2000); // safety fallback
+            } else {
+              window.onload = doPrint;
+              setTimeout(doPrint, 1000);
+            }
           </script>
         </body>
       </html>

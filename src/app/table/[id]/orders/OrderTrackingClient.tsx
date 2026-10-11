@@ -175,16 +175,19 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                     <h3 className="font-bold text-gray-900 mb-4 text-lg">Pay Securely via UPI</h3>
                     <div className="flex justify-center mb-6">
                       <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`upi://pay?pa=restaurant@upi&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR`)}`} 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${id}%20Bill`)}`} 
                         alt="UPI QR Code" 
-                        className="rounded-xl border-4 border-gray-100 shadow-sm"
+                        className="rounded-xl border-4 border-gray-100 shadow-md p-2 bg-white"
                       />
                     </div>
+                    <div className="text-sm font-bold text-gray-600 mb-3">
+                      Amount: <span className="text-green-600 text-base">₹{grandTotal}</span> (Auto-Filled)
+                    </div>
                     <a 
-                      href={`upi://pay?pa=restaurant@upi&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR`}
+                      href={`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${id}%20Bill`}
                       className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg mb-6"
                     >
-                      Pay via UPI App (Zero Fee)
+                      Pay via GPay / PhonePe / Paytm
                     </a>
                     
                     <div className="border-t pt-6">
