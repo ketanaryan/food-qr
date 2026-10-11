@@ -168,22 +168,22 @@ export default function GuestCRMPage() {
   const repeatRate = customers.length > 0 ? Math.round((repeatGuests / customers.length) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 md:p-10 font-sans w-full max-w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-              <span className="p-2 bg-blue-100 text-blue-700 rounded-xl">👥</span> Guest CRM & Loyalty
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2.5">
+              <span className="p-1.5 sm:p-2 bg-blue-100 text-blue-700 rounded-xl text-lg sm:text-xl">👥</span> Guest CRM & Loyalty
             </h1>
-            <p className="text-gray-500 mt-1">
+            <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
               Customer Directory, Repeat Guest Tracking & Direct WhatsApp Marketing
             </p>
           </div>
           <button
             onClick={exportCSV}
-            className="flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-6 py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 shadow-sm text-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-900 text-white font-bold px-5 py-2.5 sm:py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 shadow-sm text-sm"
           >
             <span>📥 Export to Excel (CSV)</span>
           </button>

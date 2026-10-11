@@ -99,6 +99,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ${collapsed ? 'lg:ml-20' : 'lg:ml-64'}
           pt-16 lg:pt-0
           min-h-screen
+          w-full max-w-full overflow-x-hidden
         `}
       >
         {children}

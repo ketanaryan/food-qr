@@ -177,22 +177,22 @@ export default function MenuBuilder() {
   const groupedCategories = (activeCategory === "ALL" ? categories : [activeCategory]).filter(Boolean);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 lg:p-10 font-sans w-full max-w-full overflow-x-hidden">
       <div className="max-w-6xl mx-auto">
         
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-              <span className="p-2 bg-amber-100 text-amber-800 rounded-xl">📖</span> Menu & Category Builder
+            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2.5">
+              <span className="p-1.5 sm:p-2 bg-amber-100 text-amber-800 rounded-xl text-lg sm:text-xl">📖</span> Menu & Categories
             </h1>
-            <p className="text-gray-500 mt-1">Organize dishes category-wise, edit prices, and mark items Out of Stock.</p>
+            <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Manage dishes, prices, and In-Stock / Sold-Out status.</p>
           </div>
           <button 
             onClick={() => openAddModal()}
-            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition active:scale-95 flex items-center justify-center gap-2 shadow-sm text-sm"
+            className="w-full sm:w-auto bg-blue-600 text-white px-5 py-2.5 sm:py-3 rounded-xl font-bold hover:bg-blue-700 transition active:scale-95 flex items-center justify-center gap-2 shadow-sm text-sm"
           >
-            <Plus size={20}/> Add New Dish
+            <Plus size={18}/> Add New Dish
           </button>
         </div>
 
@@ -410,25 +410,25 @@ export default function MenuBuilder() {
                 <div key={cat} className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                   
                   {/* Category Header */}
-                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-6 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-amber-400 font-black text-lg">●</span>
-                      <h2 className="text-lg font-bold tracking-wide">{cat}</h2>
-                      <span className="bg-white/10 text-white/80 text-xs px-2.5 py-0.5 rounded-full font-bold">
+                  <div className="bg-gradient-to-r from-gray-900 to-gray-800 text-white px-4 py-3 sm:px-6 sm:py-4 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <span className="text-amber-400 font-black text-sm sm:text-lg">●</span>
+                      <h2 className="text-sm sm:text-lg font-bold tracking-wide truncate">{cat}</h2>
+                      <span className="bg-white/10 text-white/80 text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold shrink-0">
                         {catItems.length} items
                       </span>
                     </div>
 
                     <button
                       onClick={() => openAddModal(cat)}
-                      className="bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition active:scale-95 shadow-sm"
+                      className="bg-amber-500 hover:bg-amber-600 text-gray-950 font-bold px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs flex items-center gap-1 transition active:scale-95 shadow-sm shrink-0 whitespace-nowrap"
                     >
-                      <Plus size={16}/> Add to {cat}
+                      <Plus size={14}/> Add to {cat}
                     </button>
                   </div>
 
-                  {/* Items Table for this Category */}
-                  <div className="overflow-x-auto">
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">
                       <thead className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-100">
                         <tr>
@@ -509,6 +509,58 @@ export default function MenuBuilder() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Mobile Cards View (100% responsive on small phone screens) */}
+                  <div className="block md:hidden divide-y divide-gray-100">
+                    {catItems.map(item => (
+                      <div key={item.id} className="p-3.5 flex items-center justify-between gap-3 hover:bg-gray-50/50 transition">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <img
+                            src={item.image_url || '/menu/default-food.jpg'}
+                            alt={item.name}
+                            className="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm shrink-0"
+                            onError={(e) => { (e.target as any).src = '/hotel-white-bliss.jpg'; }}
+                          />
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="font-extrabold text-gray-900 text-sm">₹{item.price}</span>
+                              {item.original_price && (
+                                <span className="text-[11px] text-gray-400 line-through">₹{item.original_price}</span>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => toggleAvailability(item)}
+                              className={`mt-1 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition active:scale-95 ${
+                                item.is_available
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {item.is_available ? "● In Stock" : "● Sold Out"}
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            onClick={() => { setFormData(item); setEditingId(item.id); }}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition"
+                            title="Edit"
+                          >
+                            <Edit2 size={16}/>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(item.id, item.name)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition"
+                            title="Delete"
+                          >
+                            <Trash2 size={16}/>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
                 </div>

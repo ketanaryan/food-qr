@@ -108,19 +108,19 @@ export default function SalesReport() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-6 lg:p-10 font-sans w-full max-w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Detailed Sales Report</h1>
-            <p className="text-gray-500">Track and tally your end-of-month sales perfectly.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Detailed Sales Report</h1>
+            <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Track and tally your end-of-month sales perfectly.</p>
           </div>
           
           <button 
             onClick={exportCSV}
-            className="flex items-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-green-700 transition shadow-sm"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-green-700 transition shadow-sm text-sm"
           >
-            <Download size={20} /> Export to CSV
+            <Download size={18} /> Export to CSV
           </button>
         </div>
 
