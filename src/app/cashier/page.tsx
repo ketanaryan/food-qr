@@ -80,7 +80,40 @@ export default function CashierDashboard() {
     acc[t].total += order.total_amount;
     if (order.status === 'billing') acc[t].requestedBill = true; // custom status for requesting bill
     return acc;
-  }, {})
+  }, {});
+
+  // Live Floor Map: 15 Dine-in Tables
+  const TOTAL_TABLES = 15;
+  const tableNumbers = Array.from({ length: TOTAL_TABLES }, (_, i) => String(i + 1));
+  
+  const tableStatusList = tableNumbers.map(tNum => {
+    const group = Object.values(tableGroups).find((g: any) => {
+      const cleanG = String(g.table).replace(/[^0-9]/g, '');
+      return cleanG === tNum;
+    }) as any;
+
+    if (group) {
+      return {
+        tableNumber: tNum,
+        status: group.requestedBill ? 'BILLING' : 'OCCUPIED',
+        total: group.total,
+        orderCount: group.orders.length,
+        group
+      };
+    }
+    return {
+      tableNumber: tNum,
+      status: 'FREE',
+      total: 0,
+      orderCount: 0,
+      group: null
+    };
+  });
+
+  const freeCount = tableStatusList.filter(t => t.status === 'FREE').length;
+  const occupiedCount = tableStatusList.filter(t => t.status === 'OCCUPIED').length;
+  const billingCount = tableStatusList.filter(t => t.status === 'BILLING').length;
+  const deliveryGroups = Object.values(tableGroups).filter((g: any) => g.table.match(/^(Swiggy|Zomato|Takeaway)/i));
 
   const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI', customerPhone?: string) => {
     // Optimistic UI
@@ -441,9 +474,99 @@ export default function CashierDashboard() {
           </button>
         </div>
 
+        {/* Live Floor Status & Table Map */}
+        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span>🗺️</span> Live Floor Map (All 15 Tables)
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">Real-time table occupancy & billing overview</p>
+            </div>
+
+            {/* Status Legend Badges */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                <span className="w-2 h-2 rounded-full bg-green-500"></span> {freeCount} Free
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                <span className="w-2 h-2 rounded-full bg-blue-500"></span> {occupiedCount} Dining
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span> {billingCount} Bill Ready
+              </span>
+              {deliveryGroups.length > 0 && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                  <span className="w-2 h-2 rounded-full bg-purple-500"></span> {deliveryGroups.length} Delivery
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 15 Table Grid */}
+          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-8 gap-2.5 sm:gap-3">
+            {tableStatusList.map(t => {
+              const isOccupied = t.status === 'OCCUPIED';
+              const isBilling = t.status === 'BILLING';
+              const isFree = t.status === 'FREE';
+
+              return (
+                <button
+                  key={t.tableNumber}
+                  onClick={() => {
+                    if (t.group) {
+                      const el = document.getElementById(`table-card-${t.group.table}`);
+                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      toast(`Viewing Table ${t.tableNumber}`, { icon: '📍' });
+                    } else {
+                      toast(`Table ${t.tableNumber} is Free & Ready for Guests`, { icon: '🟢' });
+                    }
+                  }}
+                  className={`p-2.5 sm:p-3 rounded-xl border text-center transition active:scale-95 flex flex-col items-center justify-between min-h-[74px] ${
+                    isBilling
+                      ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400 shadow-sm animate-pulse'
+                      : isOccupied
+                      ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
+                      : 'bg-green-50/50 border-green-200 hover:bg-green-100/60'
+                  }`}
+                >
+                  <span className="font-extrabold text-sm text-gray-900">
+                    Table {t.tableNumber}
+                  </span>
+                  
+                  {isFree && (
+                    <span className="text-[10px] font-bold text-green-700 bg-green-100/80 px-1.5 py-0.5 rounded">
+                      🟢 Free
+                    </span>
+                  )}
+                  {isOccupied && (
+                    <div className="flex flex-col items-center leading-tight">
+                      <span className="text-[11px] font-black text-blue-700">₹{t.total}</span>
+                      <span className="text-[9px] text-blue-600 font-semibold">Dining</span>
+                    </div>
+                  )}
+                  {isBilling && (
+                    <div className="flex flex-col items-center leading-tight">
+                      <span className="text-[11px] font-black text-amber-800">₹{t.total}</span>
+                      <span className="text-[9px] font-bold text-amber-700">Bill Ready</span>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Active Billing Section Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <span>🧾</span> Active Bills To Settle ({Object.keys(tableGroups).length})
+          </h2>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.values(tableGroups).map((group: any) => (
-            <div key={group.table} className={`bg-white rounded-2xl shadow-sm border p-6 ${group.requestedBill ? 'ring-2 ring-orange-400 shadow-orange-100' : 'border-gray-200'}`}>
+            <div id={`table-card-${group.table}`} key={group.table} className={`bg-white rounded-2xl shadow-sm border p-6 transition-all ${group.requestedBill ? 'ring-2 ring-orange-400 shadow-orange-100' : 'border-gray-200'}`}>
               <div className="flex justify-between items-center border-b pb-4 mb-4">
                 <h2 className="text-2xl font-bold">
                   {group.table.match(/^(Swiggy|Zomato|Takeaway)/i) ? group.table : `Table ${group.table}`}
