@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { 
   Boxes, Plus, AlertTriangle, ArrowDownRight, ArrowUpRight, 
   Search, Download, Trash2, Edit3, MessageCircle, RefreshCw, 
-  Layers, CheckCircle2, DollarSign, PackageOpen, Sparkles, Filter
+  Layers, CheckCircle2, DollarSign, PackageOpen, Sparkles, Filter,
+  FileText, Users, Calculator, CreditCard, ChevronRight, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -19,6 +20,44 @@ export interface InventoryItem {
   vendorName: string;
   vendorPhone: string;
   lastUpdated: string;
+}
+
+export interface VendorPurchase {
+  id: string;
+  invoiceNo: string;
+  vendorName: string;
+  vendorPhone: string;
+  date: string;
+  itemsSummary: string;
+  totalAmount: number;
+  paymentStatus: "PAID" | "PENDING_CREDIT";
+  paymentMethod?: "CASH" | "UPI" | "BANK_TRANSFER";
+  notes?: string;
+}
+
+export interface VendorAccount {
+  id: string;
+  name: string;
+  category: string;
+  phone: string;
+  totalPurchased: number;
+  totalPaid: number;
+  pendingDue: number;
+  lastPaymentDate: string;
+}
+
+export interface DailyReconciliation {
+  id: string;
+  itemName: string;
+  unit: string;
+  openingStock: number;
+  inwardToday: number;
+  consumedSales: number;
+  wastage: number;
+  expectedClosing: number;
+  physicalClosing: number;
+  variance: number;
+  status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS";
 }
 
 export interface StockLog {
@@ -38,7 +77,7 @@ export interface RecipeBOM {
   ingredients: { name: string; qty: number; unit: string }[];
 }
 
-// Initial realistic default restaurant inventory for Hotel White Bliss
+// Initial realistic default inventory for Hotel White Bliss
 const INITIAL_INVENTORY: InventoryItem[] = [
   {
     id: "inv-1",
@@ -46,7 +85,7 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     category: "Dairy",
     currentStock: 3.2,
     unit: "kg",
-    minAlertStock: 5.0, // Low stock trigger
+    minAlertStock: 5.0,
     costPerUnit: 340,
     vendorName: "Kalyan Dairy",
     vendorPhone: "9822334455",
@@ -58,7 +97,7 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     category: "Dairy",
     currentStock: 1.5,
     unit: "kg",
-    minAlertStock: 3.0, // Low stock trigger
+    minAlertStock: 3.0,
     costPerUnit: 480,
     vendorName: "Kalyan Dairy",
     vendorPhone: "9822334455",
@@ -106,7 +145,7 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     category: "Dairy",
     currentStock: 8.0,
     unit: "L",
-    minAlertStock: 12.0, // Low stock trigger
+    minAlertStock: 12.0,
     costPerUnit: 64,
     vendorName: "Kalyan Dairy",
     vendorPhone: "9822334455",
@@ -118,7 +157,7 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     category: "Packaging",
     currentStock: 18,
     unit: "Pcs",
-    minAlertStock: 30, // Low stock trigger
+    minAlertStock: 30,
     costPerUnit: 8,
     vendorName: "Golden Bakery",
     vendorPhone: "9765432100",
@@ -159,6 +198,190 @@ const INITIAL_INVENTORY: InventoryItem[] = [
     vendorName: "Nashik Mandi Direct",
     vendorPhone: "9422778899",
     lastUpdated: "Today, 06:45 AM"
+  }
+];
+
+// Initial Inward Vendor Purchase Invoices
+const INITIAL_PURCHASES: VendorPurchase[] = [
+  {
+    id: "pur-1",
+    invoiceNo: "INV-KD-104",
+    vendorName: "Kalyan Dairy",
+    vendorPhone: "9822334455",
+    date: "Today, 08:30 AM",
+    itemsSummary: "Full Cream Milk (15L), Paneer (5kg)",
+    totalAmount: 2660,
+    paymentStatus: "PAID",
+    paymentMethod: "UPI",
+    notes: "Batch morning quality verified"
+  },
+  {
+    id: "pur-2",
+    invoiceNo: "INV-ALM-89",
+    vendorName: "Al-Madina Poultry",
+    vendorPhone: "9890123456",
+    date: "Today, 07:45 AM",
+    itemsSummary: "Fresh Chicken Breast (15kg)",
+    totalAmount: 3300,
+    paymentStatus: "PENDING_CREDIT",
+    notes: "Credit bill - to be cleared on Friday"
+  },
+  {
+    id: "pur-3",
+    invoiceNo: "INV-MT-552",
+    vendorName: "Mahalaxmi Traders",
+    vendorPhone: "9823456789",
+    date: "Yesterday, 04:15 PM",
+    itemsSummary: "Basmati Rice (50kg), Sunflower Oil (30L)",
+    totalAmount: 9550,
+    paymentStatus: "PAID",
+    paymentMethod: "CASH",
+    notes: "Monthly bulk grocery replenishment"
+  },
+  {
+    id: "pur-4",
+    invoiceNo: "INV-GB-21",
+    vendorName: "Golden Bakery",
+    vendorPhone: "9765432100",
+    date: "Yesterday, 09:00 AM",
+    itemsSummary: "Burger & Pav Buns (40 Pcs)",
+    totalAmount: 320,
+    paymentStatus: "PAID",
+    paymentMethod: "UPI"
+  },
+  {
+    id: "pur-5",
+    invoiceNo: "INV-NM-12",
+    vendorName: "Nashik Mandi Direct",
+    vendorPhone: "9422778899",
+    date: "2 days ago",
+    itemsSummary: "Tomatoes (25kg), Onions (30kg), Coriander (5kg)",
+    totalAmount: 1850,
+    paymentStatus: "PAID",
+    paymentMethod: "CASH"
+  }
+];
+
+// Initial Vendor Ledgers & Payables
+const INITIAL_VENDORS: VendorAccount[] = [
+  {
+    id: "v-1",
+    name: "Kalyan Dairy",
+    category: "Milk, Paneer, Cheese, Butter",
+    phone: "9822334455",
+    totalPurchased: 34500,
+    totalPaid: 28000,
+    pendingDue: 6500,
+    lastPaymentDate: "Yesterday"
+  },
+  {
+    id: "v-2",
+    name: "Al-Madina Poultry",
+    category: "Fresh Chicken & Eggs",
+    phone: "9890123456",
+    totalPurchased: 22400,
+    totalPaid: 19100,
+    pendingDue: 3300,
+    lastPaymentDate: "3 days ago"
+  },
+  {
+    id: "v-3",
+    name: "Mahalaxmi Traders",
+    category: "Rice, Cooking Oil, Atta, Spices",
+    phone: "9823456789",
+    totalPurchased: 48000,
+    totalPaid: 48000,
+    pendingDue: 0,
+    lastPaymentDate: "Yesterday"
+  },
+  {
+    id: "v-4",
+    name: "Nashik Mandi Direct",
+    category: "Daily Farm Vegetables",
+    phone: "9422778899",
+    totalPurchased: 14200,
+    totalPaid: 12000,
+    pendingDue: 2200,
+    lastPaymentDate: "2 days ago"
+  },
+  {
+    id: "v-5",
+    name: "Golden Bakery",
+    category: "Buns, Bread & Croissants",
+    phone: "9765432100",
+    totalPurchased: 3800,
+    totalPaid: 3800,
+    pendingDue: 0,
+    lastPaymentDate: "Yesterday"
+  }
+];
+
+// Initial Daily Closing Reconciliation Sheet
+const INITIAL_RECONCILIATION: DailyReconciliation[] = [
+  {
+    id: "rec-1",
+    itemName: "Amul Malai Paneer",
+    unit: "kg",
+    openingStock: 5.0,
+    inwardToday: 5.0,
+    consumedSales: 6.0,
+    wastage: 0.8,
+    expectedClosing: 3.2,
+    physicalClosing: 3.0,
+    variance: -0.2, // Minor leakage/portioning
+    status: "LEAKAGE_THEFT"
+  },
+  {
+    id: "rec-2",
+    itemName: "Mozzarella Pizza Cheese",
+    unit: "kg",
+    openingStock: 3.0,
+    inwardToday: 0.0,
+    consumedSales: 1.5,
+    wastage: 0.0,
+    expectedClosing: 1.5,
+    physicalClosing: 1.5,
+    variance: 0.0,
+    status: "MATCHED"
+  },
+  {
+    id: "rec-3",
+    itemName: "Fresh Chicken Breast",
+    unit: "kg",
+    openingStock: 8.0,
+    inwardToday: 15.0,
+    consumedSales: 9.0,
+    wastage: 0.0,
+    expectedClosing: 14.0,
+    physicalClosing: 14.0,
+    variance: 0.0,
+    status: "MATCHED"
+  },
+  {
+    id: "rec-4",
+    itemName: "India Gate Basmati Rice",
+    unit: "kg",
+    openingStock: 50.0,
+    inwardToday: 0.0,
+    consumedSales: 8.0,
+    wastage: 0.0,
+    expectedClosing: 42.0,
+    physicalClosing: 42.0,
+    variance: 0.0,
+    status: "MATCHED"
+  },
+  {
+    id: "rec-5",
+    itemName: "Burger & Pav Buns",
+    unit: "Pcs",
+    openingStock: 38.0,
+    inwardToday: 0.0,
+    consumedSales: 20.0,
+    wastage: 0.0,
+    expectedClosing: 18.0,
+    physicalClosing: 18.0,
+    variance: 0.0,
+    status: "MATCHED"
   }
 ];
 
@@ -235,20 +458,37 @@ const SAMPLE_RECIPES: RecipeBOM[] = [
 
 export default function InventoryDashboard() {
   const [items, setItems] = useState<InventoryItem[]>([]);
+  const [purchases, setPurchases] = useState<VendorPurchase[]>([]);
+  const [vendors, setVendors] = useState<VendorAccount[]>([]);
+  const [reconciliations, setReconciliations] = useState<DailyReconciliation[]>([]);
   const [logs, setLogs] = useState<StockLog[]>([]);
-  const [activeTab, setActiveTab] = useState<"stocks" | "inward" | "wastage" | "recipes" | "logs">("stocks");
+
+  // Navigation tab state
+  const [activeTab, setActiveTab] = useState<"stocks" | "inward" | "vendors" | "audit" | "recipes" | "logs">("stocks");
   const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [showLowStockOnly, setShowLowStockOnly] = useState(false);
 
   // Modals
   const [isInwardModalOpen, setIsInwardModalOpen] = useState(false);
+  const [isNewInvoiceModalOpen, setIsNewInvoiceModalOpen] = useState(false);
   const [isWastageModalOpen, setIsWastageModalOpen] = useState(false);
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
-  const [selectedItemForAction, setSelectedItemForAction] = useState<InventoryItem | null>(null);
+  const [isPayVendorModalOpen, setIsPayVendorModalOpen] = useState(false);
+  const [selectedVendorForPay, setSelectedVendorForPay] = useState<VendorAccount | null>(null);
 
   // Form states
   const [inwardForm, setInwardForm] = useState({ itemId: "", qty: "", costPerUnit: "", notes: "" });
+  const [newInvoiceForm, setNewInvoiceForm] = useState({
+    invoiceNo: "",
+    vendorName: "",
+    vendorPhone: "",
+    itemsSummary: "",
+    totalAmount: "",
+    paymentStatus: "PAID" as "PAID" | "PENDING_CREDIT",
+    paymentMethod: "UPI" as "CASH" | "UPI" | "BANK_TRANSFER",
+    notes: ""
+  });
   const [wastageForm, setWastageForm] = useState({ itemId: "", qty: "", reason: "Spoiled / Expired", notes: "" });
   const [newItemForm, setNewItemForm] = useState<Partial<InventoryItem>>({
     name: "",
@@ -260,24 +500,30 @@ export default function InventoryDashboard() {
     vendorName: "",
     vendorPhone: ""
   });
+  const [payAmount, setPayAmount] = useState("");
 
-  // LocalStorage initialization
+  // Load from localStorage
   useEffect(() => {
     const savedItems = localStorage.getItem("hwb_inventory_items");
+    const savedPurchases = localStorage.getItem("hwb_inventory_purchases");
+    const savedVendors = localStorage.getItem("hwb_inventory_vendors");
+    const savedRec = localStorage.getItem("hwb_inventory_reconciliations");
     const savedLogs = localStorage.getItem("hwb_inventory_logs");
-    if (savedItems) {
-      try { setItems(JSON.parse(savedItems)); } catch (e) { setItems(INITIAL_INVENTORY); }
-    } else {
-      setItems(INITIAL_INVENTORY);
-      localStorage.setItem("hwb_inventory_items", JSON.stringify(INITIAL_INVENTORY));
-    }
 
-    if (savedLogs) {
-      try { setLogs(JSON.parse(savedLogs)); } catch (e) { setLogs(INITIAL_LOGS); }
-    } else {
-      setLogs(INITIAL_LOGS);
-      localStorage.setItem("hwb_inventory_logs", JSON.stringify(INITIAL_LOGS));
-    }
+    if (savedItems) try { setItems(JSON.parse(savedItems)); } catch (e) { setItems(INITIAL_INVENTORY); }
+    else setItems(INITIAL_INVENTORY);
+
+    if (savedPurchases) try { setPurchases(JSON.parse(savedPurchases)); } catch (e) { setPurchases(INITIAL_PURCHASES); }
+    else setPurchases(INITIAL_PURCHASES);
+
+    if (savedVendors) try { setVendors(JSON.parse(savedVendors)); } catch (e) { setVendors(INITIAL_VENDORS); }
+    else setVendors(INITIAL_VENDORS);
+
+    if (savedRec) try { setReconciliations(JSON.parse(savedRec)); } catch (e) { setReconciliations(INITIAL_RECONCILIATION); }
+    else setReconciliations(INITIAL_RECONCILIATION);
+
+    if (savedLogs) try { setLogs(JSON.parse(savedLogs)); } catch (e) { setLogs(INITIAL_LOGS); }
+    else setLogs(INITIAL_LOGS);
   }, []);
 
   const saveItems = (updated: InventoryItem[]) => {
@@ -285,19 +531,29 @@ export default function InventoryDashboard() {
     localStorage.setItem("hwb_inventory_items", JSON.stringify(updated));
   };
 
+  const savePurchases = (updated: VendorPurchase[]) => {
+    setPurchases(updated);
+    localStorage.setItem("hwb_inventory_purchases", JSON.stringify(updated));
+  };
+
+  const saveVendors = (updated: VendorAccount[]) => {
+    setVendors(updated);
+    localStorage.setItem("hwb_inventory_vendors", JSON.stringify(updated));
+  };
+
   const saveLogs = (updatedLogs: StockLog[]) => {
     setLogs(updatedLogs);
     localStorage.setItem("hwb_inventory_logs", JSON.stringify(updatedLogs));
   };
 
-  // KPI Calculations
+  // Top KPI calculations
   const totalValuation = items.reduce((acc, item) => acc + (item.currentStock * item.costPerUnit), 0);
+  const totalInwardMonth = purchases.reduce((acc, p) => acc + p.totalAmount, 0);
+  const totalPendingUdhar = vendors.reduce((acc, v) => acc + v.pendingDue, 0);
   const lowStockItems = items.filter(i => i.currentStock <= i.minAlertStock);
-  const totalWastageLoss = logs
-    .filter(l => l.type === "WASTAGE")
-    .reduce((acc, l) => acc + l.cost, 0);
+  const totalWastageLoss = logs.filter(l => l.type === "WASTAGE").reduce((acc, l) => acc + l.cost, 0);
 
-  // Filtered Items
+  // Filtered Stock items
   const filteredItems = items.filter(item => {
     const matchesCategory = categoryFilter === "ALL" || item.category === categoryFilter;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -306,7 +562,7 @@ export default function InventoryDashboard() {
     return matchesCategory && matchesSearch && matchesLowStock;
   });
 
-  // Inward Stock Submit
+  // Single Item Inward submit
   const handleInwardSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const targetItem = items.find(i => i.id === inwardForm.itemId);
@@ -343,6 +599,55 @@ export default function InventoryDashboard() {
     setIsInwardModalOpen(false);
     setInwardForm({ itemId: "", qty: "", costPerUnit: "", notes: "" });
     toast.success(`+${qty} ${targetItem.unit} added to ${targetItem.name}!`);
+  };
+
+  // New Vendor Inward Invoice submit
+  const handleNewInvoiceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amt = parseFloat(newInvoiceForm.totalAmount);
+    if (isNaN(amt) || amt <= 0) return toast.error("Enter valid total bill amount");
+
+    const newInvoice: VendorPurchase = {
+      id: "pur-" + Date.now(),
+      invoiceNo: newInvoiceForm.invoiceNo || `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      vendorName: newInvoiceForm.vendorName || "Direct Vendor",
+      vendorPhone: newInvoiceForm.vendorPhone || "7499934257",
+      date: "Today, " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      itemsSummary: newInvoiceForm.itemsSummary || "Bulk supplies",
+      totalAmount: amt,
+      paymentStatus: newInvoiceForm.paymentStatus,
+      paymentMethod: newInvoiceForm.paymentMethod,
+      notes: newInvoiceForm.notes
+    };
+
+    // Update vendor due if credit
+    if (newInvoiceForm.paymentStatus === "PENDING_CREDIT") {
+      const updatedVendors = vendors.map(v => {
+        if (v.name.toLowerCase().includes(newInvoiceForm.vendorName.toLowerCase())) {
+          return {
+            ...v,
+            totalPurchased: v.totalPurchased + amt,
+            pendingDue: v.pendingDue + amt
+          };
+        }
+        return v;
+      });
+      saveVendors(updatedVendors);
+    }
+
+    savePurchases([newInvoice, ...purchases]);
+    setIsNewInvoiceModalOpen(false);
+    setNewInvoiceForm({
+      invoiceNo: "",
+      vendorName: "",
+      vendorPhone: "",
+      itemsSummary: "",
+      totalAmount: "",
+      paymentStatus: "PAID",
+      paymentMethod: "UPI",
+      notes: ""
+    });
+    toast.success(`Inward Bill #${newInvoice.invoiceNo} (₹${amt}) logged successfully!`);
   };
 
   // Wastage Log Submit
@@ -417,6 +722,51 @@ export default function InventoryDashboard() {
     toast.success(`${item.name} added to inventory!`);
   };
 
+  // Settle Vendor Payment
+  const handleSettleVendorPayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedVendorForPay) return;
+    const paidVal = parseFloat(payAmount);
+    if (isNaN(paidVal) || paidVal <= 0) return toast.error("Enter valid payment amount");
+    if (paidVal > selectedVendorForPay.pendingDue) return toast.error("Payment cannot exceed pending due");
+
+    const updated = vendors.map(v => {
+      if (v.id === selectedVendorForPay.id) {
+        return {
+          ...v,
+          totalPaid: v.totalPaid + paidVal,
+          pendingDue: v.pendingDue - paidVal,
+          lastPaymentDate: "Today"
+        };
+      }
+      return v;
+    });
+
+    saveVendors(updated);
+    setIsPayVendorModalOpen(false);
+    setPayAmount("");
+    toast.success(`₹${paidVal} paid to ${selectedVendorForPay.name}!`);
+  };
+
+  // WhatsApp Vendor Statement Share
+  const handleShareVendorStatement = (v: VendorAccount) => {
+    const cleanPhone = v.phone.replace(/\D/g, "");
+    const msg = `🧾 *VENDOR LEDGER STATEMENT - HOTEL WHITE BLISS*\n` +
+      `--------------------------------\n` +
+      `*Vendor:* ${v.name}\n` +
+      `*Category:* ${v.category}\n` +
+      `--------------------------------\n` +
+      `*Total Purchased (This Month):* ₹${v.totalPurchased.toLocaleString("en-IN")}\n` +
+      `*Total Paid:* ₹${v.totalPaid.toLocaleString("en-IN")}\n` +
+      `*Outstanding Balance (Udhar):* ₹${v.pendingDue.toLocaleString("en-IN")}\n` +
+      `*Last Payment:* ${v.lastPaymentDate}\n` +
+      `--------------------------------\n` +
+      `Dhanyawad! Hotel White Bliss Management. 🙏`;
+
+    window.open(`https://wa.me/91${cleanPhone || "7499934257"}?text=${encodeURIComponent(msg)}`, "_blank");
+    toast.success(`Opening WhatsApp statement for ${v.name}`);
+  };
+
   // WhatsApp Vendor Purchase Order Re-order
   const handleWhatsAppReorder = (item: InventoryItem) => {
     const requiredRefill = Math.max(item.minAlertStock * 2, 5);
@@ -467,13 +817,13 @@ export default function InventoryDashboard() {
             </div>
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                Inventory & Recipe Stocks
+                Inventory & Procurement Suite
                 <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Live BOM Active
+                  Enterprise Suite
                 </span>
               </h1>
               <p className="text-sm text-gray-500 mt-1">
-                Real-time raw material tracking, low-stock WhatsApp vendor orders & kitchen wastage control
+                Raw material stocks, daily vendor inward purchases, supplier credit ledgers & closing audit
               </p>
             </div>
           </div>
@@ -482,10 +832,17 @@ export default function InventoryDashboard() {
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button
+            onClick={() => setIsNewInvoiceModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
+          >
+            <FileText size={17} /> + Record Inward Bill
+          </button>
+
+          <button
             onClick={() => setIsInwardModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
           >
-            <ArrowDownRight size={17} /> + Stock Inward
+            <ArrowDownRight size={17} /> + Quick Refill
           </button>
 
           <button
@@ -499,7 +856,7 @@ export default function InventoryDashboard() {
             onClick={() => setIsAddItemModalOpen(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
           >
-            <Plus size={17} /> Add Raw Material
+            <Plus size={17} /> New Raw Material
           </button>
 
           <button
@@ -513,21 +870,49 @@ export default function InventoryDashboard() {
       </div>
 
       {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Total Stock Value */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Stock Value</span>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Current Stock Value</span>
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <DollarSign size={18} />
+              <DollarSign size={17} />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
             ₹{totalValuation.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-            <span className="text-emerald-600 font-bold">100% Capital</span> in storage
-          </p>
+          <p className="text-xs text-gray-500 mt-1">Capital in kitchen storage</p>
+        </div>
+
+        {/* Monthly Inward Purchases */}
+        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Inward (Aaya)</span>
+            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
+              <ArrowDownRight size={17} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
+            ₹{totalInwardMonth.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">{purchases.length} Delivery Invoices</p>
+        </div>
+
+        {/* Pending Vendor Udhar */}
+        <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden transition ${
+          totalPendingUdhar > 0 ? "bg-purple-50/70 border-purple-200" : "bg-white border-gray-200"
+        }`}>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-900">Vendor Udhar (Due)</span>
+            <div className="p-2 bg-purple-600 text-white rounded-xl">
+              <CreditCard size={17} />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-purple-900">
+            ₹{totalPendingUdhar.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          </div>
+          <p className="text-xs text-purple-700 mt-1">Payable to suppliers</p>
         </div>
 
         {/* Low Stock Alerts */}
@@ -535,104 +920,121 @@ export default function InventoryDashboard() {
           lowStockItems.length > 0 ? "bg-amber-50/70 border-amber-300" : "bg-white border-gray-200"
         }`}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Low Stock Alerts</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Low Stock Alert</span>
             <div className="p-2 bg-amber-500 text-white rounded-xl">
-              <AlertTriangle size={18} />
+              <AlertTriangle size={17} />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-amber-900">
             {lowStockItems.length} Items
           </div>
           <p className="text-xs text-amber-700 mt-1">
-            {lowStockItems.length > 0 ? "Requires re-order from vendors" : "All stocks safe"}
+            {lowStockItems.length > 0 ? "Re-order needed from vendor" : "Safe levels"}
           </p>
         </div>
 
         {/* Wastage Loss */}
         <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Monthly Wastage</span>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kitchen Wastage</span>
             <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-              <ArrowUpRight size={18} />
+              <ArrowUpRight size={17} />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-extrabold text-rose-600">
             ₹{totalWastageLoss.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Kitchen spoilage / loss</p>
-        </div>
-
-        {/* Total Active SKUs */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Tracked Raw Items</span>
-            <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-              <PackageOpen size={18} />
-            </div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-            {items.length} SKUs
-          </div>
-          <p className="text-xs text-gray-500 mt-1">Across 7 Categories</p>
+          <p className="text-xs text-gray-500 mt-1">Spoilage & loss recorded</p>
         </div>
       </div>
 
       {/* Main Navigation Tabs */}
       <div className="flex items-center justify-between border-b border-gray-200 overflow-x-auto pb-px">
-        <div className="flex gap-2 min-w-max">
+        <div className="flex gap-1 sm:gap-2 min-w-max">
           <button
             onClick={() => setActiveTab("stocks")}
-            className={`pb-3 px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
               activeTab === "stocks"
                 ? "border-gray-900 text-gray-900"
                 : "border-transparent text-gray-400 hover:text-gray-700"
             }`}
           >
-            <Boxes size={16} /> Raw Materials Stock ({items.length})
+            <Boxes size={16} /> Raw Materials ({items.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("inward")}
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+              activeTab === "inward"
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            <FileText size={16} className="text-blue-600" /> Inward Bills & Delivery ({purchases.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("vendors")}
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+              activeTab === "vendors"
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            <Users size={16} className="text-purple-600" /> Vendor Udhar Ledger ({vendors.length})
+          </button>
+
+          <button
+            onClick={() => setActiveTab("audit")}
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+              activeTab === "audit"
+                ? "border-gray-900 text-gray-900"
+                : "border-transparent text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            <Calculator size={16} className="text-emerald-600" /> Daily Closing Audit
           </button>
 
           <button
             onClick={() => setActiveTab("recipes")}
-            className={`pb-3 px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
               activeTab === "recipes"
                 ? "border-gray-900 text-gray-900"
                 : "border-transparent text-gray-400 hover:text-gray-700"
             }`}
           >
-            <Sparkles size={16} className="text-amber-500" /> Recipe BOM (Dish Mapping)
+            <Sparkles size={16} className="text-amber-500" /> Recipe BOM
           </button>
 
           <button
             onClick={() => setActiveTab("logs")}
-            className={`pb-3 px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
               activeTab === "logs"
                 ? "border-gray-900 text-gray-900"
                 : "border-transparent text-gray-400 hover:text-gray-700"
             }`}
           >
-            <RefreshCw size={16} /> Stock Logs & Audit ({logs.length})
+            <RefreshCw size={16} /> Audit Logs ({logs.length})
           </button>
         </div>
       </div>
 
-      {/* TAB 1: STOCKS VIEW */}
+      {/* TAB 1: RAW MATERIALS STOCKS */}
       {activeTab === "stocks" && (
         <div className="space-y-6">
           {/* Filters & Search Bar */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-gray-200 shadow-sm">
-            {/* Search Input */}
             <div className="relative flex-1">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
               <input
                 type="text"
-                placeholder="Search raw material, ingredient or vendor name..."
+                placeholder="Search ingredient, raw material or vendor..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 focus:bg-white"
               />
             </div>
 
-            {/* Category Select */}
             <div className="flex items-center gap-2">
               <select
                 value={categoryFilter}
@@ -649,7 +1051,6 @@ export default function InventoryDashboard() {
                 <option value="Spices">Spices</option>
               </select>
 
-              {/* Low Stock Toggle */}
               <button
                 onClick={() => setShowLowStockOnly(!showLowStockOnly)}
                 className={`flex items-center gap-1.5 text-xs font-bold px-3 py-2 rounded-xl border transition ${
@@ -858,7 +1259,232 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* TAB 2: RECIPE BOM MAPPING */}
+      {/* TAB 2: INWARD BILLS & DELIVERIES (Kitna Samaan Aaya Register) */}
+      {activeTab === "inward" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+            <div>
+              <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
+                <span>📥</span> Daily Vendor Inward Register (Khareedi / Purchase Bills)
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Every delivery from dairy, meat, mandi & grocery logged with bill number, items and payment status
+              </p>
+            </div>
+            <button
+              onClick={() => setIsNewInvoiceModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+            >
+              <Plus size={15} /> + Add Inward Delivery Bill
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+                <tr>
+                  <th className="py-3.5 px-5">Invoice / Date</th>
+                  <th className="py-3.5 px-4">Vendor Name</th>
+                  <th className="py-3.5 px-4">Delivered Items Summary</th>
+                  <th className="py-3.5 px-4 text-right">Bill Amount</th>
+                  <th className="py-3.5 px-4 text-center">Payment Status</th>
+                  <th className="py-3.5 px-5 text-right">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {purchases.map(p => (
+                  <tr key={p.id} className="hover:bg-gray-50/70 transition">
+                    <td className="py-4 px-5">
+                      <div className="font-bold text-gray-900">{p.invoiceNo}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{p.date}</div>
+                    </td>
+                    <td className="py-4 px-4 font-semibold text-gray-800">
+                      <div>{p.vendorName}</div>
+                      <div className="text-xs text-gray-400">{p.vendorPhone}</div>
+                    </td>
+                    <td className="py-4 px-4 text-xs text-gray-700 max-w-xs font-medium">
+                      {p.itemsSummary}
+                    </td>
+                    <td className="py-4 px-4 text-right font-extrabold text-base text-gray-900">
+                      ₹{p.totalAmount.toLocaleString("en-IN")}
+                    </td>
+                    <td className="py-4 px-4 text-center">
+                      {p.paymentStatus === "PAID" ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                          <Check size={12} /> PAID ({p.paymentMethod || "CASH"})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 animate-pulse">
+                          🟡 CREDIT (Udhar)
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-4 px-5 text-right text-xs text-gray-400">
+                      {p.notes || "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: VENDOR UDHAR LEDGER (Kaun Se Supplier Ka Kitna Baki Hai) */}
+      {activeTab === "vendors" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-2xl flex items-start gap-3">
+            <Users className="text-purple-700 mt-0.5 shrink-0" size={20} />
+            <div>
+              <h3 className="font-bold text-purple-950 text-sm">Supplier Accounts & Udhar Payables (Khata Book)</h3>
+              <p className="text-xs text-purple-800 mt-0.5 leading-relaxed">
+                Track how much stock came from each supplier, how much has been paid, and exact pending credit due. Send WhatsApp payment receipts with 1-click!
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {vendors.map(v => (
+              <div key={v.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+                <div className="flex items-start justify-between border-b pb-3 border-gray-100">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-base">{v.name}</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">{v.category}</p>
+                    <p className="text-xs text-gray-500 font-medium mt-1">📱 {v.phone}</p>
+                  </div>
+                  {v.pendingDue > 0 ? (
+                    <span className="text-xs font-bold px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg">
+                      Due: ₹{v.pendingDue.toLocaleString("en-IN")}
+                    </span>
+                  ) : (
+                    <span className="text-xs font-bold px-2.5 py-1 bg-green-100 text-green-700 rounded-lg">
+                      All Clear ✓
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl text-center text-xs">
+                  <div>
+                    <span className="text-gray-400 block font-medium">Purchased</span>
+                    <span className="font-bold text-gray-900 mt-0.5 block text-sm">
+                      ₹{v.totalPurchased.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block font-medium">Paid</span>
+                    <span className="font-bold text-emerald-700 mt-0.5 block text-sm">
+                      ₹{v.totalPaid.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-gray-400 block font-medium">Pending Udhar</span>
+                    <span className={`font-black mt-0.5 block text-sm ${v.pendingDue > 0 ? "text-purple-700" : "text-gray-400"}`}>
+                      ₹{v.pendingDue.toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  {v.pendingDue > 0 && (
+                    <button
+                      onClick={() => {
+                        setSelectedVendorForPay(v);
+                        setPayAmount(String(v.pendingDue));
+                        setIsPayVendorModalOpen(true);
+                      }}
+                      className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95"
+                    >
+                      💳 Settle Payment
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleShareVendorStatement(v)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#25D366] hover:bg-[#1ebd5b] text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95"
+                  >
+                    <MessageCircle size={15} /> Send Ledger on WA
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: DAILY STOCK CLOSING RECONCILIATION AUDIT */}
+      {activeTab === "audit" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex items-start gap-3">
+            <Calculator className="text-emerald-700 mt-0.5 shrink-0" size={20} />
+            <div>
+              <h3 className="font-bold text-emerald-950 text-sm">End of Day Stock Reconciliation (Daily Closing Sheet)</h3>
+              <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
+                Formula: <strong>Opening + Inward Received (-) Sales Consumed (-) Wastage = Expected Closing</strong>. If Physical count is lower than Expected, the system flags it in Red to catch kitchen theft and over-portioning!
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+                <tr>
+                  <th className="py-3.5 px-5">Raw Material</th>
+                  <th className="py-3.5 px-4 text-center">Opening</th>
+                  <th className="py-3.5 px-4 text-center text-emerald-700">+ Inward</th>
+                  <th className="py-3.5 px-4 text-center text-blue-700">- Sales Used</th>
+                  <th className="py-3.5 px-4 text-center text-rose-700">- Wastage</th>
+                  <th className="py-3.5 px-4 text-center font-bold">System Expected</th>
+                  <th className="py-3.5 px-4 text-center font-black">Physical Count</th>
+                  <th className="py-3.5 px-5 text-right font-black">Variance / Difference</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {reconciliations.map(r => {
+                  const hasLeakage = r.variance < 0;
+
+                  return (
+                    <tr key={r.id} className="hover:bg-gray-50/70 transition">
+                      <td className="py-4 px-5 font-bold text-gray-900">
+                        {r.itemName}
+                      </td>
+                      <td className="py-4 px-4 text-center text-gray-600 font-medium">
+                        {r.openingStock} {r.unit}
+                      </td>
+                      <td className="py-4 px-4 text-center font-bold text-emerald-600">
+                        +{r.inwardToday} {r.unit}
+                      </td>
+                      <td className="py-4 px-4 text-center font-bold text-blue-600">
+                        -{r.consumedSales} {r.unit}
+                      </td>
+                      <td className="py-4 px-4 text-center font-bold text-rose-600">
+                        -{r.wastage} {r.unit}
+                      </td>
+                      <td className="py-4 px-4 text-center font-extrabold text-gray-900 bg-gray-50/70">
+                        {r.expectedClosing} {r.unit}
+                      </td>
+                      <td className="py-4 px-4 text-center font-black text-gray-900 bg-gray-100/70">
+                        {r.physicalClosing} {r.unit}
+                      </td>
+                      <td className="py-4 px-5 text-right">
+                        {hasLeakage ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800">
+                            {r.variance} {r.unit} (⚠️ Theft / Leakage)
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                            ✓ 0.0 {r.unit} (Exact Match)
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: RECIPE BOM MAPPING */}
       {activeTab === "recipes" && (
         <div className="space-y-6 animate-in fade-in duration-200">
           <div className="bg-amber-50/60 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
@@ -901,7 +1527,7 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* TAB 3: STOCK LOGS & AUDIT */}
+      {/* TAB 6: STOCK LOGS & AUDIT */}
       {activeTab === "logs" && (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-200">
           <div className="p-4 border-b border-gray-100 flex items-center justify-between">
@@ -943,13 +1569,13 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* MODAL 1: STOCK INWARD */}
+      {/* MODAL 1: SINGLE ITEM STOCK INWARD */}
       {isInwardModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <ArrowDownRight className="text-emerald-600" /> + Stock Inward (Vendor Purchase)
+                <ArrowDownRight className="text-emerald-600" /> + Quick Stock Inward Refill
               </h2>
               <button onClick={() => setIsInwardModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
             </div>
@@ -1029,7 +1655,186 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* MODAL 2: LOG WASTAGE */}
+      {/* MODAL 2: FULL VENDOR INWARD INVOICE */}
+      {isNewInvoiceModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <FileText className="text-blue-600" /> Record Vendor Inward Delivery Bill
+              </h2>
+              <button onClick={() => setIsNewInvoiceModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+            </div>
+
+            <form onSubmit={handleNewInvoiceSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Vendor Bill / Invoice #</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. INV-KD-901"
+                    value={newInvoiceForm.invoiceNo}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, invoiceNo: e.target.value })}
+                    required
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Total Bill Amount (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 4500"
+                    value={newInvoiceForm.totalAmount}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, totalAmount: e.target.value })}
+                    required
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Vendor / Supplier Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Kalyan Dairy"
+                    value={newInvoiceForm.vendorName}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, vendorName: e.target.value })}
+                    required
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Vendor Phone (WhatsApp)</label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9822334455"
+                    value={newInvoiceForm.vendorPhone}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, vendorPhone: e.target.value })}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Delivered Items Summary</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Paneer (10kg), Milk (20L), Butter (5kg)"
+                  value={newInvoiceForm.itemsSummary}
+                  onChange={e => setNewInvoiceForm({ ...newInvoiceForm, itemsSummary: e.target.value })}
+                  required
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Payment Status</label>
+                  <select
+                    value={newInvoiceForm.paymentStatus}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, paymentStatus: e.target.value as any })}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="PAID">PAID (Clear)</option>
+                    <option value="PENDING_CREDIT">CREDIT (Udhar / Pending)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">Payment Method</label>
+                  <select
+                    value={newInvoiceForm.paymentMethod}
+                    onChange={e => setNewInvoiceForm({ ...newInvoiceForm, paymentMethod: e.target.value as any })}
+                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="UPI">UPI / GPay / PhonePe</option>
+                    <option value="CASH">Cash Counter</option>
+                    <option value="BANK_TRANSFER">NEFT / Bank Transfer</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Staff / Delivery Notes</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Received by Chef Manoj, weighed and checked"
+                  value={newInvoiceForm.notes}
+                  onChange={e => setNewInvoiceForm({ ...newInvoiceForm, notes: e.target.value })}
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsNewInvoiceModalOpen(false)}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-md"
+                >
+                  Save Inward Bill
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: SETTLE VENDOR PAYMENT */}
+      {isPayVendorModalOpen && selectedVendorForPay && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <CreditCard className="text-purple-600" /> Settle Vendor Udhar
+              </h2>
+              <button onClick={() => setIsPayVendorModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
+            </div>
+
+            <form onSubmit={handleSettleVendorPayment} className="space-y-4">
+              <div className="bg-purple-50 p-3.5 rounded-xl text-xs space-y-1 text-purple-900">
+                <div className="font-bold text-sm text-purple-950">{selectedVendorForPay.name}</div>
+                <div>Outstanding Balance: <strong className="text-base text-purple-900">₹{selectedVendorForPay.pendingDue.toLocaleString("en-IN")}</strong></div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Paying Amount (₹)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 5000"
+                  value={payAmount}
+                  onChange={e => setPayAmount(e.target.value)}
+                  required
+                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPayVendorModalOpen(false)}
+                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm shadow-md"
+                >
+                  Record Payment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: LOG WASTAGE */}
       {isWastageModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-5 shadow-2xl">
@@ -1117,7 +1922,7 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* MODAL 3: ADD NEW RAW MATERIAL */}
+      {/* MODAL 5: ADD NEW RAW MATERIAL */}
       {isAddItemModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
