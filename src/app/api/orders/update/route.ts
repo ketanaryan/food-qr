@@ -9,13 +9,13 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
-    const { orderIds, status, paymentMethod } = await req.json();
+    const { orderIds, status, paymentMethod, customerPhone } = await req.json();
 
     if (!orderIds || !Array.isArray(orderIds) || !status) {
       return NextResponse.json({ success: false, message: 'Invalid data' }, { status: 400 });
     }
 
-    if (paymentMethod) {
+    if (paymentMethod || customerPhone) {
       for (const id of orderIds) {
         const { data: orderData } = await supabaseAdmin.from('orders').select('items').eq('id', id).single();
         if (orderData) {
@@ -24,7 +24,13 @@ export async function POST(req: Request) {
              items = typeof orderData.items === 'string' ? JSON.parse(orderData.items) : orderData.items;
           } catch(e) {}
           if (!Array.isArray(items)) items = [];
-          items.push({ id: 'PAYMENT_METHOD', method: paymentMethod });
+          
+          if (paymentMethod) {
+            items.push({ id: 'PAYMENT_METHOD', method: paymentMethod });
+          }
+          if (customerPhone) {
+            items.push({ id: 'CUSTOMER_INFO', phone: customerPhone });
+          }
           
           const { error } = await supabaseAdmin.from('orders').update({ status, items }).eq('id', id);
           if (error) throw error;

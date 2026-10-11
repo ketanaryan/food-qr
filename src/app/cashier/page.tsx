@@ -82,7 +82,7 @@ export default function CashierDashboard() {
     return acc;
   }, {})
 
-  const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI') => {
+  const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI', customerPhone?: string) => {
     // Optimistic UI
     setOrders(prev => prev.filter(o => o.table_number !== tableNumber))
     
@@ -91,7 +91,7 @@ export default function CashierDashboard() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds, status: 'completed', paymentMethod })
+        body: JSON.stringify({ orderIds, status: 'completed', paymentMethod, customerPhone })
       });
       const data = await res.json();
       if (!data.success) throw new Error();
@@ -205,7 +205,7 @@ export default function CashierDashboard() {
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     
     // Mark as Paid
-    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod);
+    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod, cleanPhone);
     
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
