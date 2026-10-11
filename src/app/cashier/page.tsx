@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
-import { Receipt, CheckCircle, CreditCard, Clock } from "lucide-react"
+import { Receipt, CheckCircle, CreditCard, Clock, LayoutGrid } from "lucide-react"
 import toast from "react-hot-toast"
 import NavBar from "@/components/common/NavBar"
 import jsPDF from "jspdf"
@@ -9,6 +9,7 @@ import autoTable from "jspdf-autotable"
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState<'bills' | 'map'>('bills')
   const [audioEnabled, setAudioEnabled] = useState(false); // Must be false for mobile security policy
   const audioEnabledRef = React.useRef(false);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
@@ -474,95 +475,155 @@ export default function CashierDashboard() {
           </button>
         </div>
 
-        {/* Live Floor Status & Table Map */}
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <span>🗺️</span> Live Floor Map (All 15 Tables)
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">Real-time table occupancy & billing overview</p>
-            </div>
+        {/* Top View Selector & Quick Glance */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6">
+          <div className="inline-flex p-1 bg-gray-200/90 rounded-2xl max-w-md w-full sm:w-auto shadow-inner">
+            <button
+              onClick={() => setActiveTab('bills')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'bills'
+                  ? 'bg-white text-gray-900 shadow-md ring-1 ring-black/5'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Receipt size={17} className={activeTab === 'bills' ? 'text-blue-600' : 'text-gray-500'} />
+              <span>Active Bills ({Object.keys(tableGroups).length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('map')}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                activeTab === 'map'
+                  ? 'bg-white text-gray-900 shadow-md ring-1 ring-black/5'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <LayoutGrid size={17} className={activeTab === 'map' ? 'text-emerald-600' : 'text-gray-500'} />
+              <span>Floor Map (15)</span>
+            </button>
+          </div>
 
-            {/* Status Legend Badges */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+          {/* Quick Table Status Summary */}
+          <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold shadow-sm overflow-x-auto justify-between sm:justify-start">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 text-green-700">
                 <span className="w-2 h-2 rounded-full bg-green-500"></span> {freeCount} Free
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+              <span className="text-gray-300">|</span>
+              <span className="inline-flex items-center gap-1.5 text-blue-700">
                 <span className="w-2 h-2 rounded-full bg-blue-500"></span> {occupiedCount} Dining
               </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span> {billingCount} Bill Ready
+              <span className="text-gray-300">|</span>
+              <span className="inline-flex items-center gap-1.5 text-amber-700">
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span> {billingCount} Ready
               </span>
-              {deliveryGroups.length > 0 && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
-                  <span className="w-2 h-2 rounded-full bg-purple-500"></span> {deliveryGroups.length} Delivery
+            </div>
+            {activeTab === 'bills' && (
+              <button
+                onClick={() => setActiveTab('map')}
+                className="text-blue-600 hover:text-blue-800 text-[11px] font-bold pl-2 flex items-center gap-0.5 underline sm:no-underline"
+              >
+                View Map ➜
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tab 1: Live Floor Status & Table Map */}
+        {activeTab === 'map' && (
+          <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-8 animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <span>🗺️</span> Live Floor Map (All 15 Tables)
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">Real-time table occupancy & billing overview. Tap any table to jump to its bill.</p>
+              </div>
+
+              {/* Status Legend Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                  <span className="w-2 h-2 rounded-full bg-green-500"></span> {freeCount} Free
                 </span>
-              )}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-700">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span> {occupiedCount} Dining
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span> {billingCount} Bill Ready
+                </span>
+                {deliveryGroups.length > 0 && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                    <span className="w-2 h-2 rounded-full bg-purple-500"></span> {deliveryGroups.length} Delivery
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* 15 Table Grid */}
+            <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-8 gap-2.5 sm:gap-3">
+              {tableStatusList.map(t => {
+                const isOccupied = t.status === 'OCCUPIED';
+                const isBilling = t.status === 'BILLING';
+                const isFree = t.status === 'FREE';
+
+                return (
+                  <button
+                    key={t.tableNumber}
+                    onClick={() => {
+                      if (t.group) {
+                        setActiveTab('bills');
+                        setTimeout(() => {
+                          const el = document.getElementById(`table-card-${t.group.table}`);
+                          el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 120);
+                        toast(`Viewing Table ${t.tableNumber}`, { icon: '📍' });
+                      } else {
+                        toast(`Table ${t.tableNumber} is Free & Ready for Guests`, { icon: '🟢' });
+                      }
+                    }}
+                    className={`p-2.5 sm:p-3 rounded-xl border text-center transition active:scale-95 flex flex-col items-center justify-between min-h-[74px] ${
+                      isBilling
+                        ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400 shadow-sm animate-pulse'
+                        : isOccupied
+                        ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
+                        : 'bg-green-50/50 border-green-200 hover:bg-green-100/60'
+                    }`}
+                  >
+                    <span className="font-extrabold text-sm text-gray-900">
+                      Table {t.tableNumber}
+                    </span>
+                    
+                    {isFree && (
+                      <span className="text-[10px] font-bold text-green-700 bg-green-100/80 px-1.5 py-0.5 rounded">
+                        🟢 Free
+                      </span>
+                    )}
+                    {isOccupied && (
+                      <div className="flex flex-col items-center leading-tight">
+                        <span className="text-[11px] font-black text-blue-700">₹{t.total}</span>
+                        <span className="text-[9px] text-blue-600 font-semibold">Dining</span>
+                      </div>
+                    )}
+                    {isBilling && (
+                      <div className="flex flex-col items-center leading-tight">
+                        <span className="text-[11px] font-black text-amber-800">₹{t.total}</span>
+                        <span className="text-[9px] font-bold text-amber-700">Bill Ready</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
+        )}
 
-          {/* 15 Table Grid */}
-          <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-5 lg:grid-cols-8 gap-2.5 sm:gap-3">
-            {tableStatusList.map(t => {
-              const isOccupied = t.status === 'OCCUPIED';
-              const isBilling = t.status === 'BILLING';
-              const isFree = t.status === 'FREE';
-
-              return (
-                <button
-                  key={t.tableNumber}
-                  onClick={() => {
-                    if (t.group) {
-                      const el = document.getElementById(`table-card-${t.group.table}`);
-                      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      toast(`Viewing Table ${t.tableNumber}`, { icon: '📍' });
-                    } else {
-                      toast(`Table ${t.tableNumber} is Free & Ready for Guests`, { icon: '🟢' });
-                    }
-                  }}
-                  className={`p-2.5 sm:p-3 rounded-xl border text-center transition active:scale-95 flex flex-col items-center justify-between min-h-[74px] ${
-                    isBilling
-                      ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-400 shadow-sm animate-pulse'
-                      : isOccupied
-                      ? 'bg-blue-50 border-blue-200 hover:border-blue-400'
-                      : 'bg-green-50/50 border-green-200 hover:bg-green-100/60'
-                  }`}
-                >
-                  <span className="font-extrabold text-sm text-gray-900">
-                    Table {t.tableNumber}
-                  </span>
-                  
-                  {isFree && (
-                    <span className="text-[10px] font-bold text-green-700 bg-green-100/80 px-1.5 py-0.5 rounded">
-                      🟢 Free
-                    </span>
-                  )}
-                  {isOccupied && (
-                    <div className="flex flex-col items-center leading-tight">
-                      <span className="text-[11px] font-black text-blue-700">₹{t.total}</span>
-                      <span className="text-[9px] text-blue-600 font-semibold">Dining</span>
-                    </div>
-                  )}
-                  {isBilling && (
-                    <div className="flex flex-col items-center leading-tight">
-                      <span className="text-[11px] font-black text-amber-800">₹{t.total}</span>
-                      <span className="text-[9px] font-bold text-amber-700">Bill Ready</span>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Active Billing Section Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            <span>🧾</span> Active Bills To Settle ({Object.keys(tableGroups).length})
-          </h2>
-        </div>
+        {/* Tab 2: Active Billing Section */}
+        {activeTab === 'bills' && (
+          <div className="animate-in fade-in duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <span>🧾</span> Active Bills To Settle ({Object.keys(tableGroups).length})
+              </h2>
+            </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {Object.values(tableGroups).map((group: any) => (
@@ -647,11 +708,23 @@ export default function CashierDashboard() {
             </div>
           ))}
           {Object.keys(tableGroups).length === 0 && (
-            <div className="col-span-full text-center py-20 text-gray-500 font-medium">
-              No active tables to bill.
+            <div className="col-span-full bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center">
+              <div className="w-14 h-14 bg-green-100 text-green-700 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-bold">
+                ✓
+              </div>
+              <h3 className="text-base font-bold text-gray-900 mb-1">All Bills Settled!</h3>
+              <p className="text-xs text-gray-500 mb-4">No active dining or pending billing requests right now.</p>
+              <button
+                onClick={() => setActiveTab('map')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition shadow-sm"
+              >
+                <LayoutGrid size={15} /> Open Floor Map ({freeCount} Free Tables)
+              </button>
             </div>
           )}
         </div>
+          </div>
+        )}
       </div>
 
       {waModal.isOpen && (
