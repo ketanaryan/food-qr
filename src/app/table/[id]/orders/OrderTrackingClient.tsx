@@ -8,6 +8,7 @@ import { useSearchParams } from "next/navigation"
 
 export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const token = searchParams.get('token')
 
@@ -15,23 +16,28 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('table_number', tableId)
-        .in('status', ['received', 'preparing', 'ready', 'served', 'rejected', 'billing'])
-        .order('created_at', { ascending: false })
-        .limit(10)
+      try {
+        const { data } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('table_number', tableId)
+          .in('status', ['received', 'preparing', 'ready', 'served', 'rejected', 'billing'])
+          .order('created_at', { ascending: false })
+          .limit(10)
 
-      if (data) {
-        setOrders(data)
+        if (data) {
+          setOrders(data)
+        }
+      } catch {
+      } finally {
+        setLoading(false)
       }
     }
 
     fetchOrders()
 
     const channel = supabase
-      .channel('table-orders')
+      .channel(`table-orders-${tableId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `table_number=eq.${tableId}` }, (payload) => {
         if (payload.eventType === 'UPDATE' && payload.new.status === 'completed') {
            setShowReview(true);
@@ -60,29 +66,29 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
 
   if (showReview) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
-          <CheckCircle size={48} />
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-5 shadow-sm">
+          <CheckCircle size={40} />
         </div>
-        <h1 className="text-3xl font-black text-gray-900 mb-2">Payment Successful!</h1>
-        <p className="text-gray-500 mb-10 text-lg">Thank you for dining with Hotel White Bliss.</p>
+        <h1 className="text-2xl font-bold font-playfair text-[#1E1B16] mb-1">Payment Successful!</h1>
+        <p className="text-sm text-[#6F624E] mb-8 font-light">Thank you for dining with Hotel White Bliss.</p>
 
-        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl w-full max-w-sm mb-6 shadow-sm">
-          <h2 className="font-bold text-blue-900 mb-2 text-xl">How was your food?</h2>
-          <p className="text-blue-700 text-sm mb-6">Support us by leaving a 5-star review on Google!</p>
-          <div className="flex justify-center gap-2 mb-6">
-             {[1,2,3,4,5].map(i => <span key={i} className="text-4xl text-yellow-400">★</span>)}
+        <div className="bg-white border border-[#e8dfd3] p-6 rounded-2xl w-full max-w-sm mb-6 shadow-sm">
+          <h2 className="font-playfair font-bold text-[#1E1B16] mb-1.5 text-lg">How was your dining experience?</h2>
+          <p className="text-[#6F624E] text-xs mb-5 font-light">Support us by leaving a 5-star review on Google!</p>
+          <div className="flex justify-center gap-1.5 mb-5">
+             {[1,2,3,4,5].map(i => <span key={i} className="text-2xl text-amber-400">★</span>)}
           </div>
           <a 
             href="https://www.google.com/search?q=Hotel+White+Bliss+Nashik" 
             target="_blank"
-            className="block w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg hover:bg-blue-700 transition"
+            className="block w-full bg-[#1E1B16] text-[#F8F5F0] font-bold py-3.5 rounded-xl shadow-md hover:bg-black transition text-xs uppercase tracking-widest"
           >
             Review on Google
           </a>
         </div>
         
-        <Link href={`/table/${tableId}?token=${token}`} className="text-gray-400 font-semibold underline underline-offset-4">
+        <Link href={`/table/${tableId}?token=${token}`} className="text-[#A18D6D] text-xs font-bold tracking-wider uppercase underline underline-offset-4">
           Return to Menu
         </Link>
       </div>
@@ -90,14 +96,44 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 px-6 pt-20 pb-32">
+    <div className="min-h-screen bg-[#FDFBF7] px-4 sm:px-6 pt-16 pb-36">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-mono">Your Orders</h1>
-        <Link href={`/table/${tableId}?token=${token}`} className="text-sm font-semibold text-blue-600">Back to Menu</Link>
+        <div>
+          <h1 className="text-2xl font-bold font-playfair text-[#1E1B16]">Your Orders</h1>
+          <p className="text-xs text-[#6F624E]">Table #{tableId} • Live Kitchen Status</p>
+        </div>
+        <Link 
+          href={`/table/${tableId}?token=${token}`} 
+          className="text-xs font-bold tracking-wider uppercase text-[#A18D6D] hover:text-[#1E1B16] py-1.5 px-3.5 rounded-full border border-[#A18D6D]/40 bg-white shadow-2xs transition"
+        >
+          + Add Items
+        </Link>
       </div>
 
-      {orders.filter(o => o.status !== 'completed').length === 0 ? (
-        <div className="text-center text-gray-500 mt-20">No active orders found.</div>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center pt-24 text-center">
+          <div className="w-10 h-10 rounded-full border-3 border-zinc-200 border-t-[#A18D6D] animate-spin mb-4" />
+          <p className="text-sm font-semibold text-zinc-700">Connecting to Live Kitchen...</p>
+          <p className="text-xs text-zinc-400 mt-1">Fetching live orders for Table #{tableId}</p>
+        </div>
+      ) : orders.filter(o => o.status !== 'completed').length === 0 ? (
+        <div className="flex flex-col items-center justify-center pt-20 text-center px-4">
+          <div className="w-16 h-16 rounded-full bg-[#F5EFE6] border border-[#e8dfd3] flex items-center justify-center text-[#A18D6D] mb-4 shadow-2xs">
+            <Utensils size={24} />
+          </div>
+          <h3 className="font-playfair font-bold text-xl text-[#1E1B16] mb-1">
+            No Active Orders
+          </h3>
+          <p className="text-xs text-[#6F624E] max-w-xs mb-6 leading-relaxed font-light">
+            Your table has no active orders right now. Ready to taste something delicious?
+          </p>
+          <Link
+            href={`/table/${tableId}?token=${token}`}
+            className="rounded-full bg-[#1E1B16] text-[#F8F5F0] px-7 py-3 text-xs font-bold tracking-widest uppercase hover:bg-black transition shadow-md active:scale-95"
+          >
+            Browse Menu
+          </Link>
+        </div>
       ) : (
         <>
           <div className="space-y-4 mb-8">
@@ -175,7 +211,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                     <h3 className="font-bold text-gray-900 mb-4 text-lg">Pay Securely via UPI</h3>
                     <div className="flex justify-center mb-6">
                       <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${id}%20Bill`)}`} 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableId}%20Bill`)}`} 
                         alt="UPI QR Code" 
                         className="rounded-xl border-4 border-gray-100 shadow-md p-2 bg-white"
                       />
@@ -184,7 +220,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
                       Amount: <span className="text-green-600 text-base">₹{grandTotal}</span> (Auto-Filled)
                     </div>
                     <a 
-                      href={`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${id}%20Bill`}
+                      href={`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableId}%20Bill`}
                       className="block w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-md hover:bg-blue-700 transition active:scale-95 text-lg mb-6"
                     >
                       Pay via GPay / PhonePe / Paytm

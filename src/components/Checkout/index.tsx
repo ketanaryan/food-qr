@@ -14,11 +14,12 @@ function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, i
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPlaced, setIsPlaced] = useState(false);
   const [notes, setNotes] = useState("");
   const [idempotencyKey] = useState(uuidv4()); 
 
   const handlePay = async () => {
-    if (isSubmitting) return;
+    if (isSubmitting || isPlaced) return;
     setIsSubmitting(true);
 
     const items = checkout.map(c => ({
@@ -47,26 +48,76 @@ function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, i
         return;
       }
 
-      toast.success("Order placed successfully!");
+      // Show beautiful order confirmation screen first
+      setIsPlaced(true);
+      toast.success("Order placed successfully!", { icon: "🎉" });
       clearCheckout();
       
-      if (isPosMode) {
-        router.push('/pos');
-      } else {
-        router.push(`/table/${merchantId}/orders?token=${token || ''}`);
-      }
-    } catch (e) {
+      setTimeout(() => {
+        if (isPosMode) {
+          router.push('/pos');
+        } else {
+          router.push(`/table/${merchantId}/orders?token=${token || ''}`);
+        }
+      }, 1400);
+    } catch {
       toast.error("Network error");
       setIsSubmitting(false);
     }
   }
 
+  // 1. Order Successfully Placed Celebration State
+  if (isPlaced) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-5 shadow-sm animate-bounce">
+          <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold font-playfair text-[#1E1B16] mb-1">
+          Order Sent to Kitchen!
+        </h1>
+        <p className="text-sm text-[#6F624E] mb-6 font-medium">
+          Table #{merchantId} • Preparing your fresh delicacies
+        </p>
+        <div className="inline-flex items-center gap-2 text-xs text-zinc-500 bg-white px-4 py-2 rounded-full border border-zinc-200 shadow-2xs">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span>Opening Live Order Tracking...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Empty Cart State
   if (checkout.length === 0) {
     return (
-      <div className="px-6 pt-20 text-center text-gray-500">
-        Your cart is empty
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-[#F5EFE6] border border-[#e8dfd3] flex items-center justify-center text-[#A18D6D] mb-5 shadow-2xs">
+          <svg className="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+          </svg>
+        </div>
+        <h1 className="text-2xl font-bold font-playfair text-[#1E1B16] mb-2">
+          Your Cart is Empty
+        </h1>
+        <p className="text-sm text-[#6F624E] max-w-xs mb-8 leading-relaxed font-light">
+          Looks like you haven&apos;t added any delicacies yet. Explore our freshly prepared menu!
+        </p>
+        <button
+          onClick={() => {
+            if (isPosMode) {
+              router.push('/pos')
+            } else {
+              router.push(`/table/${merchantId}?token=${token || ''}`)
+            }
+          }}
+          className="rounded-full bg-[#1E1B16] text-[#F8F5F0] px-8 py-3.5 text-xs font-bold tracking-widest uppercase hover:bg-black transition-colors shadow-md active:scale-95"
+        >
+          Browse Menu
+        </button>
       </div>
-    )
+    );
   }
 
   const originalTotal = checkout.reduce(
@@ -84,12 +135,15 @@ function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, i
   const savings = originalTotal - discountedTotal
 
   return (
-    <div className="relative min-h-screen bg-gray-50 px-6 pt-20">
+    <div className="relative min-h-screen bg-[#FDFBF7] px-4 sm:px-6 pt-16 pb-36">
 
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="font-mono text-2xl text-zinc-950">
-          Checkout
-        </h1>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h1 className="font-playfair font-bold text-2xl text-[#1E1B16]">
+            Review Order
+          </h1>
+          <p className="text-xs text-[#6F624E]">Table #{merchantId}</p>
+        </div>
         <button 
           onClick={() => {
             if (isPosMode) {
@@ -98,9 +152,9 @@ function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, i
               router.push(`/table/${merchantId}?token=${token || ''}`)
             }
           }}
-          className="text-sm font-semibold text-blue-600"
+          className="text-xs font-bold tracking-wider uppercase text-[#A18D6D] hover:text-[#1E1B16] py-1.5 px-3 rounded-full border border-[#A18D6D]/40 transition"
         >
-          Back to Menu
+          + Add More
         </button>
       </div>
 
