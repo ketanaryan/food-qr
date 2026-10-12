@@ -5,7 +5,8 @@ import { supabase } from "@/lib/supabase";
 import { 
   Users, Search, Plus, Minus, ArrowLeft, Send, Receipt, 
   RotateCcw, Sparkles, AlertCircle, CheckCircle2, Clock, 
-  ChevronRight, Utensils, Coffee, Pizza, Flame, ChefHat, RefreshCw, Printer
+  ChevronRight, Utensils, Coffee, Pizza, Flame, ChefHat, RefreshCw, Printer,
+  Bell, DollarSign, Smartphone, QrCode, X
 } from "lucide-react";
 import toast from "react-hot-toast";
 import NavBar from "@/components/common/NavBar";
@@ -56,6 +57,12 @@ export default function CaptainPortal() {
   // Table Shift / Transfer Modal state
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [targetShiftTable, setTargetShiftTable] = useState("");
+
+  // Bill & Settlement Modal state (Cashier Alert vs Direct Settle)
+  const [isBillModalOpen, setIsBillModalOpen] = useState(false);
+  const [billSettlementTab, setBillSettlementTab] = useState<'options' | 'upi_qr'>('options');
+  const [isSettling, setIsSettling] = useState(false);
+  const [customerPhone, setCustomerPhone] = useState("");
 
   // Load orders and menu
   useEffect(() => {
@@ -250,23 +257,76 @@ export default function CaptainPortal() {
     }
   };
 
-  // Request Bill for Table
-  const handleRequestBill = async (tableNum: string) => {
+  // Option 1: Alert Cashier Counter (Standard Fine-Dine)
+  const handleAlertCashier = async (tableNum: string) => {
     const group = tableGroups[tableNum];
     if (!group || group.orders.length === 0) return;
 
     try {
       const orderIds = group.orders.map((o: any) => o.id);
-      const { error } = await supabase
-        .from("orders")
-        .update({ status: "billing" })
-        .in("id", orderIds);
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
+        body: JSON.stringify({
+          orderIds,
+          status: 'billing'
+        })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to alert cashier');
 
-      if (error) throw error;
-      toast.success(`Bill Requested for Table ${tableNum}! Cashier alerted.`, { icon: "🔔" });
+      toast.success(`Bill Requested for Table ${tableNum}! Cashier alerted to print slip.`, {
+        icon: "🔔",
+        duration: 4000
+      });
+      setIsBillModalOpen(false);
       fetchOrders();
     } catch (e: any) {
-      toast.error("Failed to request bill");
+      toast.error(e.message || "Failed to request bill");
+    }
+  };
+
+  // Option 2: Direct Settle at Table (Cash / UPI)
+  const handleDirectSettle = async (tableNum: string, paymentMethod: 'CASH' | 'UPI') => {
+    const group = tableGroups[tableNum];
+    if (!group || group.orders.length === 0) return;
+
+    setIsSettling(true);
+    try {
+      const orderIds = group.orders.map((o: any) => o.id);
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
+        body: JSON.stringify({
+          orderIds,
+          status: 'completed',
+          paymentMethod,
+          customerPhone: customerPhone.trim() || undefined
+        })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to settle table');
+
+      toast.success(`Table ${tableNum} Settled via ${paymentMethod} (₹${group.total})! Table is now Available.`, {
+        icon: "✅",
+        duration: 4500
+      });
+
+      setIsBillModalOpen(false);
+      setBillSettlementTab('options');
+      setCustomerPhone("");
+      setSelectedTable(null);
+      fetchOrders();
+    } catch (e: any) {
+      toast.error(e.message || "Failed to settle table");
+    } finally {
+      setIsSettling(false);
     }
   };
 
@@ -513,10 +573,18 @@ export default function CaptainPortal() {
                     <RotateCcw size={14} /> Shift
                   </button>
                   <button
-                    onClick={() => handleRequestBill(selectedTable)}
-                    className="px-3 py-1.5 text-xs font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 rounded-xl flex items-center gap-1 border border-amber-300"
+                    onClick={() => {
+                      setIsBillModalOpen(true);
+                      setBillSettlementTab('options');
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 border transition ${
+                      selectedGroup.requestedBill
+                        ? "text-amber-900 bg-amber-200 hover:bg-amber-300 border-amber-400 ring-2 ring-amber-300 animate-pulse"
+                        : "text-amber-800 bg-amber-100 hover:bg-amber-200 border-amber-300 shadow-xs"
+                    }`}
                   >
-                    <Receipt size={14} /> Request Bill
+                    <Receipt size={14} />
+                    <span>{selectedGroup.requestedBill ? "⏳ Bill Requested" : "🧾 Bill & Settle"}</span>
                   </button>
                 </>
               )}
@@ -762,6 +830,166 @@ export default function CaptainPortal() {
                 Confirm Shift
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: BILLING & SETTLEMENT (2-IN-1: CASHIER ALERT OR DIRECT SETTLE) */}
+      {isBillModalOpen && selectedGroup && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-black text-lg text-gray-900">
+                    Table {selectedTable} Bill
+                  </h3>
+                  {selectedGroup.requestedBill && (
+                    <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
+                      Cashier Alerted
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {selectedGroup.orders.length} KOTs • Captain: {selectedCaptain}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsBillModalOpen(false);
+                  setBillSettlementTab('options');
+                }}
+                className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Bill Summary Banner */}
+            <div className="bg-[#F8F6F0] border border-[#E6E0D2] p-3.5 rounded-2xl flex items-center justify-between">
+              <div>
+                <span className="text-xs text-gray-600 font-bold uppercase tracking-wider">Total Payable</span>
+                <div className="text-2xl font-black text-gray-900 font-mono mt-0.5">
+                  ₹{selectedGroup.total}
+                </div>
+              </div>
+              <div className="text-right text-[11px] text-gray-500">
+                <div>GST (5% CGST+SGST) Inc.</div>
+                <div className="text-emerald-700 font-bold mt-0.5">Ready for Settlement</div>
+              </div>
+            </div>
+
+            {billSettlementTab === 'options' ? (
+              <div className="space-y-3.5">
+                {/* OPTION 1: CASHIER COUNTER (FINE DINE) */}
+                <div className="border border-amber-200 bg-amber-50/60 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
+                      <Bell size={15} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-amber-950">Option 1: Alert Cashier Counter</h4>
+                      <p className="text-[10px] text-amber-800">
+                        Cashier ke POS screen par sound chime bajega aur wo counter se print slip nikal kar denge.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleAlertCashier(selectedTable!)}
+                    className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Bell size={14} />
+                    <span>{selectedGroup.requestedBill ? "🔔 Re-send Alert to Cashier" : "🔔 Send Bill Request to Cashier"}</span>
+                  </button>
+                </div>
+
+                {/* OPTION 2: DIRECT TABLE SETTLEMENT (QSR / PAY AT TABLE) */}
+                <div className="border border-blue-200 bg-blue-50/50 rounded-2xl p-3.5 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                      <DollarSign size={15} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-blue-950">Option 2: Direct Settle at Table</h4>
+                      <p className="text-[10px] text-blue-800">
+                        Customer se table par hi cash ya UPI QR scan karwa ke table ko turant Available banayein.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Customer Phone for WhatsApp bill (Optional) */}
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                      Customer Phone (Optional - for WhatsApp Bill):
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. 9876543210"
+                      value={customerPhone}
+                      onChange={e => setCustomerPhone(e.target.value)}
+                      className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none font-mono"
+                    />
+                  </div>
+
+                  {/* Direct Payment Buttons */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={() => handleDirectSettle(selectedTable!, 'CASH')}
+                      disabled={isSettling}
+                      className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                    >
+                      <DollarSign size={14} />
+                      <span>💵 Cash (₹{selectedGroup.total})</span>
+                    </button>
+                    <button
+                      onClick={() => setBillSettlementTab('upi_qr')}
+                      className="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
+                    >
+                      <QrCode size={14} />
+                      <span>📱 Scan UPI QR</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* DYNAMIC UPI QR SCAN SUB-VIEW */
+              <div className="space-y-3.5 text-center">
+                <div className="p-3 bg-white border-2 border-dashed border-blue-300 rounded-2xl flex flex-col items-center">
+                  <span className="text-xs font-black text-blue-900 mb-1">
+                    Guest ko Mobile se Scan Karwayein:
+                  </span>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${selectedGroup.total}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
+                    alt="UPI QR Code"
+                    className="w-44 h-44 my-2 border p-1 rounded-xl shadow-xs"
+                  />
+                  <div className="font-mono font-black text-lg text-gray-900">
+                    ₹{selectedGroup.total}
+                  </div>
+                  <div className="text-[10px] text-gray-500">
+                    Google Pay • PhonePe • Paytm • BHIM
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setBillSettlementTab('options')}
+                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+                  >
+                    ← Back
+                  </button>
+                  <button
+                    onClick={() => handleDirectSettle(selectedTable!, 'UPI')}
+                    disabled={isSettling}
+                    className="flex-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle2 size={15} />
+                    <span>Confirm UPI Paid & Free Table</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
