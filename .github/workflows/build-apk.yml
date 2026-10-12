@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'capacitor.config.json'
-      - '.github/workflows/build-apk.yml'
   workflow_dispatch:
     inputs:
       notes:
@@ -47,11 +44,8 @@ jobs:
         run: |
           npm ci || npm install
 
-      - name: Initialize Capacitor Android Project
+      - name: Sync Capacitor Android Project
         run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
           npx cap sync android
 
       - name: Build Android APK with Gradle
