@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { TrendingUp, Users, DollarSign, Activity, Clock } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { consolidateOrders, ConsolidatedBill } from "@/lib/orderConsolidation";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -13,7 +14,7 @@ export default function Dashboard() {
     avgOrderValue: 0
   });
   const [chartData, setChartData] = useState<any[]>([]);
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [recentOrders, setRecentOrders] = useState<ConsolidatedBill[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -30,40 +31,31 @@ export default function Dashboard() {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const { data: orders } = await supabase
+    const { data: rawOrders } = await supabase
       .from('orders')
       .select('*')
       .in('status', ['completed', 'billing'])
       .gte('created_at', sevenDaysAgo.toISOString())
       .order('created_at', { ascending: false });
 
-    if (orders) {
-      // 1. Calculate Today's Stats
-      const todaysOrders = orders.filter(o => new Date(o.created_at) >= todayStart);
+    if (rawOrders) {
+      // Consolidate individual KOTs of same table session into single Bills
+      const consolidatedBills = consolidateOrders(rawOrders);
+
+      // 1. Calculate Today's Stats based on payment/order time
+      const todaysBills = consolidatedBills.filter(b => {
+        const timeToCompare = new Date(b.settled_at || b.created_at);
+        return timeToCompare >= todayStart;
+      });
       
       let sales = 0;
       let itemsCount: Record<string, number> = {};
 
-      todaysOrders.forEach(o => {
-        const subtotal = Number(o.total_amount || 0);
-        const gst = Math.round(subtotal * 0.05);
-        const serviceCharge = Math.round(subtotal * 0.05);
-        const grandTotal = subtotal + gst + serviceCharge;
-        
-        sales += grandTotal;
-        
-        if (o.items) {
-          try {
-            const itemsArray = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-            if (Array.isArray(itemsArray)) {
-              itemsArray.forEach((item: any) => {
-                if (item.name && item.id !== 'NOTE') {
-                  itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
-                }
-              });
-            }
-          } catch(e) {}
-        }
+      todaysBills.forEach(b => {
+        sales += b.grand_total;
+        b.items.forEach(item => {
+          itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
+        });
       });
 
       let top = "-";
@@ -77,15 +69,14 @@ export default function Dashboard() {
 
       setStats({
         totalSales: sales,
-        totalOrders: todaysOrders.length,
+        totalOrders: todaysBills.length,
         topItem: top,
-        avgOrderValue: todaysOrders.length > 0 ? Math.round(sales / todaysOrders.length) : 0
+        avgOrderValue: todaysBills.length > 0 ? Math.round(sales / todaysBills.length) : 0
       });
 
-      // 2. Generate Real 7-Day Chart Data
+      // 2. Generate Real 7-Day Chart Data using settled_at / created_at
       const daysMap: Record<string, number> = {};
       
-      // Initialize last 7 days with 0
       for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
@@ -93,15 +84,10 @@ export default function Dashboard() {
         daysMap[dateStr] = 0;
       }
 
-      orders.forEach(o => {
-        const subtotal = Number(o.total_amount || 0);
-        const gst = Math.round(subtotal * 0.05);
-        const serviceCharge = Math.round(subtotal * 0.05);
-        const grandTotal = subtotal + gst + serviceCharge;
-
-        const dateStr = new Date(o.created_at).toLocaleDateString('en-US', { weekday: 'short' });
+      consolidatedBills.forEach(b => {
+        const dateStr = new Date(b.settled_at || b.created_at).toLocaleDateString('en-US', { weekday: 'short' });
         if (daysMap[dateStr] !== undefined) {
-          daysMap[dateStr] += grandTotal;
+          daysMap[dateStr] += b.grand_total;
         }
       });
 
@@ -112,15 +98,8 @@ export default function Dashboard() {
 
       setChartData(finalChartData);
       
-      // 3. Recent Orders
-      // Add grand total to each order for rendering
-      const recent = orders.slice(0, 5).map(o => {
-        const subtotal = Number(o.total_amount || 0);
-        const gst = Math.round(subtotal * 0.05);
-        const serviceCharge = Math.round(subtotal * 0.05);
-        return { ...o, grand_total: subtotal + gst + serviceCharge };
-      });
-      setRecentOrders(recent);
+      // 3. Recent Orders: Top 5 Consolidated Bills
+      setRecentOrders(consolidatedBills.slice(0, 5));
     }
     setLoading(false);
   };
@@ -178,20 +157,41 @@ export default function Dashboard() {
                 <Clock size={20} className="text-gray-400" />
               </div>
               <div className="space-y-4">
-                {recentOrders.map((order, idx) => {
-                   const timeStr = new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                   const formattedTable = order.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? order.table_number : `Table ${order.table_number}`;
+                {recentOrders.map((bill, idx) => {
+                   const paidTimeStr = new Date(bill.settled_at || bill.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                   const formattedTable = bill.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? bill.table_number : `Table ${bill.table_number}`;
                    
                    return (
-                     <div key={idx} className="flex justify-between items-center p-4 rounded-xl bg-gray-50 border border-gray-100">
+                     <div key={idx} className="flex justify-between items-center p-3.5 rounded-xl bg-gray-50 border border-gray-100 hover:bg-gray-100/70 transition">
                        <div>
-                         <p className="font-bold text-gray-900">{formattedTable}</p>
-                         <p className="text-xs text-gray-500">{timeStr}</p>
+                         <div className="flex items-center gap-1.5 flex-wrap">
+                           <p className="font-bold text-gray-900 text-sm">{formattedTable}</p>
+                           {bill.kot_count > 1 && (
+                             <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded-md">
+                               {bill.kot_count} KOTs
+                             </span>
+                           )}
+                           {bill.payment_method && bill.payment_method !== 'UNKNOWN' && (
+                             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                               bill.payment_method === 'UPI' ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'
+                             }`}>
+                               {bill.payment_method}
+                             </span>
+                           )}
+                         </div>
+                         <p className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                           <span className="text-emerald-600 font-semibold">✓ Paid {paidTimeStr}</span>
+                           {bill.created_at !== bill.settled_at && (
+                             <span className="text-[10px] text-gray-400">
+                               (Ordered {new Date(bill.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })})
+                             </span>
+                           )}
+                         </p>
                        </div>
-                       <div className="text-right">
-                         <p className="font-bold text-green-600">₹{order.grand_total}</p>
-                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 bg-gray-200 text-gray-600 rounded-md">
-                           {order.status}
+                       <div className="text-right shrink-0">
+                         <p className="font-bold text-green-600 text-base">₹{bill.grand_total}</p>
+                         <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-gray-200 text-gray-600 rounded-md">
+                           {bill.status}
                          </span>
                        </div>
                      </div>

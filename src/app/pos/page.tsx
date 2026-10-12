@@ -2111,8 +2111,20 @@ export default function PetpoojaPOSPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {settledOrders.map((ord: any) => {
-                      const payMode = ord.items?.includes("UPI") ? "UPI" : "CASH";
-                      const timeStr = new Date(ord.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                      let payMode = "CASH";
+                      let settledTime = ord.created_at;
+                      if (ord.items) {
+                        try {
+                          const itArr = typeof ord.items === 'string' ? JSON.parse(ord.items) : ord.items;
+                          const sInfo = Array.isArray(itArr) ? itArr.find((i: any) => i && i.id === 'SETTLEMENT_INFO') : null;
+                          const pObj = Array.isArray(itArr) ? itArr.find((i: any) => i && i.id === 'PAYMENT_METHOD') : null;
+                          if (sInfo?.settled_at) settledTime = sInfo.settled_at;
+                          if (sInfo?.payment_method) payMode = sInfo.payment_method;
+                          else if (pObj?.method) payMode = pObj.method;
+                          else if (JSON.stringify(ord.items).includes("UPI")) payMode = "UPI";
+                        } catch {}
+                      }
+                      const timeStr = new Date(settledTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
                       return (
                         <tr key={ord.id} className="hover:bg-gray-50">

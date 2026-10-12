@@ -82,8 +82,11 @@ export async function POST(req: Request) {
     const validMethods = ['UPI', 'CASH', 'SWIGGY', 'ZOMATO', 'SPLIT'];
     const cleanPaymentMethod = validMethods.includes(paymentMethod) ? paymentMethod : null;
     const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, '').slice(-15) : null;
+    const isCompleting = status === 'completed';
+    const settledAt = new Date().toISOString();
+    const billSessionId = `BILL-${Date.now().toString().slice(-6)}`;
 
-    if (cleanPaymentMethod || cleanPhone) {
+    if (cleanPaymentMethod || cleanPhone || isCompleting) {
       for (const id of cleanOrderIds) {
         const { data: orderData } = await supabaseAdmin
           .from('orders')
@@ -95,8 +98,24 @@ export async function POST(req: Request) {
           let items: any[] = [];
           try {
             items = typeof orderData.items === 'string' ? JSON.parse(orderData.items) : orderData.items;
-          } catch (e) {}
+          } catch {
+            items = [];
+          }
           if (!Array.isArray(items)) items = [];
+
+          // Clean previous metadata entries
+          items = items.filter(
+            (i: any) => i && i.id !== 'SETTLEMENT_INFO' && i.id !== 'PAYMENT_METHOD' && i.id !== 'CUSTOMER_INFO'
+          );
+
+          if (isCompleting || cleanPaymentMethod) {
+            items.push({
+              id: 'SETTLEMENT_INFO',
+              settled_at: settledAt,
+              bill_session_id: billSessionId,
+              payment_method: cleanPaymentMethod || 'CASH'
+            });
+          }
 
           if (cleanPaymentMethod) {
             items.push({ id: 'PAYMENT_METHOD', method: cleanPaymentMethod });

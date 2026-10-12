@@ -4,9 +4,10 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Download, Calendar, Search, Filter } from "lucide-react";
 import toast from "react-hot-toast";
+import { consolidateOrders, ConsolidatedBill } from "@/lib/orderConsolidation";
 
 export default function SalesReport() {
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<ConsolidatedBill[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Date filters
@@ -46,7 +47,7 @@ export default function SalesReport() {
     const { data, error } = await supabase
       .from('orders')
       .select('*')
-      .in('status', ['completed', 'billing']) // Assume billed/completed are sales
+      .in('status', ['completed', 'billing'])
       .gte('created_at', startObj.toISOString())
       .lte('created_at', endObj.toISOString())
       .order('created_at', { ascending: false });
@@ -55,19 +56,12 @@ export default function SalesReport() {
       console.error(error);
       toast.error("Failed to load sales data");
     } else if (data) {
-      setOrders(data);
+      const consolidated = consolidateOrders(data);
+      setOrders(consolidated);
       
-      let rev = 0;
-      data.forEach(o => {
-        const subtotal = Number(o.total_amount || 0);
-        const gst = Math.round(subtotal * 0.05);
-        const serviceCharge = Math.round(subtotal * 0.05);
-        const grandTotal = subtotal + gst + serviceCharge;
-        o.grand_total = grandTotal; // Set it on the object for rendering
-        rev += grandTotal;
-      });
+      const rev = consolidated.reduce((acc, b) => acc + b.grand_total, 0);
       setTotalRevenue(rev);
-      setTotalOrders(data.length);
+      setTotalOrders(consolidated.length);
     }
     
     setLoading(false);
@@ -76,23 +70,17 @@ export default function SalesReport() {
   const exportCSV = () => {
     if (orders.length === 0) return toast.error("No data to export");
     
-    let csvContent = "Date,Time,Table,Order ID,Amount,Status,Items\n";
+    let csvContent = "Bill ID,Table,KOTs,Payment Mode,Paid Time,Order Time,Amount,Status,Items\n";
     
     orders.forEach(o => {
-      const d = new Date(o.created_at);
-      const dateStr = d.toLocaleDateString();
-      const timeStr = d.toLocaleTimeString();
+      const paidDate = new Date(o.settled_at || o.created_at);
+      const orderDate = new Date(o.created_at);
+      const paidStr = `${paidDate.toLocaleDateString()} ${paidDate.toLocaleTimeString()}`;
+      const orderStr = `${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}`;
       
-      let itemsStr = "";
-      try {
-        const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-        itemsStr = parsed.filter((i:any)=>i.id!=='NOTE').map((i:any) => `${i.qty}x ${i.name}`).join(' | ');
-      } catch(e) {}
+      const itemsStr = o.items.map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/"/g, '""');
       
-      // Escape quotes for CSV
-      itemsStr = `"${itemsStr.replace(/"/g, '""')}"`;
-      
-      csvContent += `${dateStr},${timeStr},${o.table_number},${o.id},${o.grand_total},${o.status},${itemsStr}\n`;
+      csvContent += `"${o.id}","${o.table_number}","${o.kot_count}","${o.payment_method}","${paidStr}","${orderStr}","${o.grand_total}","${o.status}","${itemsStr}"\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -176,9 +164,10 @@ export default function SalesReport() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-100">
-                  <th className="p-4 font-bold">Date & Time</th>
-                  <th className="p-4 font-bold">Order ID</th>
-                  <th className="p-4 font-bold">Table</th>
+                  <th className="p-4 font-bold">Settled / Paid Time</th>
+                  <th className="p-4 font-bold">Bill ID</th>
+                  <th className="p-4 font-bold">Table / Channel</th>
+                  <th className="p-4 font-bold">KOTs</th>
                   <th className="p-4 font-bold">Amount</th>
                   <th className="p-4 font-bold">Payment</th>
                   <th className="p-4 font-bold">Status</th>
@@ -186,31 +175,41 @@ export default function SalesReport() {
               </thead>
               <tbody className="text-sm">
                 {loading ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={6} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
+                  <tr><td colSpan={7} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
                 ) : (
                   orders.map((o) => {
-                    let pMethod = 'UNKNOWN';
-                    try {
-                      const parsed = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-                      const paymentObj = Array.isArray(parsed) ? parsed.find(i => i.id === 'PAYMENT_METHOD') : null;
-                      if (paymentObj) pMethod = paymentObj.method;
-                    } catch(e) {}
+                    const paidDate = new Date(o.settled_at || o.created_at);
+                    const orderDate = new Date(o.created_at);
 
                     return (
                       <tr key={o.id} className="border-b border-gray-50 hover:bg-gray-50 transition">
                         <td className="p-4">
-                          <div className="font-bold text-gray-800">{new Date(o.created_at).toLocaleDateString()}</div>
-                          <div className="text-xs text-gray-500">{new Date(o.created_at).toLocaleTimeString()}</div>
+                          <div className="font-bold text-gray-800">{paidDate.toLocaleDateString()}</div>
+                          <div className="text-xs text-emerald-600 font-semibold">
+                            ✓ Paid: {paidDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          {o.created_at !== o.settled_at && (
+                            <div className="text-[11px] text-gray-400">
+                              Order: {orderDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          )}
                         </td>
                         <td className="p-4 text-gray-500 font-mono text-xs">#{o.id}</td>
                         <td className="p-4 font-bold">{o.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? o.table_number : `Table ${o.table_number}`}</td>
-                        <td className="p-4 font-bold text-gray-900">₹{o.grand_total}</td>
                         <td className="p-4">
-                          {pMethod === 'UPI' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">📱 UPI</span>}
-                          {pMethod === 'CASH' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">💵 CASH</span>}
-                          {pMethod === 'UNKNOWN' && <span className="text-gray-400 text-xs font-bold">-</span>}
+                          <span className="text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                            {o.kot_count} {o.kot_count === 1 ? 'KOT' : 'KOTs'}
+                          </span>
+                        </td>
+                        <td className="p-4 font-bold text-gray-900 font-mono text-base">₹{o.grand_total}</td>
+                        <td className="p-4">
+                          {o.payment_method === 'UPI' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">📱 UPI</span>}
+                          {o.payment_method === 'CASH' && <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">💵 CASH</span>}
+                          {o.payment_method === 'SWIGGY' && <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">🟠 Swiggy</span>}
+                          {o.payment_method === 'ZOMATO' && <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">🔴 Zomato</span>}
+                          {(o.payment_method === 'UNKNOWN' || !o.payment_method) && <span className="text-gray-400 text-xs font-bold">-</span>}
                         </td>
                         <td className="p-4">
                           <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">
@@ -218,7 +217,7 @@ export default function SalesReport() {
                           </span>
                         </td>
                       </tr>
-                    )
+                    );
                   })
                 )}
               </tbody>
