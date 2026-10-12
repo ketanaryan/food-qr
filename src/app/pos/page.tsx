@@ -45,6 +45,15 @@ const DEFAULT_MENU_ITEMS = [
   { id: "m-15", name: "Gulab Jamun (2 Pcs)", category: "Dessert", price: 90, isVeg: true }
 ];
 
+function escapeHtml(str: any): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export default function PetpoojaPOSPage() {
   // Navigation View: 'tables' (Floor Plan), 'quick_bill' (Takeaway/Delivery), 'live_kots' (Kitchen Monitor), 'register' (Settled Bills)
   const [activeView, setActiveView] = useState<'tables' | 'quick_bill' | 'live_kots' | 'register'>('tables');
@@ -52,6 +61,9 @@ export default function PetpoojaPOSPage() {
   // Floor & Filter state
   const [selectedSection, setSelectedSection] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "FREE" | "OCCUPIED" | "BILLING">("ALL");
+
+  // Mobile Sub-View in Punching Mode: 'menu' (Dish Explorer) or 'cart' (KOT & Bill Docket)
+  const [mobilePunchView, setMobilePunchView] = useState<'menu' | 'cart'>('menu');
 
   // Orders Data
   const [orders, setOrders] = useState<any[]>([]);
@@ -90,9 +102,6 @@ export default function PetpoojaPOSPage() {
   // Modals
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [targetShiftTable, setTargetShiftTable] = useState("");
-  
-  const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
-  const [splitParts, setSplitParts] = useState<number>(2);
 
   const [waModal, setWaModal] = useState<{
     isOpen: boolean;
@@ -399,7 +408,7 @@ export default function PetpoojaPOSPage() {
         })
       });
       const data = await res.json();
-      if (!data.success) throw new Error();
+      if (!data.success) throw new Error(data.message || 'Failed to mark as paid');
 
       toast.success(`Table ${tableNumber} Settled & Marked Available!`, { icon: "✅" });
       setSelectedTable(null);
@@ -410,12 +419,12 @@ export default function PetpoojaPOSPage() {
       setCustomerName("");
       fetchOrders();
       fetchSettledOrders();
-    } catch (e) {
-      toast.error("Failed to mark as paid");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to mark as paid");
     }
   };
 
-  // 3. TABLE TRANSFER / SHIFT
+  // 3. TABLE TRANSFER / SHIFT (Using secure backend API)
   const handleShiftTable = async () => {
     if (!selectedTable || !targetShiftTable) return;
     if (selectedTable === targetShiftTable) return toast.error("Choose a different table");
@@ -423,6 +432,7 @@ export default function PetpoojaPOSPage() {
     if (!group || group.orders.length === 0) return;
 
     try {
+      const orderIds = group.orders.map((o: any) => o.id);
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -437,18 +447,9 @@ export default function PetpoojaPOSPage() {
       setTargetShiftTable("");
       fetchOrders();
     } catch (e: any) {
-      toast.error("Failed to shift table");
+      toast.error(e.message || "Failed to shift table");
     }
   };
-
-  function escapeHtml(str: any): string {
-    return String(str || '')
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;');
-  }
 
   // 4. PRINT 80MM PETPOOJA GST INVOICE WITH DYNAMIC UPI QR
   const printOfficialInvoice = (
@@ -549,8 +550,8 @@ export default function PetpoojaPOSPage() {
             <tr><td class="text-left" style="color:#555; width:35%;">Invoice No</td><td class="text-right bold">${invoiceNo}</td></tr>
             <tr><td class="text-left" style="color:#555;">Date</td><td class="text-right">${formattedDate}</td></tr>
             <tr><td class="text-left" style="color:#555;">Type</td><td class="text-right">${orderType}</td></tr>
-            <tr><td class="text-left" style="color:#555;">Location</td><td class="text-right bold">${location}</td></tr>
-            <tr><td class="text-left" style="color:#555;">Cashier / Captain</td><td class="text-right">${selectedCaptain}</td></tr>
+            <tr><td class="text-left" style="color:#555;">Location</td><td class="text-right bold">${escapeHtml(location)}</td></tr>
+            <tr><td class="text-left" style="color:#555;">Cashier / Captain</td><td class="text-right">${escapeHtml(selectedCaptain)}</td></tr>
           </table>
           <table class="items-table">
             <thead>
@@ -705,37 +706,37 @@ export default function PetpoojaPOSPage() {
     <div className="min-h-screen bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
       <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
 
-      {/* TOP PETPOOJA PRO NAVIGATION BAR */}
-      <header className="bg-[#1E1B16] text-white px-4 py-2.5 sticky top-0 z-50 shadow-md border-b border-[#322c24] flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center font-black text-white text-base shadow">
+      {/* TOP RESPONSIVE PETPOOJA PRO NAVIGATION BAR */}
+      <header className="bg-[#1E1B16] text-white px-3 sm:px-4 py-2 sticky top-0 z-50 shadow-md border-b border-[#322c24] flex items-center justify-between gap-2">
+        
+        {/* Brand & Status */}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center font-black text-white text-sm sm:text-base shadow shrink-0">
             WB
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-playfair font-bold text-base tracking-wide text-white">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="font-playfair font-bold text-sm sm:text-base tracking-wide text-white truncate">
                 Hotel White Bliss
               </h1>
-              <span className="text-[10px] font-black uppercase tracking-wider bg-[#A18D6D]/30 text-[#e8d5b5] border border-[#A18D6D]/40 px-2 py-0.5 rounded">
-                Petpooja Pro POS
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-[#A18D6D]/30 text-[#e8d5b5] border border-[#A18D6D]/40 px-1.5 sm:px-2 py-0.5 rounded">
+                POS
               </span>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-gray-400">
+            <div className="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-gray-400">
               <span className="font-mono text-emerald-400 font-bold">● ONLINE</span>
-              <span>•</span>
-              <span className="font-mono text-gray-300">{currentTime || "12:00:00 PM"}</span>
-              <span>•</span>
-              <span>Terminal 1 (Counter POS)</span>
+              <span className="hidden sm:inline">•</span>
+              <span className="font-mono text-gray-300 hidden sm:inline">{currentTime || "12:00 PM"}</span>
             </div>
           </div>
         </div>
 
-        {/* CENTER VIEW MODE SELECTOR */}
-        <div className="hidden md:flex items-center p-1 bg-white/10 rounded-xl border border-white/15 text-xs font-bold">
+        {/* DESKTOP VIEW MODE SELECTOR */}
+        <div className="hidden lg:flex items-center p-1 bg-white/10 rounded-xl border border-white/15 text-xs font-bold">
           <button
             onClick={() => { setActiveView('tables'); setSelectedTable(null); }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-              activeView === 'tables' ? "bg-white text-gray-900 shadow font-extrabold" : "text-gray-300 hover:text-white"
+              activeView === 'tables' && !selectedTable ? "bg-white text-gray-900 shadow font-extrabold" : "text-gray-300 hover:text-white"
             }`}
           >
             <Layers size={14} />
@@ -745,6 +746,7 @@ export default function PetpoojaPOSPage() {
             onClick={() => {
               setActiveView('quick_bill');
               setSelectedTable(`Takeaway-${Math.floor(100 + Math.random() * 900)}`);
+              setMobilePunchView('menu');
               setCart({});
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
@@ -770,12 +772,12 @@ export default function PetpoojaPOSPage() {
             }`}
           >
             <Receipt size={14} />
-            <span>Settled Register ({settledOrders.length})</span>
+            <span>Register ({settledOrders.length})</span>
           </button>
         </div>
 
         {/* RIGHT QUICK ACTIONS */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => {
               setAudioEnabled(!audioEnabled);
@@ -783,20 +785,20 @@ export default function PetpoojaPOSPage() {
                 audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
               }
             }}
-            className={`p-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+            className={`p-1.5 sm:p-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
               audioEnabled ? "bg-green-600/90 text-white" : "bg-red-500/20 text-red-300 border border-red-500/30"
             }`}
-            title="Toggle KOT Audio Chimes"
+            title="Toggle Audio Bell"
           >
             {audioEnabled ? <Bell size={14} /> : <BellOff size={14} />}
-            <span className="hidden lg:inline">{audioEnabled ? "Audio On" : "Audio Muted"}</span>
+            <span className="hidden md:inline">{audioEnabled ? "On" : "Muted"}</span>
           </button>
 
           <a
             href="/kitchen"
             target="_blank"
-            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-white/10"
-            title="Open Kitchen Display (KDS)"
+            className="hidden sm:flex p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold items-center gap-1 border border-white/10"
+            title="Kitchen Display"
           >
             <ChefHat size={14} />
             <span className="hidden xl:inline">KDS</span>
@@ -805,28 +807,28 @@ export default function PetpoojaPOSPage() {
           <a
             href="/captain"
             target="_blank"
-            className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-white/10"
-            title="Open Waiter / Captain App"
+            className="hidden sm:flex p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold items-center gap-1 border border-white/10"
+            title="Waiter App"
           >
             <Smartphone size={14} />
-            <span className="hidden xl:inline">Waiter App</span>
+            <span className="hidden xl:inline">Waiter</span>
           </a>
 
           <a
             href="/admin/dashboard"
-            className="p-2 bg-[#A18D6D] hover:bg-[#8e7a5c] text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow"
-            title="Go to Admin Dashboard"
+            className="p-1.5 sm:p-2 bg-[#A18D6D] hover:bg-[#8e7a5c] text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow"
+            title="Admin"
           >
             <span>Admin</span>
           </a>
         </div>
       </header>
 
-      {/* MOBILE TAB BAR */}
-      <div className="md:hidden flex bg-[#28241d] text-gray-300 text-xs font-bold p-1 overflow-x-auto border-b border-black/20">
+      {/* MOBILE / TABLET PRIMARY VIEW SELECTOR BAR */}
+      <nav className="lg:hidden flex bg-[#28241d] text-gray-300 text-xs font-bold p-1 overflow-x-auto border-b border-black/20 shrink-0">
         <button
           onClick={() => { setActiveView('tables'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeView === 'tables' ? "bg-white text-gray-900" : ""}`}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'tables' && !selectedTable ? "bg-white text-gray-900 shadow-xs" : ""}`}
         >
           Tables ({tablesList.length})
         </button>
@@ -834,46 +836,48 @@ export default function PetpoojaPOSPage() {
           onClick={() => {
             setActiveView('quick_bill');
             setSelectedTable(`Takeaway-${Math.floor(100 + Math.random() * 900)}`);
+            setMobilePunchView('menu');
+            setCart({});
           }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeView === 'quick_bill' ? "bg-white text-gray-900" : ""}`}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'quick_bill' ? "bg-white text-gray-900 shadow-xs" : ""}`}
         >
           Takeaway
         </button>
         <button
           onClick={() => { setActiveView('live_kots'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeView === 'live_kots' ? "bg-white text-gray-900" : ""}`}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'live_kots' ? "bg-white text-gray-900 shadow-xs" : ""}`}
         >
           Live KOTs ({orders.length})
         </button>
         <button
           onClick={() => { setActiveView('register'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap ${activeView === 'register' ? "bg-white text-gray-900" : ""}`}
+          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'register' ? "bg-white text-gray-900 shadow-xs" : ""}`}
         >
           Register ({settledOrders.length})
         </button>
-      </div>
+      </nav>
 
       {/* MAIN VIEW AREA */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
 
-        {/* ------------------------------------------------------------- */}
-        {/* VIEW 1: DINE-IN TABLE FLOOR LAYOUT (When no table is punching) */}
-        {/* ------------------------------------------------------------- */}
+        {/* ============================================================= */}
+        {/* VIEW 1: DINE-IN TABLE FLOOR LAYOUT (When no table is selected) */}
+        {/* ============================================================= */}
         {activeView === 'tables' && !selectedTable && (
-          <div className="flex-1 flex flex-col p-4 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 max-w-7xl mx-auto w-full space-y-4">
             
             {/* Top Filter & Section Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-[#e8e1d6] shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-3 rounded-2xl border border-[#e8e1d6] shadow-xs">
               
               {/* Section Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
                 {SECTIONS.map(sec => (
                   <button
                     key={sec.id}
                     onClick={() => setSelectedSection(sec.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                    className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
                       selectedSection === sec.id
-                        ? "bg-[#1E1B16] text-white shadow-sm"
+                        ? "bg-[#1E1B16] text-white shadow-xs"
                         : "bg-[#F4F1EA] text-gray-700 hover:bg-[#e8e1d6]"
                     }`}
                   >
@@ -882,11 +886,11 @@ export default function PetpoojaPOSPage() {
                 ))}
               </div>
 
-              {/* Status Badges & Quick Stats */}
-              <div className="flex items-center gap-2 overflow-x-auto text-xs font-bold">
+              {/* Status Badges */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-bold">
                 <button
                   onClick={() => setStatusFilter("ALL")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition ${
+                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap ${
                     statusFilter === "ALL" ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"
                   }`}
                 >
@@ -894,7 +898,7 @@ export default function PetpoojaPOSPage() {
                 </button>
                 <button
                   onClick={() => setStatusFilter("FREE")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
                     statusFilter === "FREE" ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-50 text-emerald-800 border-emerald-200"
                   }`}
                 >
@@ -902,7 +906,7 @@ export default function PetpoojaPOSPage() {
                 </button>
                 <button
                   onClick={() => setStatusFilter("OCCUPIED")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
                     statusFilter === "OCCUPIED" ? "bg-blue-600 text-white border-blue-600" : "bg-blue-50 text-blue-800 border-blue-200"
                   }`}
                 >
@@ -910,7 +914,7 @@ export default function PetpoojaPOSPage() {
                 </button>
                 <button
                   onClick={() => setStatusFilter("BILLING")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition flex items-center gap-1 ${
+                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
                     statusFilter === "BILLING" ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-800 border-amber-200"
                   }`}
                 >
@@ -919,12 +923,12 @@ export default function PetpoojaPOSPage() {
               </div>
             </div>
 
-            {/* Delivery / Online Orders Strip (if any active) */}
+            {/* Delivery / Online Orders Strip */}
             {deliveryGroups.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3.5 space-y-2">
+              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-purple-900">
                   <span className="flex items-center gap-1.5">
-                    <Bike size={16} /> Active Takeaway & Online Orders ({deliveryGroups.length})
+                    <Bike size={15} /> Active Takeaway & Online Orders ({deliveryGroups.length})
                   </span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -933,12 +937,13 @@ export default function PetpoojaPOSPage() {
                       key={g.table}
                       onClick={() => {
                         setSelectedTable(g.table);
+                        setMobilePunchView('cart');
                         setCart({});
                       }}
                       className="p-2.5 bg-white border border-purple-200 rounded-xl text-left hover:border-purple-400 shadow-xs flex justify-between items-center"
                     >
                       <div>
-                        <div className="font-extrabold text-xs text-purple-900">{g.table}</div>
+                        <div className="font-extrabold text-xs text-purple-900 truncate">{g.table}</div>
                         <div className="text-[10px] text-gray-500">{g.orders.length} KOTs</div>
                       </div>
                       <div className="text-right font-black text-xs text-purple-950 font-mono">
@@ -950,8 +955,8 @@ export default function PetpoojaPOSPage() {
               </div>
             )}
 
-            {/* 15 TABLE TILES GRID (PETPOOJA DESIGN) */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
+            {/* 15 TABLE TILES GRID (RESPONSIVE) */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
               {filteredTables.map(t => {
                 const isFree = t.status === "FREE";
                 const isOccupied = t.status === "OCCUPIED";
@@ -962,46 +967,47 @@ export default function PetpoojaPOSPage() {
                     key={t.tableNumber}
                     onClick={() => {
                       setSelectedTable(t.tableNumber);
+                      setMobilePunchView(isFree ? 'menu' : 'cart');
                       setCart({});
                       setCookingNotes("");
                       setDiscountPercent(0);
                       setCustomDiscountAmt(0);
                     }}
-                    className={`relative p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all active:scale-[0.98] shadow-xs min-h-[140px] group ${
+                    className={`relative p-3 sm:p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all active:scale-[0.98] shadow-xs min-h-[115px] sm:min-h-[135px] group ${
                       isBilling
                         ? "bg-amber-50/90 border-amber-400 ring-2 ring-amber-300 shadow-amber-100 animate-pulse"
                         : isOccupied
-                        ? "bg-white border-blue-400 hover:border-blue-500 shadow-sm"
+                        ? "bg-white border-blue-400 hover:border-blue-500 shadow-xs"
                         : "bg-white border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/30"
                     }`}
                   >
-                    {/* Tile Top Header */}
-                    <div className="flex items-start justify-between w-full">
+                    {/* Tile Top */}
+                    <div className="flex items-start justify-between w-full gap-1">
                       <div>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xl font-black text-gray-900 font-mono">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-lg sm:text-xl font-black text-gray-900 font-mono">
                             T-{t.tableNumber.padStart(2, '0')}
                           </span>
-                          <span className="text-[10px] text-gray-400 font-bold">
+                          <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold">
                             [{t.sectionName}]
                           </span>
                         </div>
                         {isFree && (
-                          <div className="flex items-center gap-1 mt-1">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <span className="text-[11px] font-bold text-emerald-700">Available</span>
+                          <div className="flex items-center gap-1 mt-0.5 sm:mt-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-emerald-700">Available</span>
                           </div>
                         )}
                       </div>
 
                       {/* Status Badges */}
                       {isBilling && (
-                        <span className="text-[10px] font-extrabold uppercase bg-amber-500 text-white px-2 py-0.5 rounded-full shadow-xs">
-                          Bill Ready
+                        <span className="text-[9px] sm:text-[10px] font-extrabold uppercase bg-amber-500 text-white px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs shrink-0">
+                          Bill
                         </span>
                       )}
                       {isOccupied && (
-                        <span className="text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full">
+                        <span className="text-[9px] sm:text-[10px] font-bold uppercase bg-blue-100 text-blue-800 border border-blue-200 px-1.5 sm:px-2 py-0.5 rounded-full shrink-0">
                           Dining
                         </span>
                       )}
@@ -1009,45 +1015,45 @@ export default function PetpoojaPOSPage() {
 
                     {/* Tile Middle / Running Data */}
                     {isOccupied && (
-                      <div className="my-2 p-2 bg-blue-50/70 rounded-xl border border-blue-100/80">
+                      <div className="my-1.5 p-1.5 sm:p-2 bg-blue-50/70 rounded-xl border border-blue-100/80">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-xs text-blue-900 font-bold">Running</span>
-                          <span className="text-base font-black text-blue-950 font-mono">₹{t.total}</span>
+                          <span className="text-[11px] sm:text-xs text-blue-900 font-bold">Running</span>
+                          <span className="text-sm sm:text-base font-black text-blue-950 font-mono">₹{t.total}</span>
                         </div>
-                        <div className="flex items-center justify-between text-[10px] text-blue-700 mt-0.5">
-                          <span>{t.itemCount} Items • {t.group?.kotCount || 1} KOTs</span>
+                        <div className="flex items-center justify-between text-[9px] sm:text-[10px] text-blue-700 mt-0.5">
+                          <span>{t.itemCount} Items</span>
                           <span className="flex items-center gap-0.5 font-mono">
-                            <Clock size={10} /> {t.elapsedMinutes}m
+                            <Clock size={9} /> {t.elapsedMinutes}m
                           </span>
                         </div>
                       </div>
                     )}
 
                     {isBilling && (
-                      <div className="my-2 p-2 bg-amber-100/70 rounded-xl border border-amber-200">
+                      <div className="my-1.5 p-1.5 sm:p-2 bg-amber-100/70 rounded-xl border border-amber-200">
                         <div className="flex items-baseline justify-between">
-                          <span className="text-xs text-amber-900 font-bold">Bill Due</span>
-                          <span className="text-base font-black text-amber-950 font-mono">₹{t.total}</span>
+                          <span className="text-[11px] sm:text-xs text-amber-900 font-bold">Bill Due</span>
+                          <span className="text-sm sm:text-base font-black text-amber-950 font-mono">₹{t.total}</span>
                         </div>
-                        <div className="text-[10px] text-amber-800 mt-0.5">
-                          Payment settlement requested
+                        <div className="text-[9px] sm:text-[10px] text-amber-800 mt-0.5">
+                          Requested
                         </div>
                       </div>
                     )}
 
-                    {/* Tile Footer Action Cue */}
-                    <div className="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                    {/* Tile Footer Action */}
+                    <div className="pt-1.5 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
                       {isFree ? (
                         <>
-                          <span className="text-[11px] font-bold text-emerald-800 flex items-center gap-1">
+                          <span className="text-[10px] sm:text-[11px] font-bold text-emerald-800 flex items-center gap-0.5">
                             ⚡ Punch Order
                           </span>
-                          <ChevronRight size={14} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                          <ChevronRight size={13} className="text-emerald-600 group-hover:translate-x-1 transition-transform" />
                         </>
                       ) : (
                         <>
-                          <span className="text-[11px] font-bold text-gray-700">Manage / Settle</span>
-                          <ChevronRight size={14} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
+                          <span className="text-[10px] sm:text-[11px] font-bold text-gray-700">Manage / Settle</span>
+                          <ChevronRight size={13} className="text-gray-400 group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </div>
@@ -1058,560 +1064,659 @@ export default function PetpoojaPOSPage() {
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
-        {/* VIEW 2: HIGH-SPEED PETPOOJA TOUCH POS PUNCHING & BILL TERMINAL */}
-        {/* ------------------------------------------------------------- */}
+        {/* ============================================================= */}
+        {/* VIEW 2: RESPONSIVE TOUCH POS PUNCHING & BILL TERMINAL          */}
+        {/* ============================================================= */}
         {(selectedTable || activeView === 'quick_bill') && (
-          <div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-white">
+          <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
             
-            {/* LEFT / CENTER PANE: MENU EXPLORER & QUICK TOUCH PUNCH */}
-            <div className="flex-1 flex flex-col border-r border-[#e8e1d6] overflow-hidden">
-              
-              {/* Menu Explorer Header */}
-              <div className="p-3.5 bg-gray-50 border-b border-[#e8e1d6] space-y-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <button
-                    onClick={() => {
-                      setSelectedTable(null);
-                      if (activeView === 'quick_bill') setActiveView('tables');
-                    }}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-100 shadow-xs"
-                  >
-                    <ArrowLeft size={15} /> Back to Floor
-                  </button>
-
-                  {/* Search Bar */}
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={15} />
-                    <input
-                      type="text"
-                      placeholder="Search dish (e.g. Naan, Paneer, Biryani)..."
-                      value={searchQuery}
-                      onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-900/10 font-medium"
-                    />
-                    {searchQuery && (
-                      <button
-                        onClick={() => setSearchQuery("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        <X size={14} />
-                      </button>
-                    )}
+            {/* MOBILE & TABLET SUB-HEADER & VIEW TOGGLE (< 1024px) */}
+            <div className="lg:hidden bg-[#1E1B16] text-white p-2.5 border-b border-[#322c24] flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <button
+                  onClick={() => {
+                    setSelectedTable(null);
+                    if (activeView === 'quick_bill') setActiveView('tables');
+                  }}
+                  className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300 shrink-0"
+                >
+                  <ArrowLeft size={16} />
+                </button>
+                <div className="truncate">
+                  <div className="font-mono font-black text-sm text-[#A18D6D] truncate">
+                    {selectedTable?.startsWith("Takeaway") || selectedTable?.startsWith("Swiggy") || selectedTable?.startsWith("Zomato") 
+                      ? selectedTable 
+                      : `Table ${selectedTable}`}
                   </div>
-
-                  {/* Veg / Non-Veg Quick Switcher */}
-                  <div className="flex items-center p-0.5 bg-gray-200 rounded-xl text-xs font-bold">
-                    <button
-                      onClick={() => setVegFilter("ALL")}
-                      className={`px-2.5 py-1 rounded-lg transition ${vegFilter === "ALL" ? "bg-white text-gray-900 shadow-xs" : "text-gray-600"}`}
-                    >
-                      All
-                    </button>
-                    <button
-                      onClick={() => setVegFilter("VEG")}
-                      className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${vegFilter === "VEG" ? "bg-green-600 text-white shadow-xs" : "text-green-700"}`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Veg
-                    </button>
-                    <button
-                      onClick={() => setVegFilter("NON_VEG")}
-                      className={`px-2.5 py-1 rounded-lg transition flex items-center gap-1 ${vegFilter === "NON_VEG" ? "bg-red-600 text-white shadow-xs" : "text-red-700"}`}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> Non-Veg
-                    </button>
-                  </div>
-                </div>
-
-                {/* Category Navigation Bar */}
-                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-                  {categories.map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setActiveCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition ${
-                        activeCategory === cat
-                          ? "bg-[#1E1B16] text-white shadow-xs"
-                          : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-100"
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                  {activeGroup && (
+                    <div className="text-[10px] text-gray-400">
+                      ₹{activeGroup.total} Running in Kitchen
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Menu Grid: Rapid 1-Tap Punch */}
-              <div className="flex-1 p-3.5 overflow-y-auto bg-[#FBF9F5]">
-                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5">
-                  {filteredMenuItems.map(item => {
-                    const inCartQty = cart[item.id]?.qty || 0;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`p-3 rounded-2xl border transition-all flex flex-col justify-between shadow-xs ${
-                          inCartQty > 0
-                            ? "bg-amber-50/70 border-[#A18D6D] ring-1 ring-[#A18D6D]"
-                            : "bg-white border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-start justify-between gap-1 mb-1">
-                            <span className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 mt-0.5 ${
-                              item.isVeg ? "border-green-600" : "border-red-600"
-                            }`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${
-                                item.isVeg ? "bg-green-600" : "bg-red-600"
-                              }`}></span>
-                            </span>
-                            <span className="text-[10px] font-bold text-gray-400 uppercase">
-                              {item.category}
-                            </span>
-                          </div>
-
-                          <div className="font-extrabold text-xs sm:text-sm text-gray-900 leading-tight">
-                            {item.name}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3 pt-2 border-t border-gray-100">
-                          <span className="font-black text-sm font-mono text-[#A18D6D]">
-                            ₹{item.price}
-                          </span>
-
-                          {inCartQty > 0 ? (
-                            <div className="flex items-center gap-1.5 bg-gray-900 text-white rounded-xl p-0.5 shadow-xs">
-                              <button
-                                onClick={() => removeFromCart(item.id)}
-                                className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-lg active:scale-90"
-                              >
-                                <Minus size={12} />
-                              </button>
-                              <span className="font-mono font-black text-xs w-4 text-center">
-                                {inCartQty}
-                              </span>
-                              <button
-                                onClick={() => addToCart(item)}
-                                className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-lg active:scale-90"
-                              >
-                                <Plus size={12} />
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => addToCart(item)}
-                              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-extrabold text-xs rounded-xl transition active:scale-95 border border-gray-200"
-                            >
-                              + ADD
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Segmented Switcher on Mobile: Menu vs Cart */}
+              <div className="flex items-center p-0.5 bg-white/10 rounded-xl text-xs font-bold shrink-0">
+                <button
+                  onClick={() => setMobilePunchView('menu')}
+                  className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 ${
+                    mobilePunchView === 'menu' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-300'
+                  }`}
+                >
+                  <Utensils size={13} />
+                  <span>Menu</span>
+                </button>
+                <button
+                  onClick={() => setMobilePunchView('cart')}
+                  className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 ${
+                    mobilePunchView === 'cart' ? 'bg-[#A18D6D] text-white shadow-xs' : 'text-gray-300'
+                  }`}
+                >
+                  <Receipt size={13} />
+                  <span>
+                    Bill {cartItemCount > 0 ? `(${cartItemCount})` : ''}
+                  </span>
+                </button>
               </div>
             </div>
 
-            {/* RIGHT PANE: THE LIVE KOT TICKET & BILL DOCKET */}
-            <div className="w-full lg:w-[420px] flex flex-col bg-white border-t lg:border-t-0 shadow-lg h-full overflow-hidden">
+            {/* MAIN TWO-PANE BODY */}
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
               
-              {/* Ticket Header */}
-              <div className="p-3.5 bg-[#1E1B16] text-white space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-black font-mono text-[#A18D6D]">
-                      {selectedTable?.startsWith("Takeaway") || selectedTable?.startsWith("Swiggy") || selectedTable?.startsWith("Zomato") 
-                        ? selectedTable 
-                        : `TABLE ${selectedTable}`}
-                    </span>
-                    {activeGroup && (
-                      <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded">
-                        ₹{activeGroup.total} Running
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Actions: Shift & Request Bill */}
-                  <div className="flex items-center gap-1.5">
-                    {activeGroup && (
-                      <button
-                        onClick={() => setIsShiftModalOpen(true)}
-                        className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300"
-                        title="Shift Table"
-                      >
-                        <RotateCcw size={13} />
-                      </button>
-                    )}
+              {/* --------------------------------------------------------- */}
+              {/* PANE 1: MENU EXPLORER & QUICK TOUCH PUNCH                  */}
+              {/* (Visible when mobilePunchView === 'menu' OR desktop lg:flex) */}
+              {/* --------------------------------------------------------- */}
+              <div className={`${mobilePunchView === 'menu' ? 'flex' : 'hidden'} lg:flex flex-1 flex-col border-r border-[#e8e1d6] min-h-0 overflow-hidden bg-[#FBF9F5]`}>
+                
+                {/* Search & Category Header */}
+                <div className="p-2.5 sm:p-3.5 bg-white border-b border-[#e8e1d6] space-y-2 shrink-0">
+                  <div className="flex items-center justify-between gap-2">
                     <button
                       onClick={() => {
                         setSelectedTable(null);
-                        setCart({});
+                        if (activeView === 'quick_bill') setActiveView('tables');
                       }}
-                      className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300"
+                      className="hidden lg:flex items-center gap-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 shadow-xs shrink-0"
                     >
-                      <X size={14} />
+                      <ArrowLeft size={14} /> Back
                     </button>
-                  </div>
-                </div>
 
-                {/* Captain, Pax & Customer Details Input */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <label className="text-[10px] text-gray-400 block mb-0.5">Captain / Steward</label>
-                    <select
-                      value={selectedCaptain}
-                      onChange={e => setSelectedCaptain(e.target.value)}
-                      className="w-full bg-white/10 text-white rounded-lg p-1.5 text-xs font-bold border border-white/20 focus:outline-none"
-                    >
-                      {CAPTAINS.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] text-gray-400 block mb-0.5">Guest Pax Count</label>
-                    <select
-                      value={guestPax}
-                      onChange={e => setGuestPax(Number(e.target.value))}
-                      className="w-full bg-white/10 text-white rounded-lg p-1.5 text-xs font-bold border border-white/20 focus:outline-none"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 8, 10, 12].map(p => <option key={p} value={p} className="bg-gray-900">{p} Guests</option>)}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Running KOTs & Active Cart Items List */}
-              <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-gray-50/50">
-                
-                {/* 1. RUNNING KOTs (Already sent to kitchen) */}
-                {activeGroup && activeGroup.orders.length > 0 && (
-                  <div className="bg-white p-3 rounded-2xl border border-blue-200 shadow-xs space-y-2">
-                    <div className="flex items-center justify-between text-xs font-black text-blue-900 border-b border-gray-100 pb-1.5">
-                      <span className="flex items-center gap-1">
-                        <Utensils size={13} className="text-blue-600" />
-                        Running in Kitchen ({activeGroup.orders.length} KOTs)
-                      </span>
-                      <span className="font-mono text-blue-950 font-bold">₹{activeGroup.total}</span>
+                    {/* Search Bar */}
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                      <input
+                        type="text"
+                        placeholder="Search dishes (e.g. Naan, Paneer, Biryani)..."
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        className="w-full pl-8 pr-7 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-900 font-medium"
+                      />
+                      {searchQuery && (
+                        <button
+                          onClick={() => setSearchQuery("")}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          <X size={13} />
+                        </button>
+                      )}
                     </div>
 
-                    <div className="space-y-1.5 max-h-36 overflow-y-auto">
-                      {activeGroup.orders.map((ord: any) => {
-                        let items: any[] = [];
-                        try {
-                          items = typeof ord.items === "string" ? JSON.parse(ord.items) : ord.items;
-                        } catch (e) {}
+                    {/* Veg / Non-Veg Quick Switcher */}
+                    <div className="flex items-center p-0.5 bg-gray-100 rounded-xl text-xs font-bold shrink-0">
+                      <button
+                        onClick={() => setVegFilter("ALL")}
+                        className={`px-2 py-1 rounded-lg transition text-[11px] ${vegFilter === "ALL" ? "bg-white text-gray-900 shadow-xs" : "text-gray-600"}`}
+                      >
+                        All
+                      </button>
+                      <button
+                        onClick={() => setVegFilter("VEG")}
+                        className={`px-2 py-1 rounded-lg transition text-[11px] flex items-center gap-1 ${vegFilter === "VEG" ? "bg-green-600 text-white shadow-xs" : "text-green-700"}`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Veg
+                      </button>
+                      <button
+                        onClick={() => setVegFilter("NON_VEG")}
+                        className={`px-2 py-1 rounded-lg transition text-[11px] flex items-center gap-1 ${vegFilter === "NON_VEG" ? "bg-red-600 text-white shadow-xs" : "text-red-700"}`}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span> Non
+                      </button>
+                    </div>
+                  </div>
 
-                        return (
-                          <div key={ord.id} className="bg-blue-50/40 p-2 rounded-xl text-xs space-y-0.5">
-                            <div className="flex justify-between text-[10px] font-bold text-gray-500">
-                              <span>KOT #{ord.order_number || ord.id}</span>
-                              <span className="uppercase text-blue-700 font-black">{ord.status}</span>
+                  {/* Category Pills Bar */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    {categories.map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`px-2.5 py-1 rounded-xl font-bold whitespace-nowrap transition text-[11px] sm:text-xs ${
+                          activeCategory === cat
+                            ? "bg-[#1E1B16] text-white shadow-xs"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Dishes Grid */}
+                <div className="flex-1 p-2.5 sm:p-3.5 overflow-y-auto">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5">
+                    {filteredMenuItems.map(item => {
+                      const inCartQty = cart[item.id]?.qty || 0;
+
+                      return (
+                        <div
+                          key={item.id}
+                          className={`p-2.5 sm:p-3 rounded-2xl border transition-all flex flex-col justify-between shadow-xs ${
+                            inCartQty > 0
+                              ? "bg-amber-50/80 border-[#A18D6D] ring-1 ring-[#A18D6D]"
+                              : "bg-white border-gray-200 hover:border-gray-300"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-start justify-between gap-1 mb-1">
+                              <span className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 mt-0.5 ${
+                                item.isVeg ? "border-green-600" : "border-red-600"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  item.isVeg ? "bg-green-600" : "bg-red-600"
+                                }`}></span>
+                              </span>
+                              <span className="text-[9px] font-bold text-gray-400 uppercase truncate">
+                                {item.category}
+                              </span>
                             </div>
-                            {Array.isArray(items) && items.filter(i => i.id !== "NOTE").map((it, idx) => (
-                              <div key={idx} className="flex justify-between text-gray-800 text-[11px]">
-                                <span>{it.qty}x {it.name}</span>
-                                <span className="font-mono font-bold">₹{it.price * it.qty}</span>
-                              </div>
-                            ))}
+
+                            <div className="font-extrabold text-xs sm:text-sm text-gray-900 leading-tight">
+                              {item.name}
+                            </div>
                           </div>
-                        );
-                      })}
+
+                          <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100">
+                            <span className="font-black text-xs sm:text-sm font-mono text-[#A18D6D]">
+                              ₹{item.price}
+                            </span>
+
+                            {inCartQty > 0 ? (
+                              <div className="flex items-center gap-1 bg-gray-900 text-white rounded-xl p-0.5 shadow-xs">
+                                <button
+                                  onClick={() => removeFromCart(item.id)}
+                                  className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-lg active:scale-90"
+                                >
+                                  <Minus size={12} />
+                                </button>
+                                <span className="font-mono font-black text-xs w-4 text-center">
+                                  {inCartQty}
+                                </span>
+                                <button
+                                  onClick={() => addToCart(item)}
+                                  className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-lg active:scale-90"
+                                >
+                                  <Plus size={12} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => addToCart(item)}
+                                className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-extrabold text-xs rounded-xl transition active:scale-95 border border-gray-200"
+                              >
+                                + ADD
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* MOBILE FLOATING CART BAR (Shown when items in cart on mobile) */}
+                {(cartItemCount > 0 || (activeGroup && activeGroup.total > 0)) && (
+                  <div className="lg:hidden sticky bottom-0 left-0 right-0 p-2.5 sm:p-3 bg-white border-t border-gray-200 shadow-xl z-30 shrink-0">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <span className="text-[11px] text-gray-500 font-bold block">
+                          {cartItemCount > 0 ? `${cartItemCount} New Items` : 'Running Orders'} • Table {selectedTable}
+                        </span>
+                        <span className="text-lg font-black font-mono text-gray-950">
+                          ₹{combinedSubtotal}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setMobilePunchView('cart')}
+                        className="px-4 py-2.5 bg-gray-900 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md flex items-center gap-1.5"
+                      >
+                        <span>View Ticket & Settle</span>
+                        <ChevronRight size={14} />
+                      </button>
                     </div>
                   </div>
                 )}
+              </div>
 
-                {/* 2. NEW ITEMS CART (Ready to punch or settle) */}
-                <div className="bg-white p-3 rounded-2xl border border-[#e8e1d6] shadow-xs space-y-2">
-                  <div className="flex items-center justify-between text-xs font-black text-gray-900 border-b border-gray-100 pb-1.5">
-                    <span>New Items ({cartItemCount})</span>
-                    {cartItemCount > 0 && (
+              {/* --------------------------------------------------------- */}
+              {/* PANE 2: THE LIVE KOT TICKET & BILL DOCKET                  */}
+              {/* (Visible when mobilePunchView === 'cart' OR desktop lg:flex) */}
+              {/* --------------------------------------------------------- */}
+              <div className={`${mobilePunchView === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[380px] xl:w-[420px] flex-col bg-white border-t lg:border-t-0 shadow-lg min-h-0 overflow-hidden shrink-0`}>
+                
+                {/* Desktop Ticket Header */}
+                <div className="p-3 bg-[#1E1B16] text-white space-y-2 shrink-0">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base sm:text-lg font-black font-mono text-[#A18D6D]">
+                        {selectedTable?.startsWith("Takeaway") || selectedTable?.startsWith("Swiggy") || selectedTable?.startsWith("Zomato") 
+                          ? selectedTable 
+                          : `TABLE ${selectedTable}`}
+                      </span>
+                      {activeGroup && (
+                        <span className="text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 px-2 py-0.5 rounded">
+                          ₹{activeGroup.total} Running
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {activeGroup && (
+                        <button
+                          onClick={() => setIsShiftModalOpen(true)}
+                          className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300"
+                          title="Shift Table"
+                        >
+                          <RotateCcw size={13} />
+                        </button>
+                      )}
                       <button
-                        onClick={() => setCart({})}
-                        className="text-[10px] text-red-600 font-bold hover:underline"
+                        onClick={() => {
+                          setSelectedTable(null);
+                          setCart({});
+                        }}
+                        className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300"
+                        title="Close Table"
                       >
-                        Clear Cart
+                        <X size={14} />
                       </button>
+                    </div>
+                  </div>
+
+                  {/* Mobile Shortcut to add more dishes */}
+                  <div className="lg:hidden flex justify-between items-center pt-1 border-t border-white/10">
+                    <button
+                      onClick={() => setMobilePunchView('menu')}
+                      className="text-xs text-[#e8d5b5] font-bold flex items-center gap-1 hover:underline"
+                    >
+                      <Plus size={13} /> Add More Dishes from Menu
+                    </button>
+                  </div>
+
+                  {/* Captain & Pax Selectors */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <label className="text-[10px] text-gray-400 block mb-0.5">Captain / Steward</label>
+                      <select
+                        value={selectedCaptain}
+                        onChange={e => setSelectedCaptain(e.target.value)}
+                        className="w-full bg-white/10 text-white rounded-lg p-1 text-xs font-bold border border-white/20 focus:outline-none"
+                      >
+                        {CAPTAINS.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-gray-400 block mb-0.5">Guest Pax Count</label>
+                      <select
+                        value={guestPax}
+                        onChange={e => setGuestPax(Number(e.target.value))}
+                        className="w-full bg-white/10 text-white rounded-lg p-1 text-xs font-bold border border-white/20 focus:outline-none"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 8, 10, 12].map(p => <option key={p} value={p} className="bg-gray-900">{p} Guests</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scrollable Middle: Running KOTs, New Cart Items & Discount Engine */}
+                <div className="flex-1 p-3 overflow-y-auto space-y-3 bg-gray-50/50">
+                  
+                  {/* 1. RUNNING KOTs (If already sent to kitchen) */}
+                  {activeGroup && activeGroup.orders.length > 0 && (
+                    <div className="bg-white p-2.5 rounded-2xl border border-blue-200 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between text-xs font-black text-blue-900 border-b border-gray-100 pb-1">
+                        <span className="flex items-center gap-1">
+                          <Utensils size={13} className="text-blue-600" />
+                          Running in Kitchen ({activeGroup.orders.length} KOTs)
+                        </span>
+                        <span className="font-mono text-blue-950 font-bold">₹{activeGroup.total}</span>
+                      </div>
+
+                      <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                        {activeGroup.orders.map((ord: any) => {
+                          let items: any[] = [];
+                          try {
+                            items = typeof ord.items === "string" ? JSON.parse(ord.items) : ord.items;
+                          } catch (e) {}
+
+                          return (
+                            <div key={ord.id} className="bg-blue-50/40 p-2 rounded-xl text-xs space-y-0.5">
+                              <div className="flex justify-between text-[10px] font-bold text-gray-500">
+                                <span>KOT #{ord.order_number || ord.id}</span>
+                                <span className="uppercase text-blue-700 font-black">{ord.status}</span>
+                              </div>
+                              {Array.isArray(items) && items.filter(i => i.id !== "NOTE").map((it, idx) => (
+                                <div key={idx} className="flex justify-between text-gray-800 text-[11px]">
+                                  <span>{it.qty}x {it.name}</span>
+                                  <span className="font-mono font-bold">₹{it.price * it.qty}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. NEW ITEMS CART */}
+                  <div className="bg-white p-2.5 rounded-2xl border border-[#e8e1d6] shadow-xs space-y-2">
+                    <div className="flex items-center justify-between text-xs font-black text-gray-900 border-b border-gray-100 pb-1">
+                      <span>New Items to Punch ({cartItemCount})</span>
+                      {cartItemCount > 0 && (
+                        <button
+                          onClick={() => setCart({})}
+                          className="text-[10px] text-red-600 font-bold hover:underline"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+
+                    {cartItems.length === 0 ? (
+                      <div className="py-4 text-center text-gray-400 text-xs">
+                        No new dishes in cart.<br />
+                        <button
+                          onClick={() => setMobilePunchView('menu')}
+                          className="mt-2 text-blue-600 font-bold underline inline-flex items-center gap-1"
+                        >
+                          <Plus size={13} /> Browse Menu
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1.5 max-h-44 overflow-y-auto">
+                        {cartItems.map(c => (
+                          <div key={c.item.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-50">
+                            <div className="flex-1 pr-2">
+                              <div className="font-bold text-gray-900 truncate">{c.item.name}</div>
+                              <div className="text-[10px] text-gray-500 font-mono">₹{c.item.price} each</div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                                <button
+                                  onClick={() => removeFromCart(c.item.id)}
+                                  className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded text-gray-700"
+                                >
+                                  -
+                                </button>
+                                <span className="font-mono font-bold w-4 text-center">{c.qty}</span>
+                                <button
+                                  onClick={() => addToCart(c.item)}
+                                  className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded text-gray-700"
+                                >
+                                  +
+                                </button>
+                              </div>
+                              <span className="font-mono font-black text-gray-900 w-11 text-right">
+                                ₹{c.item.price * c.qty}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Quick Kitchen Cooking Tags */}
+                    {cartItemCount > 0 && (
+                      <div className="pt-2 border-t border-gray-100 space-y-1.5">
+                        <div className="flex flex-wrap gap-1">
+                          {["Extra Spicy", "Jain / No Onion", "Less Oil", "Crispy", "Extra Butter"].map(tag => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => setCookingNotes(prev => prev ? `${prev}, ${tag}` : tag)}
+                              className="text-[9px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded transition"
+                            >
+                              +{tag}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Cooking instruction (e.g. less salt)..."
+                          value={cookingNotes}
+                          onChange={e => setCookingNotes(e.target.value)}
+                          className="w-full text-xs p-1.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
+                        />
+                      </div>
                     )}
                   </div>
 
-                  {cartItems.length === 0 ? (
-                    <div className="py-6 text-center text-gray-400 text-xs">
-                      No new items selected.<br />
-                      Tap dishes from the menu to punch new KOT.
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {cartItems.map(c => (
-                        <div key={c.item.id} className="flex items-center justify-between text-xs py-1 border-b border-gray-50">
-                          <div className="flex-1 pr-2">
-                            <div className="font-bold text-gray-900">{c.item.name}</div>
-                            <div className="text-[10px] text-gray-500 font-mono">₹{c.item.price} each</div>
-                          </div>
+                  {/* 3. DISCOUNT & CHARGES CONTROLS */}
+                  {combinedSubtotal > 0 && (
+                    <div className="bg-white p-2.5 rounded-2xl border border-gray-200 shadow-xs space-y-2 text-xs">
+                      <div className="flex items-center justify-between font-bold text-gray-700">
+                        <span>Discount Voucher</span>
+                        <span className="text-[#A18D6D] font-mono">
+                          {discountPercent > 0 ? `${discountPercent}% Off` : customDiscountAmt > 0 ? `₹${customDiscountAmt} Off` : "None"}
+                        </span>
+                      </div>
 
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 bg-gray-100 rounded-lg p-0.5">
-                              <button
-                                onClick={() => removeFromCart(c.item.id)}
-                                className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded text-gray-700"
-                              >
-                                -
-                              </button>
-                              <span className="font-mono font-bold w-4 text-center">{c.qty}</span>
-                              <button
-                                onClick={() => addToCart(c.item)}
-                                className="w-5 h-5 flex items-center justify-center hover:bg-gray-200 rounded text-gray-700"
-                              >
-                                +
-                              </button>
-                            </div>
-                            <span className="font-mono font-black text-gray-900 w-12 text-right">
-                              ₹{c.item.price * c.qty}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Quick Cooking Instructions */}
-                  {cartItemCount > 0 && (
-                    <div className="pt-2 border-t border-gray-100 space-y-1.5">
-                      <div className="flex flex-wrap gap-1">
-                        {["Extra Spicy", "Jain / No Onion", "Less Oil", "Crispy", "Extra Butter"].map(tag => (
+                      <div className="grid grid-cols-5 gap-1 text-[11px] font-bold">
+                        {[0, 5, 10, 15, 20].map(pct => (
                           <button
-                            key={tag}
-                            type="button"
-                            onClick={() => setCookingNotes(prev => prev ? `${prev}, ${tag}` : tag)}
-                            className="text-[10px] font-bold bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-0.5 rounded transition"
+                            key={pct}
+                            onClick={() => {
+                              setDiscountPercent(pct);
+                              setCustomDiscountAmt(0);
+                            }}
+                            className={`py-1 rounded-lg border text-center transition ${
+                              discountPercent === pct && customDiscountAmt === 0
+                                ? "bg-gray-900 text-white border-gray-900"
+                                : "bg-gray-50 text-gray-700 border-gray-200"
+                            }`}
                           >
-                            +{tag}
+                            {pct === 0 ? "0%" : `${pct}%`}
                           </button>
                         ))}
                       </div>
-                      <input
-                        type="text"
-                        placeholder="Cooking instruction (e.g. less salt)..."
-                        value={cookingNotes}
-                        onChange={e => setCookingNotes(e.target.value)}
-                        className="w-full text-xs p-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
-                      />
+
+                      {/* Service charge toggle */}
+                      <div className="flex items-center justify-between pt-1 border-t border-gray-100">
+                        <label className="text-gray-600 flex items-center gap-1.5 cursor-pointer text-[11px]">
+                          <input
+                            type="checkbox"
+                            checked={applyServiceCharge}
+                            onChange={e => setApplyServiceCharge(e.target.checked)}
+                            className="rounded text-gray-900"
+                          />
+                          <span>Apply Service Charge (5%)</span>
+                        </label>
+                        <span className="font-mono text-gray-500 text-[11px]">₹{serviceCharge}</span>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* 3. DISCOUNT & CHARGES CONTROLS */}
+                {/* Financial Calculation Bar */}
                 {combinedSubtotal > 0 && (
-                  <div className="bg-white p-3 rounded-2xl border border-gray-200 shadow-xs space-y-2 text-xs">
-                    <div className="flex items-center justify-between font-bold text-gray-700">
-                      <span>Discount Voucher / Reason</span>
-                      <span className="text-[#A18D6D] font-mono">
-                        {discountPercent > 0 ? `${discountPercent}% Off` : customDiscountAmt > 0 ? `₹${customDiscountAmt} Off` : "None"}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-5 gap-1 text-[11px] font-bold">
-                      {[0, 5, 10, 15, 20].map(pct => (
-                        <button
-                          key={pct}
-                          onClick={() => {
-                            setDiscountPercent(pct);
-                            setCustomDiscountAmt(0);
-                          }}
-                          className={`py-1 rounded-lg border text-center transition ${
-                            discountPercent === pct && customDiscountAmt === 0
-                              ? "bg-gray-900 text-white border-gray-900"
-                              : "bg-gray-50 text-gray-700 border-gray-200"
-                          }`}
-                        >
-                          {pct === 0 ? "0%" : `${pct}%`}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Service charge toggle */}
-                    <div className="flex items-center justify-between pt-1 border-t border-gray-100">
-                      <label className="text-gray-600 flex items-center gap-1.5 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={applyServiceCharge}
-                          onChange={e => setApplyServiceCharge(e.target.checked)}
-                          className="rounded text-gray-900"
-                        />
-                        <span>Apply Service Charge (5%)</span>
-                      </label>
-                      <span className="font-mono text-gray-500">₹{serviceCharge}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Financial Calculation Box */}
-              {combinedSubtotal > 0 && (
-                <div className="p-3.5 bg-gray-50 border-t border-gray-200 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span className="font-mono font-bold">₹{combinedSubtotal}</span>
-                  </div>
-                  {calculatedDiscount > 0 && (
-                    <div className="flex justify-between text-emerald-700 font-bold">
-                      <span>Discount</span>
-                      <span className="font-mono">-₹{calculatedDiscount}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-gray-600">
-                    <span>GST (5% • CGST 2.5% + SGST 2.5%)</span>
-                    <span className="font-mono font-bold">₹{gst}</span>
-                  </div>
-                  {serviceCharge > 0 && (
+                  <div className="p-2.5 sm:p-3 bg-gray-50 border-t border-gray-200 space-y-1 text-xs shrink-0">
                     <div className="flex justify-between text-gray-600">
-                      <span>Service Charge (5%)</span>
-                      <span className="font-mono font-bold">₹{serviceCharge}</span>
+                      <span>Subtotal</span>
+                      <span className="font-mono font-bold">₹{combinedSubtotal}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between items-baseline pt-2 mt-1 border-t border-gray-200">
-                    <span className="font-black text-gray-950 text-sm">GRAND TOTAL</span>
-                    <span className="font-black text-2xl font-mono text-gray-950">₹{grandTotal}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* ACTION BUTTONS (PETPOOJA SPEED WORKFLOW) */}
-              <div className="p-3.5 bg-white border-t border-gray-200 space-y-2">
-                
-                {/* Primary Button: Punch KOT (if new items in cart) */}
-                {cartItemCount > 0 && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handlePunchKOT(true)}
-                      className="flex-1 py-3 bg-[#1E1B16] hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-                    >
-                      <Printer size={15} />
-                      <span>🔥 KOT & Print Slip</span>
-                    </button>
-                    <button
-                      onClick={() => handlePunchKOT(false)}
-                      className="py-3 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition border border-gray-200"
-                      title="Send to kitchen without printing"
-                    >
-                      🔥 KOT Only
-                    </button>
+                    {calculatedDiscount > 0 && (
+                      <div className="flex justify-between text-emerald-700 font-bold">
+                        <span>Discount</span>
+                        <span className="font-mono">-₹{calculatedDiscount}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-gray-600">
+                      <span>GST (5% • CGST 2.5% + SGST 2.5%)</span>
+                      <span className="font-mono font-bold">₹{gst}</span>
+                    </div>
+                    {serviceCharge > 0 && (
+                      <div className="flex justify-between text-gray-600">
+                        <span>Service Charge (5%)</span>
+                        <span className="font-mono font-bold">₹{serviceCharge}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-baseline pt-1.5 mt-1 border-t border-gray-200">
+                      <span className="font-black text-gray-950 text-xs sm:text-sm">GRAND TOTAL</span>
+                      <span className="font-black text-xl sm:text-2xl font-mono text-gray-950">₹{grandTotal}</span>
+                    </div>
                   </div>
                 )}
 
-                {/* Settle / Bill Print (if table has running orders) */}
-                {activeGroup && activeGroup.orders.length > 0 && (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => {
-                        printOfficialInvoice(
-                          activeGroup.table,
-                          activeGroup.orders,
-                          activeGroup.total,
-                          calculatedDiscount,
-                          gst,
-                          serviceCharge,
-                          grandTotal
-                        );
-                      }}
-                      className="w-full py-2.5 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
-                    >
-                      <Printer size={15} /> Print Estimate / Bill
-                    </button>
+                {/* ACTION BUTTONS */}
+                <div className="p-2.5 sm:p-3 bg-white border-t border-gray-200 space-y-2 shrink-0">
+                  
+                  {/* Punch KOT (if new items in cart) */}
+                  {cartItemCount > 0 && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handlePunchKOT(true)}
+                        className="flex-1 py-2.5 bg-[#1E1B16] hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                      >
+                        <Printer size={14} />
+                        <span>🔥 KOT & Print Slip</span>
+                      </button>
+                      <button
+                        onClick={() => handlePunchKOT(false)}
+                        className="py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition border border-gray-200"
+                        title="Send to kitchen without printing"
+                      >
+                        🔥 KOT Only
+                      </button>
+                    </div>
+                  )}
 
+                  {/* Settle / Bill Print (if table has running orders) */}
+                  {activeGroup && activeGroup.orders.length > 0 && (
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          printOfficialInvoice(
+                            activeGroup.table,
+                            activeGroup.orders,
+                            activeGroup.total,
+                            calculatedDiscount,
+                            gst,
+                            serviceCharge,
+                            grandTotal
+                          );
+                        }}
+                        className="w-full py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
+                      >
+                        <Printer size={14} /> Print Estimate / Bill
+                      </button>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => {
+                            setWaModal({
+                              isOpen: true,
+                              data: {
+                                tableNumber: activeGroup.table,
+                                groupOrders: activeGroup.orders,
+                                grandTotal
+                              },
+                              paymentMethod: 'CASH'
+                            });
+                          }}
+                          className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
+                        >
+                          <DollarSign size={14} /> Paid Cash
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setWaModal({
+                              isOpen: true,
+                              data: {
+                                tableNumber: activeGroup.table,
+                                groupOrders: activeGroup.orders,
+                                grandTotal
+                              },
+                              paymentMethod: 'UPI'
+                            });
+                          }}
+                          className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
+                        >
+                          <Smartphone size={14} /> Paid UPI QR
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick Bill instant settle */}
+                  {activeView === 'quick_bill' && cartItemCount > 0 && (
                     <div className="grid grid-cols-2 gap-2">
                       <button
-                        onClick={() => {
-                          setWaModal({
-                            isOpen: true,
-                            data: {
-                              tableNumber: activeGroup.table,
-                              groupOrders: activeGroup.orders,
-                              grandTotal
-                            },
-                            paymentMethod: 'CASH'
-                          });
+                        onClick={async () => {
+                          await handlePunchKOT(false);
+                          const group = tableGroups[selectedTable || ''];
+                          if (group) {
+                            markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'CASH');
+                          }
                         }}
-                        className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
                       >
-                        <DollarSign size={15} /> Paid Cash
+                        <DollarSign size={14} /> Settle Cash
                       </button>
-
                       <button
-                        onClick={() => {
-                          setWaModal({
-                            isOpen: true,
-                            data: {
-                              tableNumber: activeGroup.table,
-                              groupOrders: activeGroup.orders,
-                              grandTotal
-                            },
-                            paymentMethod: 'UPI'
-                          });
+                        onClick={async () => {
+                          await handlePunchKOT(false);
+                          const group = tableGroups[selectedTable || ''];
+                          if (group) {
+                            markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'UPI');
+                          }
                         }}
-                        className="py-3 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
                       >
-                        <Smartphone size={15} /> Paid UPI QR
+                        <Smartphone size={14} /> Settle UPI
                       </button>
                     </div>
-                  </div>
-                )}
-
-                {/* If Quick Bill (Instant Punch & Settle) */}
-                {activeView === 'quick_bill' && cartItemCount > 0 && (
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={async () => {
-                        await handlePunchKOT(false);
-                        const group = tableGroups[selectedTable || ''];
-                        if (group) {
-                          markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'CASH');
-                        }
-                      }}
-                      className="py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-                    >
-                      <DollarSign size={15} /> Settle Cash
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await handlePunchKOT(false);
-                        const group = tableGroups[selectedTable || ''];
-                        if (group) {
-                          markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'UPI');
-                        }
-                      }}
-                      className="py-3 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
-                    >
-                      <Smartphone size={15} /> Settle UPI
-                    </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
-        {/* VIEW 3: LIVE KITCHEN MONITOR (KOT TRACKER) */}
-        {/* ------------------------------------------------------------- */}
+        {/* ============================================================= */}
+        {/* VIEW 3: LIVE KITCHEN MONITOR (KOT TRACKER)                     */}
+        {/* ============================================================= */}
         {activeView === 'live_kots' && (
-          <div className="flex-1 p-4 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
-            <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-gray-200">
+          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
+            <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200">
               <div>
-                <h2 className="text-lg font-black text-gray-900 flex items-center gap-2">
-                  <ChefHat className="text-[#A18D6D]" /> Live Kitchen Order Tickets ({orders.length} Active KOTs)
+                <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
+                  <ChefHat className="text-[#A18D6D]" size={18} /> Active Kitchen Tickets ({orders.length} KOTs)
                 </h2>
-                <p className="text-xs text-gray-500 mt-0.5">Real-time status synced with Kitchen Display System</p>
+                <p className="text-[11px] text-gray-500">Synced live with Kitchen Display System</p>
               </div>
               <button
                 onClick={fetchOrders}
                 className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700 flex items-center gap-1.5"
               >
-                <RefreshCw size={14} /> Refresh
+                <RefreshCw size={13} /> Refresh
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {orders.map(ord => {
                 let items: any[] = [];
                 try {
@@ -1622,14 +1727,14 @@ export default function PetpoojaPOSPage() {
                 const minsAgo = Math.max(1, Math.floor(diffMs / 60000));
 
                 return (
-                  <div key={ord.id} className="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-3">
+                  <div key={ord.id} className="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-xs space-y-2.5">
                     <div className="flex items-start justify-between border-b pb-2">
                       <div>
                         <span className="text-base font-black text-gray-900">
                           {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
                         </span>
-                        <div className="text-[11px] text-gray-400 font-mono">
-                          KOT #{ord.order_number || ord.id} • {minsAgo} mins ago
+                        <div className="text-[10px] text-gray-400 font-mono">
+                          KOT #{ord.order_number || ord.id} • {minsAgo}m ago
                         </div>
                       </div>
                       <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
@@ -1641,7 +1746,7 @@ export default function PetpoojaPOSPage() {
                       </span>
                     </div>
 
-                    <div className="space-y-1 max-h-40 overflow-y-auto text-xs">
+                    <div className="space-y-1 max-h-36 overflow-y-auto text-xs">
                       {Array.isArray(items) && items.map((it, idx) => (
                         <div key={idx} className="flex justify-between py-0.5">
                           <span className={it.id === "NOTE" ? "text-amber-800 font-bold" : "text-gray-800 font-medium"}>
@@ -1657,6 +1762,7 @@ export default function PetpoojaPOSPage() {
                       <button
                         onClick={() => {
                           setSelectedTable(ord.table_number);
+                          setMobilePunchView('cart');
                           setActiveView('tables');
                         }}
                         className="text-blue-600 font-bold hover:underline"
@@ -1667,37 +1773,42 @@ export default function PetpoojaPOSPage() {
                   </div>
                 );
               })}
+              {orders.length === 0 && (
+                <div className="col-span-full bg-white p-8 rounded-2xl border text-center text-gray-400 text-xs">
+                  No active orders in kitchen right now.
+                </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* ------------------------------------------------------------- */}
-        {/* VIEW 4: DAY REGISTER / SETTLED BILLS REPRINT */}
-        {/* ------------------------------------------------------------- */}
+        {/* ============================================================= */}
+        {/* VIEW 4: DAY REGISTER / SETTLED BILLS REPRINT                  */}
+        {/* ============================================================= */}
         {activeView === 'register' && (
-          <div className="flex-1 p-4 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
             
             {/* Day Sales Summary */}
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-xs font-bold text-gray-500">Today's Settled Bills</span>
-                <div className="text-2xl font-black font-mono text-gray-900 mt-1">{settledOrders.length}</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Today's Settled Bills</span>
+                <div className="text-xl sm:text-2xl font-black font-mono text-gray-900 mt-0.5">{settledOrders.length}</div>
               </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-xs font-bold text-gray-500">Total Sales (Today)</span>
-                <div className="text-2xl font-black font-mono text-emerald-700 mt-1">
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Total Sales</span>
+                <div className="text-xl sm:text-2xl font-black font-mono text-emerald-700 mt-0.5">
                   ₹{settledOrders.reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
                 </div>
               </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-xs font-bold text-gray-500">Cash Collections</span>
-                <div className="text-2xl font-black font-mono text-blue-700 mt-1">
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Cash Collections</span>
+                <div className="text-xl sm:text-2xl font-black font-mono text-blue-700 mt-0.5">
                   ₹{settledOrders.filter(o => o.items?.includes("CASH")).reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
                 </div>
               </div>
-              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-xs font-bold text-gray-500">UPI / QR Collections</span>
-                <div className="text-2xl font-black font-mono text-purple-700 mt-1">
+              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                <span className="text-[11px] sm:text-xs font-bold text-gray-500">UPI Collections</span>
+                <div className="text-xl sm:text-2xl font-black font-mono text-purple-700 mt-0.5">
                   ₹{settledOrders.filter(o => o.items?.includes("UPI")).reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
                 </div>
               </div>
@@ -1705,21 +1816,21 @@ export default function PetpoojaPOSPage() {
 
             {/* Settled Orders Table */}
             <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-              <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="font-bold text-sm text-gray-900">Today's Completed Invoices</h3>
-                <span className="text-xs text-gray-500">{new Date().toLocaleDateString()}</span>
+              <div className="p-3.5 border-b border-gray-200 flex justify-between items-center">
+                <h3 className="font-bold text-xs sm:text-sm text-gray-900">Today's Completed Invoices</h3>
+                <span className="text-[11px] text-gray-500">{new Date().toLocaleDateString()}</span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-xs min-w-[500px]">
                   <thead className="bg-gray-50 border-b text-gray-500 font-bold uppercase text-[10px]">
                     <tr>
-                      <th className="p-3">Invoice #</th>
-                      <th className="p-3">Table / Source</th>
-                      <th className="p-3">Time</th>
-                      <th className="p-3">Amount</th>
-                      <th className="p-3">Mode</th>
-                      <th className="p-3 text-right">Actions</th>
+                      <th className="p-2.5">Invoice #</th>
+                      <th className="p-2.5">Table / Source</th>
+                      <th className="p-2.5">Time</th>
+                      <th className="p-2.5">Amount</th>
+                      <th className="p-2.5">Mode</th>
+                      <th className="p-2.5 text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
@@ -1729,20 +1840,20 @@ export default function PetpoojaPOSPage() {
 
                       return (
                         <tr key={ord.id} className="hover:bg-gray-50">
-                          <td className="p-3 font-mono font-bold text-gray-900">#{ord.order_number || ord.id}</td>
-                          <td className="p-3 font-medium text-gray-800">
+                          <td className="p-2.5 font-mono font-bold text-gray-900">#{ord.order_number || ord.id}</td>
+                          <td className="p-2.5 font-medium text-gray-800">
                             {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
                           </td>
-                          <td className="p-3 text-gray-500 font-mono">{timeStr}</td>
-                          <td className="p-3 font-mono font-black text-gray-900">₹{ord.total_amount}</td>
-                          <td className="p-3">
+                          <td className="p-2.5 text-gray-500 font-mono">{timeStr}</td>
+                          <td className="p-2.5 font-mono font-black text-gray-900">₹{ord.total_amount}</td>
+                          <td className="p-2.5">
                             <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
                               payMode === "UPI" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
                             }`}>
                               {payMode}
                             </span>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="p-2.5 text-right">
                             <button
                               onClick={() => {
                                 const subtotal = ord.total_amount;
@@ -1750,7 +1861,7 @@ export default function PetpoojaPOSPage() {
                                 const gTot = subtotal + gstAmt;
                                 printOfficialInvoice(ord.table_number, [ord], subtotal, 0, gstAmt, 0, gTot, payMode);
                               }}
-                              className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[11px] inline-flex items-center gap-1"
+                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[10px] inline-flex items-center gap-1"
                             >
                               <Printer size={12} /> Reprint
                             </button>
@@ -1773,17 +1884,17 @@ export default function PetpoojaPOSPage() {
         )}
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL 1: SHIFT / TRANSFER TABLE */}
-      {/* ------------------------------------------------------------- */}
+      {/* ============================================================= */}
+      {/* MODAL 1: SHIFT / TRANSFER TABLE                                */}
+      {/* ============================================================= */}
       {isShiftModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-4 shadow-2xl">
-            <h3 className="font-black text-lg text-gray-900 flex items-center gap-2">
-              <RotateCcw className="text-blue-600" /> Shift Table {selectedTable}
+          <div className="bg-white rounded-3xl w-full max-w-sm p-5 space-y-4 shadow-2xl">
+            <h3 className="font-black text-base sm:text-lg text-gray-900 flex items-center gap-2">
+              <RotateCcw className="text-blue-600" size={18} /> Shift Table {selectedTable}
             </h3>
             <p className="text-xs text-gray-500">
-              Transfer all active running KOTs from Table {selectedTable} to an empty table.
+              Transfer active running KOTs to an empty table.
             </p>
 
             <div>
@@ -1791,7 +1902,7 @@ export default function PetpoojaPOSPage() {
               <select
                 value={targetShiftTable}
                 onChange={e => setTargetShiftTable(e.target.value)}
-                className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs sm:text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
               >
                 <option value="">-- Choose Free Table --</option>
                 {tablesList.filter(t => t.status === "FREE").map(t => (
@@ -1820,35 +1931,35 @@ export default function PetpoojaPOSPage() {
         </div>
       )}
 
-      {/* ------------------------------------------------------------- */}
-      {/* MODAL 2: WHATSAPP BILL SENDING & INSTANT SETTLEMENT */}
-      {/* ------------------------------------------------------------- */}
+      {/* ============================================================= */}
+      {/* MODAL 2: WHATSAPP BILL SENDING & INSTANT SETTLEMENT           */}
+      {/* ============================================================= */}
       {waModal.isOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
           <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
             <div className="bg-[#25D366] p-4 text-white text-center">
-              <h3 className="font-black text-lg">Send Digital WhatsApp Bill</h3>
+              <h3 className="font-black text-base sm:text-lg">Send Digital WhatsApp Bill</h3>
               <p className="text-white/90 text-xs">Table {waModal.data?.tableNumber} • Paid via {waModal.paymentMethod}</p>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-5 space-y-3.5">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1.5">Customer Mobile Number (Optional)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Customer Mobile Number (Optional)</label>
                 <input
                   type="tel"
                   autoFocus
                   placeholder="e.g. 9876543210"
                   value={waPhone}
-                  onChange={e => setWaPhone(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-xl p-3 font-mono font-bold text-gray-800 focus:border-[#25D366] outline-none"
-                  onKeyDown={e => e.key === 'Enter' && handleSendWa()}
+                  onChange={(e) => setWaPhone(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 font-mono font-bold text-gray-800 focus:border-[#25D366] outline-none text-sm"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
                 />
               </div>
 
               <div className="space-y-2 pt-1">
                 <button
                   onClick={handleSendWa}
-                  className="w-full bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold py-3 rounded-xl transition shadow-md text-xs flex items-center justify-center gap-2"
+                  className="w-full bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold py-2.5 rounded-xl transition shadow-md text-xs flex items-center justify-center gap-2"
                 >
                   <Send size={14} /> Send on WhatsApp & Clear Table
                 </button>
@@ -1875,7 +1986,7 @@ export default function PetpoojaPOSPage() {
                 </button>
                 <button
                   onClick={() => { setWaModal({ isOpen: false, data: null, paymentMethod: null }); setWaPhone(''); }}
-                  className="w-full text-gray-400 font-bold py-1.5 text-xs hover:text-gray-600 transition"
+                  className="w-full text-gray-400 font-bold py-1 text-xs hover:text-gray-600 transition"
                 >
                   Cancel (Keep Table)
                 </button>

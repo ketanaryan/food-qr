@@ -1202,144 +1202,146 @@ export default function AttendoPage() {
 
           {/* Table */}
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
-                <tr>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-3">Role & Shift</th>
-                  <th className="py-3 px-3">In-Time</th>
-                  <th className="py-3 px-3 text-center">Overtime (+₹60/h)</th>
-                  <th className="py-3 px-3 text-center">Late Penalty (-₹50)</th>
-                  <th className="py-3 px-3 text-right">Today's Wage</th>
-                  <th className="py-3 px-4 text-right">Attendance Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {staff.map(member => {
-                  const rec = attendance[member.id] || {
-                    status: "PRESENT",
-                    inTime: "10:00 AM",
-                    overtimeHours: 0,
-                    latePenalty: 0
-                  };
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[720px]">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-3">Role & Shift</th>
+                    <th className="py-3 px-3">In-Time</th>
+                    <th className="py-3 px-3 text-center">Overtime (+₹60/h)</th>
+                    <th className="py-3 px-3 text-center">Late Penalty (-₹50)</th>
+                    <th className="py-3 px-3 text-right">Today's Wage</th>
+                    <th className="py-3 px-4 text-right">Attendance Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {staff.map(member => {
+                    const rec = attendance[member.id] || {
+                      status: "PRESENT",
+                      inTime: "10:00 AM",
+                      overtimeHours: 0,
+                      latePenalty: 0
+                    };
 
-                  const multiplier = rec.status === "PRESENT" ? 1 : rec.status === "HALF_DAY" ? 0.5 : rec.status === "PAID_LEAVE" ? 1 : 0;
-                  const dayPay = Math.round(member.dailyRate * multiplier);
-                  const otPay = rec.overtimeHours * overtimeRules.ratePerHour;
-                  const penalty = rec.latePenalty;
-                  const todayEarned = Math.max(0, dayPay + otPay - penalty);
+                    const multiplier = rec.status === "PRESENT" ? 1 : rec.status === "HALF_DAY" ? 0.5 : rec.status === "PAID_LEAVE" ? 1 : 0;
+                    const dayPay = Math.round(member.dailyRate * multiplier);
+                    const otPay = rec.overtimeHours * overtimeRules.ratePerHour;
+                    const penalty = rec.latePenalty;
+                    const todayEarned = Math.max(0, dayPay + otPay - penalty);
 
-                  return (
-                    <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-zinc-900">{member.name}</div>
-                        <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{member.phone}</div>
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <span className="font-medium text-zinc-800">{member.role}</span>
-                        <span className="text-[11px] text-zinc-400 block mt-0.5">{member.shiftTiming}</span>
-                      </td>
-                      <td className="py-3.5 px-3">
-                        <input
-                          type="text"
-                          value={rec.inTime}
-                          onChange={e => handleUpdateInTime(member.id, e.target.value)}
-                          className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
-                        />
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
-                          {rec.overtimeHours > 0 && (
+                    return (
+                      <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-zinc-900">{member.name}</div>
+                          <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{member.phone}</div>
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <span className="font-medium text-zinc-800">{member.role}</span>
+                          <span className="text-[11px] text-zinc-400 block mt-0.5">{member.shiftTiming}</span>
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <input
+                            type="text"
+                            value={rec.inTime}
+                            onChange={e => handleUpdateInTime(member.id, e.target.value)}
+                            className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
+                          />
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
+                            {rec.overtimeHours > 0 && (
+                              <button
+                                onClick={() => handleSubtractOvertime(member.id)}
+                                className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
+                                title="Decrease OT"
+                              >
+                                <Minus size={11} strokeWidth={2} />
+                              </button>
+                            )}
+                            <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
+                              +{rec.overtimeHours}h
+                            </span>
                             <button
-                              onClick={() => handleSubtractOvertime(member.id)}
-                              className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
-                              title="Decrease OT"
+                              onClick={() => handleAddOvertime(member.id)}
+                              className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
+                              title="Add 1 Hour Overtime (+₹60)"
                             >
-                              <Minus size={11} strokeWidth={2} />
+                              +
                             </button>
-                          )}
-                          <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
-                            +{rec.overtimeHours}h
-                          </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
                           <button
-                            onClick={() => handleAddOvertime(member.id)}
-                            className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
-                            title="Add 1 Hour Overtime (+₹60)"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-3 text-center">
-                        <button
-                          onClick={() => handleToggleLatePenalty(member.id)}
-                          className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
-                            rec.latePenalty > 0
-                              ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
-                              : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
-                          }`}
-                          title="Toggle Late Penalty (₹50)"
-                        >
-                          {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
-                        </button>
-                      </td>
-                      <td className="py-3.5 px-3 text-right">
-                        <div className="font-mono font-semibold text-zinc-900">
-                          ₹{todayEarned.toLocaleString("en-IN")}
-                        </div>
-                        <div className="text-[10px] text-zinc-400 font-mono">
-                          rate: ₹{member.dailyRate}/d
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60">
-                          <button
-                            onClick={() => handleSetStatus(member.id, "PRESENT")}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
-                              rec.status === "PRESENT"
-                                ? "bg-white text-emerald-800 shadow-2xs font-semibold"
-                                : "text-zinc-500 hover:text-zinc-900"
+                            onClick={() => handleToggleLatePenalty(member.id)}
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
+                              rec.latePenalty > 0
+                                ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
+                                : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
                             }`}
+                            title="Toggle Late Penalty (₹50)"
                           >
-                            Present
+                            {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
                           </button>
-                          <button
-                            onClick={() => handleSetStatus(member.id, "HALF_DAY")}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
-                              rec.status === "HALF_DAY"
-                                ? "bg-white text-amber-800 shadow-2xs font-semibold"
-                                : "text-zinc-500 hover:text-zinc-900"
-                            }`}
-                          >
-                            Half Day
-                          </button>
-                          <button
-                            onClick={() => handleSetStatus(member.id, "ABSENT")}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
-                              rec.status === "ABSENT"
-                                ? "bg-white text-rose-800 shadow-2xs font-semibold"
-                                : "text-zinc-500 hover:text-zinc-900"
-                            }`}
-                          >
-                            Absent
-                          </button>
-                          <button
-                            onClick={() => handleSetStatus(member.id, "PAID_LEAVE")}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
-                              rec.status === "PAID_LEAVE"
-                                ? "bg-white text-blue-800 shadow-2xs font-semibold"
-                                : "text-zinc-500 hover:text-zinc-900"
-                            }`}
-                          >
-                            Leave
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <div className="font-mono font-semibold text-zinc-900">
+                            ₹{todayEarned.toLocaleString("en-IN")}
+                          </div>
+                          <div className="text-[10px] text-zinc-400 font-mono">
+                            rate: ₹{member.dailyRate}/d
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60">
+                            <button
+                              onClick={() => handleSetStatus(member.id, "PRESENT")}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                                rec.status === "PRESENT"
+                                  ? "bg-white text-emerald-800 shadow-2xs font-semibold"
+                                  : "text-zinc-500 hover:text-zinc-900"
+                              }`}
+                            >
+                              Present
+                            </button>
+                            <button
+                              onClick={() => handleSetStatus(member.id, "HALF_DAY")}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                                rec.status === "HALF_DAY"
+                                  ? "bg-white text-amber-800 shadow-2xs font-semibold"
+                                  : "text-zinc-500 hover:text-zinc-900"
+                              }`}
+                            >
+                              Half
+                            </button>
+                            <button
+                              onClick={() => handleSetStatus(member.id, "ABSENT")}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                                rec.status === "ABSENT"
+                                  ? "bg-white text-rose-800 shadow-2xs font-semibold"
+                                  : "text-zinc-500 hover:text-zinc-900"
+                              }`}
+                            >
+                              Absent
+                            </button>
+                            <button
+                              onClick={() => handleSetStatus(member.id, "PAID_LEAVE")}
+                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                                rec.status === "PAID_LEAVE"
+                                  ? "bg-white text-blue-800 shadow-2xs font-semibold"
+                                  : "text-zinc-500 hover:text-zinc-900"
+                              }`}
+                            >
+                              Leave
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1451,42 +1453,44 @@ export default function AttendoPage() {
                 + Schedule Advance
               </button>
             </div>
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
-                <tr>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-3">Date & Mode</th>
-                  <th className="py-3 px-3">Reason</th>
-                  <th className="py-3 px-3 text-right">Total Loan</th>
-                  <th className="py-3 px-3 text-right">Monthly Installment</th>
-                  <th className="py-3 px-4 text-right">Remaining Balance</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {advances.map(adv => (
-                  <tr key={adv.id} className="hover:bg-zinc-50/50 transition">
-                    <td className="py-3.5 px-4 font-semibold text-zinc-900">
-                      {adv.staffName}
-                    </td>
-                    <td className="py-3.5 px-3 text-zinc-500 font-mono">
-                      {adv.date} <span className="text-[10px] text-zinc-400 font-sans">({adv.mode})</span>
-                    </td>
-                    <td className="py-3.5 px-3 text-zinc-700">
-                      {adv.reason}
-                    </td>
-                    <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
-                      ₹{adv.totalLoanAmount.toLocaleString("en-IN")}
-                    </td>
-                    <td className="py-3.5 px-3 text-right font-mono font-semibold text-rose-700">
-                      -₹{adv.monthlyInstallment.toLocaleString("en-IN")} / mo
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
-                      ₹{adv.remainingBalance.toLocaleString("en-IN")}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[650px]">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-3">Date & Mode</th>
+                    <th className="py-3 px-3">Reason</th>
+                    <th className="py-3 px-3 text-right">Total Loan</th>
+                    <th className="py-3 px-3 text-right">Monthly Installment</th>
+                    <th className="py-3 px-4 text-right">Remaining Balance</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {advances.map(adv => (
+                    <tr key={adv.id} className="hover:bg-zinc-50/50 transition">
+                      <td className="py-3.5 px-4 font-semibold text-zinc-900">
+                        {adv.staffName}
+                      </td>
+                      <td className="py-3.5 px-3 text-zinc-500 font-mono">
+                        {adv.date} <span className="text-[10px] text-zinc-400 font-sans">({adv.mode})</span>
+                      </td>
+                      <td className="py-3.5 px-3 text-zinc-700">
+                        {adv.reason}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
+                        ₹{adv.totalLoanAmount.toLocaleString("en-IN")}
+                      </td>
+                      <td className="py-3.5 px-3 text-right font-mono font-semibold text-rose-700">
+                        -₹{adv.monthlyInstallment.toLocaleString("en-IN")} / mo
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
+                        ₹{adv.remainingBalance.toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1516,61 +1520,63 @@ export default function AttendoPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
-                <tr>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-3 text-right">Base Salary</th>
-                  <th className="py-3 px-3 text-center">Payable Days</th>
-                  <th className="py-3 px-3 text-right">Gross Earned</th>
-                  <th className="py-3 px-3 text-right">Advance Cut</th>
-                  <th className="py-3 px-3 text-right">Held Balance</th>
-                  <th className="py-3 px-3 text-right font-semibold text-zinc-900">Net Take-Home</th>
-                  <th className="py-3 px-4 text-right">Payslip</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {staff.map(member => {
-                  const p = calculatePayrollForMember(member);
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[720px]">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-3 text-right">Base Salary</th>
+                    <th className="py-3 px-3 text-center">Payable Days</th>
+                    <th className="py-3 px-3 text-right">Gross Earned</th>
+                    <th className="py-3 px-3 text-right">Advance Cut</th>
+                    <th className="py-3 px-3 text-right">Held Balance</th>
+                    <th className="py-3 px-3 text-right font-semibold text-zinc-900">Net Take-Home</th>
+                    <th className="py-3 px-4 text-right">Payslip</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {staff.map(member => {
+                    const p = calculatePayrollForMember(member);
 
-                  return (
-                    <tr key={member.id} className="hover:bg-zinc-50/50 transition">
-                      <td className="py-3.5 px-4">
-                        <div className="font-semibold text-zinc-900">{member.name}</div>
-                        <div className="text-[11px] text-zinc-400">{member.role}</div>
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-700">
-                        ₹{member.monthlySalary.toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-3.5 px-3 text-center font-mono font-medium text-zinc-900">
-                        {p.payableDays} / 30
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
-                        ₹{p.grossEarned.toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-rose-700">
-                        {p.installmentDeduction > 0 ? `-₹${p.installmentDeduction.toLocaleString("en-IN")}` : "—"}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-600">
-                        ₹{member.heldArrears.toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono font-semibold text-sm text-zinc-900">
-                        ₹{p.netSalary.toLocaleString("en-IN")}
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleWhatsAppSalarySlip(member, p)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-zinc-50 text-zinc-800 text-[11px] font-medium rounded-md border border-zinc-200 shadow-2xs transition"
-                        >
-                          <MessageSquare size={12} className="text-zinc-500" />
-                          <span>Send Slip</span>
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                    return (
+                      <tr key={member.id} className="hover:bg-zinc-50/50 transition">
+                        <td className="py-3.5 px-4">
+                          <div className="font-semibold text-zinc-900">{member.name}</div>
+                          <div className="text-[11px] text-zinc-400">{member.role}</div>
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-700">
+                          ₹{member.monthlySalary.toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3.5 px-3 text-center font-mono font-medium text-zinc-900">
+                          {p.payableDays} / 30
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
+                          ₹{p.grossEarned.toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono text-rose-700">
+                          {p.installmentDeduction > 0 ? `-₹${p.installmentDeduction.toLocaleString("en-IN")}` : "—"}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-600">
+                          ₹{member.heldArrears.toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono font-semibold text-sm text-zinc-900">
+                          ₹{p.netSalary.toLocaleString("en-IN")}
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleWhatsAppSalarySlip(member, p)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-zinc-50 text-zinc-800 text-[11px] font-medium rounded-md border border-zinc-200 shadow-2xs transition"
+                          >
+                            <MessageSquare size={12} className="text-zinc-500" />
+                            <span>Send Slip</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1658,41 +1664,43 @@ export default function AttendoPage() {
           </div>
 
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
-                <tr>
-                  <th className="py-3 px-4">Employee</th>
-                  <th className="py-3 px-3 text-right">Gross Pay</th>
-                  <th className="py-3 px-3 text-right">EPF (12%)</th>
-                  <th className="py-3 px-3 text-right">ESIC (0.75%)</th>
-                  <th className="py-3 px-3 text-right">Prof. Tax</th>
-                  <th className="py-3 px-4 text-right">Net Take-Home</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {staff.map(s => {
-                  const p = calculatePayrollForMember(s);
-                  return (
-                    <tr key={s.id} className="hover:bg-zinc-50/50 transition">
-                      <td className="py-3.5 px-4 font-semibold text-zinc-900">{s.name}</td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-700">₹{p.grossEarned.toLocaleString("en-IN")}</td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
-                        {complianceMode === "STATUTORY" ? `-₹${p.epfDeduction}` : "—"}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
-                        {complianceMode === "STATUTORY" ? `-₹${p.esicDeduction}` : "—"}
-                      </td>
-                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
-                        {complianceMode === "STATUTORY" ? `-₹${p.ptDeduction}` : "—"}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
-                        ₹{p.netSalary.toLocaleString("en-IN")}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[650px]">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
+                  <tr>
+                    <th className="py-3 px-4">Employee</th>
+                    <th className="py-3 px-3 text-right">Gross Pay</th>
+                    <th className="py-3 px-3 text-right">EPF (12%)</th>
+                    <th className="py-3 px-3 text-right">ESIC (0.75%)</th>
+                    <th className="py-3 px-3 text-right">Prof. Tax</th>
+                    <th className="py-3 px-4 text-right">Net Take-Home</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  {staff.map(s => {
+                    const p = calculatePayrollForMember(s);
+                    return (
+                      <tr key={s.id} className="hover:bg-zinc-50/50 transition">
+                        <td className="py-3.5 px-4 font-semibold text-zinc-900">{s.name}</td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-700">₹{p.grossEarned.toLocaleString("en-IN")}</td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                          {complianceMode === "STATUTORY" ? `-₹${p.epfDeduction}` : "—"}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                          {complianceMode === "STATUTORY" ? `-₹${p.esicDeduction}` : "—"}
+                        </td>
+                        <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                          {complianceMode === "STATUTORY" ? `-₹${p.ptDeduction}` : "—"}
+                        </td>
+                        <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
+                          ₹{p.netSalary.toLocaleString("en-IN")}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -1761,40 +1769,42 @@ export default function AttendoPage() {
             <div className="p-4 border-b border-zinc-100">
               <h4 className="font-semibold text-zinc-900 text-sm">Role-Based Access Rights</h4>
             </div>
-            <table className="w-full text-left text-xs">
-              <thead className="bg-zinc-50/75 text-zinc-500 uppercase text-[11px] font-semibold border-b border-zinc-200">
-                <tr>
-                  <th className="py-2.5 px-4">Role</th>
-                  <th className="py-2.5 px-3 text-center">Attendance</th>
-                  <th className="py-2.5 px-3 text-center">Leaves</th>
-                  <th className="py-2.5 px-3 text-center">Advances</th>
-                  <th className="py-2.5 px-3 text-center">Payroll</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                <tr>
-                  <td className="py-3 px-4 font-semibold text-zinc-900">Owner (Superadmin)</td>
-                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
-                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
-                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
-                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 font-semibold text-zinc-900">Restaurant Manager</td>
-                  <td className="py-3 px-3 text-center text-zinc-700">Mark & Edit</td>
-                  <td className="py-3 px-3 text-center text-zinc-700">Approve/Reject</td>
-                  <td className="py-3 px-3 text-center text-zinc-500">View Only</td>
-                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
-                </tr>
-                <tr>
-                  <td className="py-3 px-4 font-semibold text-zinc-900">Floor Captain</td>
-                  <td className="py-3 px-3 text-center text-zinc-500">Self Only</td>
-                  <td className="py-3 px-3 text-center text-zinc-500">Apply Only</td>
-                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
-                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs min-w-[550px]">
+                <thead className="bg-zinc-50/75 text-zinc-500 uppercase text-[11px] font-semibold border-b border-zinc-200">
+                  <tr>
+                    <th className="py-2.5 px-4">Role</th>
+                    <th className="py-2.5 px-3 text-center">Attendance</th>
+                    <th className="py-2.5 px-3 text-center">Leaves</th>
+                    <th className="py-2.5 px-3 text-center">Advances</th>
+                    <th className="py-2.5 px-3 text-center">Payroll</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100">
+                  <tr>
+                    <td className="py-3 px-4 font-semibold text-zinc-900">Owner (Superadmin)</td>
+                    <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                    <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                    <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                    <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4 font-semibold text-zinc-900">Restaurant Manager</td>
+                    <td className="py-3 px-3 text-center text-zinc-700">Mark & Edit</td>
+                    <td className="py-3 px-3 text-center text-zinc-700">Approve/Reject</td>
+                    <td className="py-3 px-3 text-center text-zinc-500">View Only</td>
+                    <td className="py-3 px-3 text-center text-zinc-400">—</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 px-4 font-semibold text-zinc-900">Floor Captain</td>
+                    <td className="py-3 px-3 text-center text-zinc-500">Self Only</td>
+                    <td className="py-3 px-3 text-center text-zinc-500">Apply Only</td>
+                    <td className="py-3 px-3 text-center text-zinc-400">—</td>
+                    <td className="py-3 px-3 text-center text-zinc-400">—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">

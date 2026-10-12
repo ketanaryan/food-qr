@@ -16,6 +16,7 @@ type Order = {
 
 export default function KitchenDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [activeMobileColumn, setActiveMobileColumn] = useState<'received' | 'preparing' | 'ready' | 'served'>('received');
   const [audioEnabled, setAudioEnabled] = useState(false); // Must be false so user explicitly clicks to unlock audio context on mobile
   const audioEnabledRef = useRef(false);
   const [isOnline, setIsOnline] = useState(true);
@@ -215,7 +216,7 @@ export default function KitchenDashboard() {
   return (
     <>
       <NavBar />
-      <div className="min-h-screen bg-gray-50 p-6 pt-24 font-sans relative">
+      <div className="min-h-screen bg-gray-50 p-3 pt-20 sm:p-6 sm:pt-24 font-sans relative">
       
       {!isOnline && (
         <div className="fixed top-16 left-0 right-0 bg-red-600 text-white text-center py-2 font-bold z-40 shadow-md">
@@ -223,8 +224,8 @@ export default function KitchenDashboard() {
         </div>
       )}
 
-      <div className={`mb-6 flex items-center justify-between ${!isOnline ? 'mt-8' : ''}`}>
-        <h1 className="text-3xl font-bold text-gray-900">Kitchen Dashboard</h1>
+      <div className={`mb-4 sm:mb-6 flex items-center justify-between gap-3 ${!isOnline ? 'mt-8' : ''}`}>
+        <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Kitchen Display</h1>
         <button
           onClick={() => {
             setAudioEnabled(!audioEnabled);
@@ -232,16 +233,37 @@ export default function KitchenDashboard() {
               audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
             }
           }}
-          className={`flex items-center gap-2 rounded-full px-6 py-3 text-lg font-bold text-white transition ${
+          className={`flex items-center gap-1.5 sm:gap-2 rounded-full px-3.5 py-2 sm:px-6 sm:py-3 text-xs sm:text-base font-bold text-white transition ${
             audioEnabled ? "bg-green-600 hover:bg-green-700 shadow-[0_0_15px_rgba(22,163,74,0.5)]" : "bg-red-500 hover:bg-red-600 animate-pulse"
           }`}
         >
-          <Bell size={24} />
-          {audioEnabled ? "Audio On" : "Enable Audio"}
+          <Bell size={18} />
+          <span>{audioEnabled ? "Audio On" : "Enable Audio"}</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+      {/* MOBILE STATUS SWITCHER TABS (< 768px) */}
+      <div className="md:hidden flex p-1 bg-gray-200/90 rounded-2xl mb-4 overflow-x-auto shadow-inner text-xs font-bold gap-1">
+        {columns.map((st) => {
+          const count = orders.filter(o => o.status === st).length;
+          return (
+            <button
+              key={st}
+              onClick={() => setActiveMobileColumn(st)}
+              className={`flex-1 min-w-[75px] py-2 px-2 rounded-xl text-center capitalize transition flex flex-col items-center gap-0.5 ${
+                activeMobileColumn === st
+                  ? 'bg-white text-gray-900 shadow-xs font-black'
+                  : 'text-gray-600'
+              }`}
+            >
+              <span className="text-[11px] truncate">{st}</span>
+              <span className="text-[10px] px-1.5 rounded-full bg-gray-300/80 font-mono">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {columns.map((status) => {
           const colOrders = orders
             .filter((o) => o.status === status)
@@ -251,7 +273,7 @@ export default function KitchenDashboard() {
             });
 
           return (
-            <div key={status} className="flex flex-col gap-4 rounded-xl bg-gray-200/50 p-4">
+            <div key={status} className={`flex-col gap-3 rounded-2xl bg-gray-200/60 p-3 sm:p-4 ${activeMobileColumn === status ? 'flex' : 'hidden md:flex'}`}>
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-bold capitalize text-gray-700">{status}</h2>
                 <div className="flex items-center gap-2">

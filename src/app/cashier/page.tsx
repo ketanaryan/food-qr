@@ -452,13 +452,13 @@ export default function CashierDashboard() {
     <>
       <NavBar />
       <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
-      <div className="min-h-screen bg-gray-50 p-6 pt-24 md:p-12 md:pt-28">
-        <div className="flex justify-between items-center mb-8">
+      <div className="min-h-screen bg-gray-50 p-3 pt-20 sm:p-6 sm:pt-24 md:p-8 md:pt-28">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Receipt size={32} className="text-blue-600"/> Cashier / Billing
+            <h1 className="text-xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2 sm:gap-3">
+              <Receipt className="text-blue-600 w-6 h-6 sm:w-8 sm:h-8"/> Cashier / Billing
             </h1>
-            <p className="text-gray-500 mt-2">Manage payments and clear tables</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage payments and clear tables</p>
           </div>
           <button
             onClick={() => {
@@ -467,7 +467,7 @@ export default function CashierDashboard() {
                 audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
               }
             }}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-white transition ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs sm:text-sm font-bold text-white transition ${
               audioEnabled ? "bg-green-600 hover:bg-green-700" : "bg-red-500 hover:bg-red-600 animate-pulse"
             }`}
           >
@@ -625,9 +625,9 @@ export default function CashierDashboard() {
               </h2>
             </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {Object.values(tableGroups).map((group: any) => (
-            <div id={`table-card-${group.table}`} key={group.table} className={`bg-white rounded-2xl shadow-sm border p-6 transition-all ${group.requestedBill ? 'ring-2 ring-orange-400 shadow-orange-100' : 'border-gray-200'}`}>
+            <div id={`table-card-${group.table}`} key={group.table} className={`bg-white rounded-2xl shadow-sm border p-4 sm:p-6 transition-all ${group.requestedBill ? 'ring-2 ring-orange-400 shadow-orange-100' : 'border-gray-200'}`}>
               <div className="flex justify-between items-center border-b pb-4 mb-4">
                 <h2 className="text-2xl font-bold">
                   {group.table.match(/^(Swiggy|Zomato|Takeaway)/i) ? group.table : `Table ${group.table}`}
