@@ -66,6 +66,12 @@ export default function CaptainPortal() {
 
   // Load orders and menu
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedCaptain = localStorage.getItem('wb_selected_captain');
+      if (savedCaptain && CAPTAINS.includes(savedCaptain)) {
+        setSelectedCaptain(savedCaptain);
+      }
+    }
     fetchOrders();
     fetchMenu();
 
@@ -392,8 +398,15 @@ export default function CaptainPortal() {
         <div className="flex items-center gap-2">
           <select
             value={selectedCaptain}
-            onChange={e => setSelectedCaptain(e.target.value)}
-            className="bg-white/10 text-white text-xs font-bold py-1.5 px-3 rounded-xl border border-white/20 focus:outline-none focus:ring-1 focus:ring-[#A18D6D]"
+            onChange={e => {
+              const val = e.target.value;
+              setSelectedCaptain(val);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('wb_selected_captain', val);
+              }
+              toast.success(`Active Captain: ${val}`, { icon: "👤" });
+            }}
+            className="bg-white/10 text-white text-xs font-bold py-1.5 px-3 rounded-xl border border-white/20 focus:outline-none focus:ring-1 focus:ring-[#A18D6D] cursor-pointer"
           >
             {CAPTAINS.map(c => (
               <option key={c} value={c} className="bg-gray-900 text-white">
