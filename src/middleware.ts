@@ -5,7 +5,7 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl.pathname;
 
   // Protect sensitive routes
-  if (url.startsWith('/kitchen') || url.startsWith('/cashier') || url.startsWith('/admin') || url.startsWith('/pos') || url.startsWith('/api/admin')) {
+  if (url.startsWith('/kitchen') || url.startsWith('/cashier') || url.startsWith('/admin') || url.startsWith('/pos') || url.startsWith('/captain') || url.startsWith('/api/admin')) {
     const basicAuth = req.headers.get('authorization')
     
     if (basicAuth) {
@@ -37,6 +37,7 @@ export const config = {
     '/cashier/:path*',
     '/admin/:path*',
     '/pos/:path*',
+    '/captain/:path*',
     '/api/orders/update/:path*',
     '/api/admin/:path*'
   ],
