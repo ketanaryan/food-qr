@@ -346,50 +346,53 @@ export default function CaptainPortal() {
 
       {/* VIEW 1: TABLE FLOOR OVERVIEW (When no table selected) */}
       {!selectedTable && (
-        <div className="flex-1 p-4 max-w-5xl mx-auto w-full space-y-4">
-          {/* Status Filter Bar */}
-          <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1">
-            <div className="flex items-center gap-1.5">
+        <div className="flex-1 p-3 sm:p-4 max-w-5xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
+          {/* Status Filter Bar (Responsive 4-col Grid + Refresh) */}
+          <div className="flex items-center gap-1.5">
+            <div className="grid grid-cols-4 gap-1 flex-1 text-[11px] sm:text-xs font-bold">
               <button
                 onClick={() => setStatusFilter("ALL")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                  statusFilter === "ALL" ? "bg-gray-900 text-white shadow" : "bg-white text-gray-700 border"
+                className={`py-1.5 px-0.5 sm:px-3 rounded-xl transition text-center truncate ${
+                  statusFilter === "ALL" ? "bg-gray-900 text-white shadow font-extrabold" : "bg-white text-gray-700 border"
                 }`}
               >
                 All (15)
               </button>
               <button
                 onClick={() => setStatusFilter("FREE")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                  statusFilter === "FREE" ? "bg-green-600 text-white shadow" : "bg-white text-green-700 border border-green-200"
+                className={`py-1.5 px-0.5 sm:px-3 rounded-xl transition text-center truncate flex items-center justify-center gap-1 ${
+                  statusFilter === "FREE" ? "bg-green-600 text-white shadow font-extrabold" : "bg-white text-green-700 border border-green-200"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-green-500"></span> Free ({tablesList.filter(t => t.status === "FREE").length})
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
+                <span className="truncate">Free ({tablesList.filter(t => t.status === "FREE").length})</span>
               </button>
               <button
                 onClick={() => setStatusFilter("OCCUPIED")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                  statusFilter === "OCCUPIED" ? "bg-blue-600 text-white shadow" : "bg-white text-blue-700 border border-blue-200"
+                className={`py-1.5 px-0.5 sm:px-3 rounded-xl transition text-center truncate flex items-center justify-center gap-1 ${
+                  statusFilter === "OCCUPIED" ? "bg-blue-600 text-white shadow font-extrabold" : "bg-white text-blue-700 border border-blue-200"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span> Dining ({tablesList.filter(t => t.status === "OCCUPIED").length})
+                <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                <span className="truncate">Dining ({tablesList.filter(t => t.status === "OCCUPIED").length})</span>
               </button>
               <button
                 onClick={() => setStatusFilter("BILLING")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-                  statusFilter === "BILLING" ? "bg-amber-600 text-white shadow" : "bg-white text-amber-700 border border-amber-200"
+                className={`py-1.5 px-0.5 sm:px-3 rounded-xl transition text-center truncate flex items-center justify-center gap-1 ${
+                  statusFilter === "BILLING" ? "bg-amber-600 text-white shadow font-extrabold" : "bg-white text-amber-700 border border-amber-200"
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-amber-500"></span> Bill Ready ({tablesList.filter(t => t.status === "BILLING").length})
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                <span className="truncate">Bill ({tablesList.filter(t => t.status === "BILLING").length})</span>
               </button>
             </div>
 
             <button
               onClick={fetchOrders}
-              className="p-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-gray-900 shadow-sm"
+              className="p-2 bg-white border border-gray-200 rounded-xl text-gray-600 hover:text-gray-900 shadow-sm shrink-0"
               title="Refresh"
             >
-              <RefreshCw size={15} />
+              <RefreshCw size={14} />
             </button>
           </div>
 

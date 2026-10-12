@@ -836,11 +836,11 @@ export default function PetpoojaPOSPage() {
         </div>
       </header>
 
-      {/* MOBILE / TABLET PRIMARY VIEW SELECTOR BAR */}
-      <nav className="lg:hidden flex bg-[#28241d] text-gray-300 text-xs font-bold p-1.5 overflow-x-auto border-b border-black/20 shrink-0 gap-1.5 pr-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+      {/* MOBILE / TABLET PRIMARY VIEW SELECTOR BAR (100% FIT-TO-SCREEN 4-COL GRID) */}
+      <nav className="lg:hidden grid grid-cols-4 bg-[#28241d] text-gray-300 text-[11px] font-bold p-1 gap-1 border-b border-black/20 shrink-0">
         <button
           onClick={() => { setActiveView('tables'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'tables' && !selectedTable ? "bg-white text-gray-900 shadow-xs" : ""}`}
+          className={`py-1.5 px-0.5 rounded-lg text-center transition truncate ${activeView === 'tables' && !selectedTable ? "bg-white text-gray-900 shadow-xs font-extrabold" : "hover:text-white"}`}
         >
           Tables ({tablesList.length})
         </button>
@@ -851,21 +851,21 @@ export default function PetpoojaPOSPage() {
             setMobilePunchView('menu');
             setCart({});
           }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'quick_bill' ? "bg-white text-gray-900 shadow-xs" : ""}`}
+          className={`py-1.5 px-0.5 rounded-lg text-center transition truncate ${activeView === 'quick_bill' ? "bg-white text-gray-900 shadow-xs font-extrabold" : "hover:text-white"}`}
         >
           Takeaway
         </button>
         <button
           onClick={() => { setActiveView('live_kots'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'live_kots' ? "bg-white text-gray-900 shadow-xs" : ""}`}
+          className={`py-1.5 px-0.5 rounded-lg text-center transition truncate ${activeView === 'live_kots' ? "bg-white text-gray-900 shadow-xs font-extrabold" : "hover:text-white"}`}
         >
-          Live KOTs ({orders.length})
+          KOTs ({orders.length})
         </button>
         <button
           onClick={() => { setActiveView('register'); setSelectedTable(null); }}
-          className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'register' ? "bg-white text-gray-900 shadow-xs" : ""}`}
+          className={`py-1.5 px-0.5 rounded-lg text-center transition truncate ${activeView === 'register' ? "bg-white text-gray-900 shadow-xs font-extrabold" : "hover:text-white"}`}
         >
-          Register ({settledOrders.length})
+          Register
         </button>
       </nav>
 
@@ -876,13 +876,37 @@ export default function PetpoojaPOSPage() {
         {/* VIEW 1: DINE-IN TABLE FLOOR LAYOUT (When no table is selected) */}
         {/* ============================================================= */}
         {activeView === 'tables' && !selectedTable && (
-          <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-5 md:p-6 max-w-7xl mx-auto w-full space-y-3 sm:space-y-4 pb-28 sm:pb-12">
             
             {/* Top Filter & Section Bar */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-3 rounded-2xl border border-[#e8e1d6] shadow-xs">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-2.5 sm:p-3 rounded-2xl border border-[#e8e1d6] shadow-xs">
               
-              {/* Section Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {/* Floor Section Selection */}
+              {/* Mobile: Compact Native Dropdown (Zero cut-off) */}
+              <div className="sm:hidden flex items-center gap-2 w-full">
+                <div className="relative flex-1">
+                  <select
+                    value={selectedSection}
+                    onChange={(e) => setSelectedSection(e.target.value)}
+                    className="w-full bg-[#F4F1EA] text-gray-900 font-extrabold text-xs py-2 pl-3 pr-8 rounded-xl border border-[#e8e1d6] appearance-none focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  >
+                    {SECTIONS.map(sec => (
+                      <option key={sec.id} value={sec.id}>
+                        {sec.id === 'ALL' ? '🏢 All Tables (15)' :
+                         sec.id === 'GROUND' ? '🟢 Ground Floor (T1-T5)' :
+                         sec.id === 'AC_HALL' ? '❄️ AC Family Hall (T6-T10)' :
+                         '🌿 Garden / Terrace (T11-T15)'}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 text-xs">
+                    ▼
+                  </div>
+                </div>
+              </div>
+
+              {/* Desktop / Tablet: Section Pills */}
+              <div className="hidden sm:flex items-center gap-1.5 text-xs">
                 {SECTIONS.map(sec => (
                   <button
                     key={sec.id}
@@ -898,39 +922,42 @@ export default function PetpoojaPOSPage() {
                 ))}
               </div>
 
-              {/* Status Badges */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-bold pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+              {/* Status Badges (4-col grid on mobile, flex on desktop - 100% Fit) */}
+              <div className="grid grid-cols-4 gap-1 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto text-[11px] sm:text-xs font-bold">
                 <button
                   onClick={() => setStatusFilter("ALL")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap ${
-                    statusFilter === "ALL" ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"
+                  className={`py-1.5 px-1 sm:px-2.5 rounded-lg border text-center transition truncate ${
+                    statusFilter === "ALL" ? "bg-gray-900 text-white border-gray-900 font-extrabold" : "bg-white text-gray-700 border-gray-200"
                   }`}
                 >
                   All ({currentSectionTables.length})
                 </button>
                 <button
                   onClick={() => setStatusFilter("FREE")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
-                    statusFilter === "FREE" ? "bg-emerald-600 text-white border-emerald-600" : "bg-emerald-50 text-emerald-800 border-emerald-200"
+                  className={`py-1.5 px-0.5 sm:px-2.5 rounded-lg border text-center transition truncate flex items-center justify-center gap-1 ${
+                    statusFilter === "FREE" ? "bg-emerald-600 text-white border-emerald-600 font-extrabold" : "bg-emerald-50 text-emerald-800 border-emerald-200"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span> Free ({freeCount})
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                  <span className="truncate">Free ({freeCount})</span>
                 </button>
                 <button
                   onClick={() => setStatusFilter("OCCUPIED")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
-                    statusFilter === "OCCUPIED" ? "bg-blue-600 text-white border-blue-600" : "bg-blue-50 text-blue-800 border-blue-200"
+                  className={`py-1.5 px-0.5 sm:px-2.5 rounded-lg border text-center transition truncate flex items-center justify-center gap-1 ${
+                    statusFilter === "OCCUPIED" ? "bg-blue-600 text-white border-blue-600 font-extrabold" : "bg-blue-50 text-blue-800 border-blue-200"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-blue-500"></span> Dining ({occupiedCount})
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                  <span className="truncate">Dining ({occupiedCount})</span>
                 </button>
                 <button
                   onClick={() => setStatusFilter("BILLING")}
-                  className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap flex items-center gap-1 ${
-                    statusFilter === "BILLING" ? "bg-amber-600 text-white border-amber-600" : "bg-amber-50 text-amber-800 border-amber-200"
+                  className={`py-1.5 px-0.5 sm:px-2.5 rounded-lg border text-center transition truncate flex items-center justify-center gap-1 ${
+                    statusFilter === "BILLING" ? "bg-amber-600 text-white border-amber-600 font-extrabold" : "bg-amber-50 text-amber-800 border-amber-200"
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-amber-500"></span> Bill Ready ({billingCount})
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                  <span className="truncate">Bill ({billingCount})</span>
                 </button>
               </div>
             </div>
@@ -1715,7 +1742,7 @@ export default function PetpoojaPOSPage() {
         {/* VIEW 3: LIVE KITCHEN MONITOR (KOT TRACKER)                     */}
         {/* ============================================================= */}
         {activeView === 'live_kots' && (
-          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
             <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200">
               <div>
                 <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
@@ -1801,7 +1828,7 @@ export default function PetpoojaPOSPage() {
         {/* VIEW 4: DAY REGISTER / SETTLED BILLS REPRINT                  */}
         {/* ============================================================= */}
         {activeView === 'register' && (
-          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4">
+          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
             
             {/* Day Sales Summary */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
