@@ -302,8 +302,8 @@ export default function CaptainPortal() {
       {/* Top Header Bar */}
       <div className="bg-[#1E1B16] text-white sticky top-0 z-40 px-4 py-3 shadow-md flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#A18D6D] flex items-center justify-center font-bold text-white text-lg shadow-sm">
-            👨‍🍳
+          <div className="w-10 h-10 rounded-xl bg-zinc-800 text-white flex items-center justify-center font-bold text-lg shadow-xs border border-zinc-700">
+            <ChefHat size={20} strokeWidth={1.75} />
           </div>
           <div>
             <h1 className="font-playfair font-bold text-base tracking-wide flex items-center gap-2">
@@ -410,11 +410,13 @@ export default function CaptainPortal() {
                         Table {t.tableNumber}
                       </span>
                       {isFree && (
-                        <p className="text-[11px] font-bold text-green-700 mt-0.5">🟢 Vacant / Ready</p>
+                        <p className="text-[11px] font-medium text-emerald-700 mt-0.5 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available
+                        </p>
                       )}
                     </div>
                     {isBilling && (
-                      <span className="text-[10px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-semibold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded">
                         BILL
                       </span>
                     )}
@@ -423,10 +425,10 @@ export default function CaptainPortal() {
                   {isOccupied && (
                     <div className="mt-2 pt-2 border-t border-blue-100 flex items-center justify-between text-xs">
                       <div>
-                        <span className="font-extrabold text-blue-900 text-sm">₹{t.total}</span>
+                        <span className="font-semibold font-mono text-blue-900 text-sm">₹{t.total}</span>
                         <span className="text-[10px] text-blue-600 block">{t.itemCount} Items</span>
                       </div>
-                      <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded">
                         Dining
                       </span>
                     </div>
@@ -434,17 +436,17 @@ export default function CaptainPortal() {
 
                   {isBilling && (
                     <div className="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between text-xs">
-                      <span className="font-extrabold text-amber-900 text-sm">₹{t.total}</span>
-                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md">
-                        Bill Ready
+                      <span className="font-semibold font-mono text-amber-900 text-sm">₹{t.total}</span>
+                      <span className="text-[10px] font-semibold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
+                        Bill Requested
                       </span>
                     </div>
                   )}
 
                   {isFree && (
                     <div className="mt-2 pt-2 border-t border-gray-100 text-right">
-                      <span className="text-[11px] font-bold text-green-600 flex items-center justify-end gap-1">
-                        + Tap to Order ➜
+                      <span className="text-[11px] font-medium text-emerald-700 flex items-center justify-end gap-1">
+                        Take Order <ChevronRight size={13} />
                       </span>
                     </div>
                   )}
@@ -655,12 +657,12 @@ export default function CaptainPortal() {
                   Kitchen Instructions (Optional):
                 </label>
                 <div className="flex flex-wrap gap-1.5 mb-2">
-                  {["🌶️ Spicy", "🌱 Jain / No Onion", "🧈 Extra Butter", "Crispy"].map(tag => (
+                  {["Extra Spicy", "Jain / No Onion", "Extra Butter", "Crispy Well-Done", "Less Oil"].map(tag => (
                     <button
                       key={tag}
                       type="button"
                       onClick={() => setCookingNotes(prev => prev ? `${prev}, ${tag}` : tag)}
-                      className="text-[11px] font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded-lg"
+                      className="text-[11px] font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-2.5 py-1 rounded-md transition"
                     >
                       {tag}
                     </button>
@@ -671,7 +673,7 @@ export default function CaptainPortal() {
                   placeholder="e.g. Serve starters first, less salt..."
                   value={cookingNotes}
                   onChange={e => setCookingNotes(e.target.value)}
-                  className="w-full text-xs p-2 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-gray-900"
+                  className="w-full text-xs p-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-900"
                 />
               </div>
             )}
@@ -679,22 +681,24 @@ export default function CaptainPortal() {
 
           {/* FIXED BOTTOM ACTION BAR (When items in cart) */}
           {cartItemCount > 0 && (
-            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 p-3 px-4 shadow-xl z-50">
+            <div className="fixed bottom-0 left-0 w-full bg-white border-t border-zinc-200 p-3 px-4 shadow-xl z-50">
               <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
                 <div>
-                  <span className="text-xs text-gray-500 font-bold block">
+                  <span className="text-xs text-zinc-500 font-medium block">
                     {cartItemCount} Items Selected
                   </span>
-                  <span className="text-xl font-black text-gray-900">
+                  <span className="text-xl font-bold font-mono text-zinc-900">
                     ₹{cartSubtotal}
                   </span>
                 </div>
 
                 <button
                   onClick={handlePunchKOT}
-                  className="flex-1 max-w-sm py-3.5 bg-green-600 hover:bg-green-700 active:scale-95 text-white font-extrabold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"
+                  className="flex-1 max-w-sm py-3 bg-zinc-900 hover:bg-black active:scale-[0.99] text-white font-semibold text-xs tracking-wide uppercase rounded-xl transition shadow-md flex items-center justify-center gap-2"
                 >
-                  <Send size={18} /> PUNCH KOT TO KITCHEN ➔
+                  <Send size={15} />
+                  <span>Dispatch KOT to Kitchen</span>
+                  <ChevronRight size={15} />
                 </button>
               </div>
             </div>

@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { 
   Users, UserCheck, Calendar, Clock, DollarSign, Plus, 
-  Search, Download, MessageCircle, AlertCircle, CheckCircle2, 
+  Search, Download, MessageSquare, AlertCircle, CheckCircle2, 
   Trash2, Edit3, ArrowUpRight, ArrowDownRight, CreditCard, ChevronRight, Check,
   X, ShieldAlert, Award, FileText, CheckCircle, XCircle,
   Lock, Unlock, Shield, Activity, FileSpreadsheet, TrendingUp,
-  Percent, Briefcase, Building2, Camera, Coffee, Smartphone, Timer, Sparkles
+  Percent, Briefcase, Building2, Camera, Coffee, Smartphone, Timer, Sparkles,
+  ArrowRight, ArrowLeft, MoreHorizontal, User, Filter
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -22,7 +23,7 @@ export interface StaffMember {
   joiningDate: string;
   shiftTiming: string;
   leaveBalance: number;
-  heldArrears: number; // Salary held with owner (Pending Lump-sum deposit)
+  heldArrears: number;
   bankAccount?: string;
   bankIFSC?: string;
 }
@@ -78,7 +79,6 @@ export interface PunchEvent {
   notes: string;
 }
 
-// Initial realistic default staff for Hotel White Bliss
 const INITIAL_STAFF: StaffMember[] = [
   {
     id: "st-1",
@@ -91,7 +91,7 @@ const INITIAL_STAFF: StaffMember[] = [
     joiningDate: "15 Jan 2024",
     shiftTiming: "10:00 AM - 11:00 PM (Split)",
     leaveBalance: 4,
-    heldArrears: 4000, // Keeps ₹4,000 pending with owner for village trip
+    heldArrears: 4000,
     bankAccount: "50100458921102",
     bankIFSC: "HDFC0001244"
   },
@@ -187,7 +187,6 @@ const INITIAL_STAFF: StaffMember[] = [
   }
 ];
 
-// Initial realistic advance salary logs with installment schedules
 const INITIAL_ADVANCES: SalaryAdvance[] = [
   {
     id: "adv-1",
@@ -199,7 +198,7 @@ const INITIAL_ADVANCES: SalaryAdvance[] = [
     remainingBalance: 2000,
     date: "12 Oct 2026",
     mode: "CASH",
-    reason: "Hospital medical emergency (2 installments)"
+    reason: "Medical emergency (2 installments)"
   },
   {
     id: "adv-2",
@@ -211,7 +210,7 @@ const INITIAL_ADVANCES: SalaryAdvance[] = [
     remainingBalance: 1500,
     date: "08 Oct 2026",
     mode: "UPI",
-    reason: "Bike repair expense (Deduct full)"
+    reason: "Vehicle maintenance"
   },
   {
     id: "adv-3",
@@ -223,48 +222,46 @@ const INITIAL_ADVANCES: SalaryAdvance[] = [
     remainingBalance: 1000,
     date: "10 Oct 2026",
     mode: "CASH",
-    reason: "Family grocery advance (2 installments)"
+    reason: "Family advance"
   }
 ];
 
-// Initial Leave Requests (Matching Attendo screenshot style)
 const INITIAL_LEAVES: LeaveRequest[] = [
   {
     id: "lv-1",
     staffId: "st-3",
-    staffName: "Vikram Singh (Captain)",
+    staffName: "Vikram Singh",
     leaveType: "Sick Leave",
     startDate: "14 Oct 2026",
     endDate: "15 Oct 2026",
     days: 2,
-    reason: "High viral fever & doctor advised bed rest",
+    reason: "Viral fever; medical rest advised",
     status: "PENDING"
   },
   {
     id: "lv-2",
     staffId: "st-5",
-    staffName: "Ganesh Jadhav (Helper)",
+    staffName: "Ganesh Jadhav",
     leaveType: "Casual Leave",
     startDate: "18 Oct 2026",
     endDate: "18 Oct 2026",
     days: 1,
-    reason: "Village family festival pooja",
+    reason: "Family festival attendance",
     status: "PENDING"
   },
   {
     id: "lv-3",
     staffId: "st-2",
-    staffName: "Manoj Patil (Tandoor)",
+    staffName: "Manoj Patil",
     leaveType: "Casual Leave",
     startDate: "05 Oct 2026",
     endDate: "06 Oct 2026",
     days: 2,
-    reason: "Sister wedding ceremony",
+    reason: "Family wedding event",
     status: "APPROVED"
   }
 ];
 
-// Initial Activity Audit Logs (Matching Screenshot 5)
 const INITIAL_LOGS: AuditLog[] = [
   {
     id: "log-1",
@@ -285,9 +282,9 @@ const INITIAL_LOGS: AuditLog[] = [
   {
     id: "log-3",
     timestamp: "12 Oct 2026, 09:10 AM",
-    actor: "System Attendo",
-    action: "Attendance Cycle Initialized",
-    details: "Automated daily attendance sheet opened for 7 active staff members",
+    actor: "System Scheduler",
+    action: "Attendance Opened",
+    details: "Standard daily attendance roster initialized for 7 employees",
     type: "ATTENDANCE"
   },
   {
@@ -295,18 +292,17 @@ const INITIAL_LOGS: AuditLog[] = [
     timestamp: "11 Oct 2026, 11:30 PM",
     actor: "Manager",
     action: "Shift Closed",
-    details: "Night floor shift closed. 2 Overtime hours logged for Head Chef.",
+    details: "Floor shift closed; 2 overtime hours logged for Head Chef",
     type: "SYSTEM"
   }
 ];
 
-// Default Punch Activity Timeline (Matches Screenshot Phone Mockup)
 const DEFAULT_PUNCHES: PunchEvent[] = [
-  { id: "p-1", type: "IN", time: "10:30 AM", photoVerified: true, notes: "Morning Shift Start" },
-  { id: "p-2", type: "OUT", time: "01:30 PM", photoVerified: true, notes: "Lunch Break (30m Break)" },
-  { id: "p-3", type: "IN", time: "02:00 PM", photoVerified: true, notes: "Dinner Prep Resumed" },
-  { id: "p-4", type: "OUT", time: "07:00 PM", photoVerified: true, notes: "Evening Tea Break (10m Break)" },
-  { id: "p-5", type: "IN", time: "07:10 PM", photoVerified: true, notes: "Dinner Rush Floor Service" }
+  { id: "p-1", type: "IN", time: "10:30 AM", photoVerified: true, notes: "Shift Open" },
+  { id: "p-2", type: "OUT", time: "01:30 PM", photoVerified: true, notes: "Break (30m)" },
+  { id: "p-3", type: "IN", time: "02:00 PM", photoVerified: true, notes: "Prep In" },
+  { id: "p-4", type: "OUT", time: "07:00 PM", photoVerified: true, notes: "Break (10m)" },
+  { id: "p-5", type: "IN", time: "07:10 PM", photoVerified: true, notes: "Dinner Service In" }
 ];
 
 export default function AttendoPage() {
@@ -316,7 +312,6 @@ export default function AttendoPage() {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   
-  // Tabs: Matches 01 to 09 of Attendo screenshot suite
   const [activeTab, setActiveTab] = useState<
     "attendance" | "leaves" | "advances" | "payroll" | "penalties" | "compliance" | "reports" | "admin_control" | "shifts" | "directory"
   >("attendance");
@@ -324,15 +319,11 @@ export default function AttendoPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
 
-  // Payroll lock & compliance state
   const [isPayrollLocked, setIsPayrollLocked] = useState(false);
   const [complianceMode, setComplianceMode] = useState<"CASH_IN_HAND" | "STATUTORY">("CASH_IN_HAND");
   const [selectedState, setSelectedState] = useState("Maharashtra");
-
-  // Attendance Modes (From Screenshot: "Attendance Modes That Match Your Floor")
   const [attendanceMode, setAttendanceMode] = useState<"MULTI_PUNCH" | "FIRST_LAST" | "SINGLE_PUNCH">("MULTI_PUNCH");
   
-  // Live Ticking Working Hours Timer (Matching screenshot: 03 : 13 : 05)
   const [liveSeconds, setLiveSeconds] = useState(3 * 3600 + 13 * 60 + 5);
 
   useEffect(() => {
@@ -355,17 +346,15 @@ export default function AttendoPage() {
 
   const timerDisplay = formatDigitalTime(liveSeconds);
 
-  // Overtime & Penalty rules configuration (Screenshot 2)
   const [overtimeRules, setOvertimeRules] = useState({
-    graceMinutes: 15, // 15 min buffer before OT starts
-    roundingInterval: 30, // 30 min rounding
+    graceMinutes: 15,
+    roundingInterval: 30,
     ratePerHour: 60,
     latePenaltyAmount: 50,
     offDayPaid: true,
-    messDeduction: 0 // e.g. Staff canteen deduction
+    messDeduction: 0
   });
 
-  // Modals
   const [isAdvanceModalOpen, setIsAdvanceModalOpen] = useState(false);
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [isNewLeaveModalOpen, setIsNewLeaveModalOpen] = useState(false);
@@ -374,7 +363,6 @@ export default function AttendoPage() {
   const [isSelfCheckOpen, setIsSelfCheckOpen] = useState(false);
   const [selectedStaffForRegularize, setSelectedStaffForRegularize] = useState<StaffMember | null>(null);
 
-  // Forms
   const [advanceForm, setAdvanceForm] = useState({
     staffId: "",
     totalLoanAmount: "",
@@ -412,7 +400,6 @@ export default function AttendoPage() {
 
   const todayStr = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 
-  // Load from localStorage
   useEffect(() => {
     const savedStaff = localStorage.getItem("hwb_attendo_staff");
     const savedAttendance = localStorage.getItem("hwb_attendo_attendance");
@@ -493,10 +480,9 @@ export default function AttendoPage() {
     localStorage.setItem("hwb_attendo_logs", JSON.stringify(updated));
   };
 
-  // Toggle Attendance Status
   const handleSetStatus = (staffId: string, status: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE") => {
     if (isPayrollLocked) {
-      return toast.error("Payroll is Finalised and Locked! Unlock to edit attendance.");
+      return toast.error("Payroll period is finalised and locked.");
     }
     const updated = {
       ...attendance,
@@ -511,11 +497,10 @@ export default function AttendoPage() {
     };
     saveAttendance(updated);
     const member = staff.find(s => s.id === staffId);
-    toast.success(`${member?.name} marked ${status}! (📸 Selfie photo verified)`);
-    logAction("Attendance Marked", `${member?.name} marked as ${status} (Photo verified)`, "ATTENDANCE");
+    toast.success(`${member?.name} marked ${status.replace("_", " ")}.`);
+    logAction("Attendance Updated", `${member?.name} marked as ${status}`, "ATTENDANCE");
   };
 
-  // Overtime / Penalty Toggle
   const handleAddOvertime = (staffId: string) => {
     if (isPayrollLocked) return toast.error("Payroll period is locked.");
     const current = attendance[staffId] || { staffId, date: todayStr, status: "PRESENT", inTime: "10:00 AM", overtimeHours: 0, latePenalty: 0 };
@@ -528,8 +513,8 @@ export default function AttendoPage() {
     };
     saveAttendance(updated);
     const member = staff.find(s => s.id === staffId);
-    toast.success(`+1 Hour Overtime added for ${member?.name} (+₹${overtimeRules.ratePerHour})`);
-    logAction("Overtime Added", `+1 Hour OT granted to ${member?.name}`, "ATTENDANCE");
+    toast.success(`+1 Hour Overtime logged for ${member?.name}.`);
+    logAction("Overtime Logged", `+1 Hour OT granted to ${member?.name}`, "ATTENDANCE");
   };
 
   const handleToggleLatePenalty = (staffId: string) => {
@@ -545,17 +530,15 @@ export default function AttendoPage() {
     };
     saveAttendance(updated);
     const member = staff.find(s => s.id === staffId);
-    toast.success(newPenalty > 0 ? `Late penalty (₹${overtimeRules.latePenaltyAmount}) logged for ${member?.name}` : "Penalty waived off");
+    toast.success(newPenalty > 0 ? `Late penalty (₹${overtimeRules.latePenaltyAmount}) applied to ${member?.name}.` : `Penalty waived for ${member?.name}.`);
     logAction("Late Penalty", `${member?.name}: ${newPenalty > 0 ? 'Deducted ₹50' : 'Waived'}`, "ATTENDANCE");
   };
 
-  // Open Regularize & Punch History Modal (Matching Screenshot)
   const handleOpenRegularizeModal = (member: StaffMember) => {
     setSelectedStaffForRegularize(member);
     setIsRegularizeModalOpen(true);
   };
 
-  // Approve / Reject Leave Request (Petpooja Attendo Feature)
   const handleLeaveAction = (leaveId: string, newStatus: "APPROVED" | "REJECTED") => {
     const targetLeave = leaves.find(l => l.id === leaveId);
     if (!targetLeave) return;
@@ -574,21 +557,20 @@ export default function AttendoPage() {
         return s;
       });
       saveStaff(updatedStaff);
-      toast.success(`Leave Approved for ${targetLeave.staffName} (${targetLeave.days} Days). Salary adjusted.`);
+      toast.success(`Leave approved for ${targetLeave.staffName} (${targetLeave.days} days).`);
       logAction("Leave Approved", `${targetLeave.staffName} - ${targetLeave.days} Days (${targetLeave.leaveType})`, "LEAVE");
     } else {
-      toast.error(`Leave Request Rejected for ${targetLeave.staffName}`);
+      toast.error(`Leave request rejected for ${targetLeave.staffName}.`);
       logAction("Leave Rejected", `${targetLeave.staffName} request declined`, "LEAVE");
     }
   };
 
-  // Submit Advance Salary with Installment schedule (Screenshot 1)
   const handleAdvanceSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const targetMember = staff.find(s => s.id === advanceForm.staffId);
-    if (!targetMember) return toast.error("Select staff member");
+    if (!targetMember) return toast.error("Select an employee.");
     const totalAmt = parseFloat(advanceForm.totalLoanAmount);
-    if (isNaN(totalAmt) || totalAmt <= 0) return toast.error("Enter valid amount");
+    if (isNaN(totalAmt) || totalAmt <= 0) return toast.error("Enter a valid advance amount.");
     const installment = advanceForm.monthlyInstallment ? parseFloat(advanceForm.monthlyInstallment) : totalAmt;
 
     const newAdvance: SalaryAdvance = {
@@ -601,23 +583,22 @@ export default function AttendoPage() {
       remainingBalance: totalAmt,
       date: todayStr,
       mode: advanceForm.mode,
-      reason: advanceForm.reason || "Staff advance"
+      reason: advanceForm.reason || "Staff Advance"
     };
 
     saveAdvances([newAdvance, ...advances]);
     setIsAdvanceModalOpen(false);
     setAdvanceForm({ staffId: "", totalLoanAmount: "", monthlyInstallment: "", mode: "CASH", reason: "" });
-    toast.success(`₹${totalAmt} Advance logged for ${targetMember.name}! ₹${installment} will auto-deduct per cycle.`);
-    logAction("Advance Logged", `₹${totalAmt} loan to ${targetMember.name} (₹${installment}/mo installment)`, "ADVANCE");
+    toast.success(`₹${totalAmt} advance scheduled for ${targetMember.name}.`);
+    logAction("Advance Scheduled", `₹${totalAmt} advance to ${targetMember.name}`, "ADVANCE");
   };
 
-  // Handle Arrears / Held Salary Khata (Screenshot 1)
   const handleArrearSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const targetMember = staff.find(s => s.id === arrearForm.staffId);
-    if (!targetMember) return toast.error("Select staff member");
+    if (!targetMember) return toast.error("Select an employee.");
     const amt = parseFloat(arrearForm.amount);
-    if (isNaN(amt) || amt <= 0) return toast.error("Enter valid amount");
+    if (isNaN(amt) || amt <= 0) return toast.error("Enter a valid amount.");
 
     const updatedStaff = staff.map(s => {
       if (s.id === targetMember.id) {
@@ -631,42 +612,40 @@ export default function AttendoPage() {
 
     saveStaff(updatedStaff);
     setIsArrearModalOpen(false);
-    const actionText = arrearForm.actionType === "HOLD" ? "Kept with Owner" : "Released & Paid to Staff";
-    toast.success(`₹${amt} Arrear ${actionText} for ${targetMember.name}!`);
-    logAction("Arrears Updated", `${targetMember.name}: ₹${amt} ${actionText}`, "PAYROLL");
+    const actionLabel = arrearForm.actionType === "HOLD" ? "Held in Khata" : "Released to Employee";
+    toast.success(`₹${amt} ${actionLabel} for ${targetMember.name}.`);
+    logAction("Arrears Updated", `${targetMember.name}: ₹${amt} ${actionLabel}`, "PAYROLL");
     setArrearForm({ staffId: "", amount: "", actionType: "HOLD", notes: "" });
   };
 
-  // Toggle Payroll Finalisation Lock (Screenshot 1)
   const handleTogglePayrollLock = () => {
     const nextState = !isPayrollLocked;
     setIsPayrollLocked(nextState);
     localStorage.setItem("hwb_attendo_locked", nextState ? "true" : "false");
     if (nextState) {
-      toast.success("🔒 October 2026 Payroll Finalised & Locked! Attendance & advances cannot be tampered with.");
-      logAction("Payroll Locked", "October 2026 Payroll marked Finalised & Closed", "PAYROLL");
+      toast.success("Payroll period locked. Record finalized.");
+      logAction("Payroll Locked", "October 2026 Payroll finalized & locked", "PAYROLL");
     } else {
-      toast.error("🔓 Payroll Unlocked for adjustments");
+      toast.error("Payroll period unlocked for adjustments.");
       logAction("Payroll Unlocked", "Admin unlocked payroll for adjustments", "PAYROLL");
     }
   };
 
-  // Submit New Leave Request
   const handleNewLeaveSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const targetMember = staff.find(s => s.id === leaveForm.staffId);
-    if (!targetMember) return toast.error("Select staff member");
+    if (!targetMember) return toast.error("Select an employee.");
     const daysNum = parseInt(leaveForm.days) || 1;
 
     const newLeave: LeaveRequest = {
       id: "lv-" + Date.now(),
       staffId: targetMember.id,
-      staffName: `${targetMember.name} (${targetMember.role})`,
+      staffName: targetMember.name,
       leaveType: leaveForm.leaveType,
       startDate: leaveForm.startDate || todayStr,
       endDate: leaveForm.endDate || todayStr,
       days: daysNum,
-      reason: leaveForm.reason || "Personal work",
+      reason: leaveForm.reason || "Personal Leave",
       status: "APPROVED"
     };
 
@@ -674,14 +653,13 @@ export default function AttendoPage() {
     const updatedStaff = staff.map(s => s.id === targetMember.id ? { ...s, leaveBalance: Math.max(0, s.leaveBalance - daysNum) } : s);
     saveStaff(updatedStaff);
     setIsNewLeaveModalOpen(false);
-    toast.success(`Leave added and approved for ${targetMember.name}`);
-    logAction("Leave Applied", `${targetMember.name} - ${daysNum} days approved directly`, "LEAVE");
+    toast.success(`Leave logged and approved for ${targetMember.name}.`);
+    logAction("Leave Applied", `${targetMember.name}: ${daysNum} days recorded`, "LEAVE");
   };
 
-  // Add New Staff
   const handleAddStaffSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaffForm.name || !newStaffForm.monthlySalary) return toast.error("Enter staff details");
+    if (!newStaffForm.name || !newStaffForm.monthlySalary) return toast.error("Provide employee details.");
 
     const newMember: StaffMember = {
       id: "st-" + Date.now(),
@@ -703,14 +681,13 @@ export default function AttendoPage() {
     saveStaff(updated);
     setIsAddStaffModalOpen(false);
     setNewStaffForm({ name: "", role: "Captain", department: "Service", phone: "", monthlySalary: 14000 });
-    toast.success(`New employee ${newMember.name} added!`);
-    logAction("Staff Joined", `${newMember.name} (${newMember.role}) joined directory`, "SYSTEM");
+    toast.success(`Employee ${newMember.name} added to directory.`);
+    logAction("Staff Joined", `${newMember.name} (${newMember.role}) added to directory`, "SYSTEM");
   };
 
-  // Continuous Payroll Math Engine
   const calculatePayrollForMember = (member: StaffMember) => {
     const rec = attendance[member.id];
-    let payableDays = 30; // Standard Indian payroll denominator
+    let payableDays = 30;
     
     if (rec?.status === "ABSENT") payableDays = 29;
     else if (rec?.status === "HALF_DAY") payableDays = 29.5;
@@ -728,15 +705,14 @@ export default function AttendoPage() {
 
     const grossEarned = baseEarned + overtimeBonus;
 
-    // Indian Compliance Deductions (Screenshots 2 & 3)
     let epfDeduction = 0;
     let esicDeduction = 0;
     let ptDeduction = 0;
 
     if (complianceMode === "STATUTORY") {
-      epfDeduction = Math.round(Math.min(grossEarned, 15000) * 0.12); // 12% PF on max 15k
-      esicDeduction = grossEarned <= 21000 ? Math.round(grossEarned * 0.0075) : 0; // 0.75% ESIC
-      ptDeduction = selectedState === "Delhi" ? 0 : 200; // State PT
+      epfDeduction = Math.round(Math.min(grossEarned, 15000) * 0.12);
+      esicDeduction = grossEarned <= 21000 ? Math.round(grossEarned * 0.0075) : 0;
+      ptDeduction = selectedState === "Delhi" ? 0 : 200;
     }
 
     const netSalary = Math.max(0, grossEarned - latePenalty - messFee - installmentDeduction - epfDeduction - esicDeduction - ptDeduction);
@@ -757,34 +733,32 @@ export default function AttendoPage() {
     };
   };
 
-  // 1-Click WhatsApp Salary Slip Share
   const handleWhatsAppSalarySlip = (member: StaffMember, payroll: any) => {
     const cleanPhone = member.phone.replace(/\D/g, "");
-    const msg = `🧾 *HOTEL WHITE BLISS — OFFICIAL SALARY SLIP* 🧾\n` +
+    const msg = `*HOTEL WHITE BLISS — SALARY SLIP*\n` +
       `--------------------------------\n` +
       `*Employee:* ${member.name} (${member.role})\n` +
-      `*Month:* ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
+      `*Period:* ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
       `--------------------------------\n` +
-      `*Base Monthly Salary:* ₹${member.monthlySalary.toLocaleString("en-IN")}\n` +
+      `*Base Salary:* ₹${member.monthlySalary.toLocaleString("en-IN")}\n` +
       `*Payable Days:* ${payroll.payableDays} / 30 Days\n` +
       `*Gross Earned:* ₹${payroll.grossEarned.toLocaleString("en-IN")}\n` +
       (payroll.overtimeBonus > 0 ? `*Overtime Bonus (+):* ₹${payroll.overtimeBonus}\n` : '') +
       (payroll.latePenalty > 0 ? `*Late Penalty (-):* ₹${payroll.latePenalty}\n` : '') +
-      (payroll.installmentDeduction > 0 ? `*Advance Installment Deducted:* -₹${payroll.installmentDeduction.toLocaleString("en-IN")}\n` : '') +
-      (complianceMode === "STATUTORY" ? `*EPF (12%):* -₹${payroll.epfDeduction} | *ESIC:* -₹${payroll.esicDeduction} | *PT:* -₹${payroll.ptDeduction}\n` : '') +
-      (member.heldArrears > 0 ? `*Savings Balance with Owner (Arrears):* ₹${member.heldArrears.toLocaleString("en-IN")}\n` : '') +
+      (payroll.installmentDeduction > 0 ? `*Advance Installment:* -₹${payroll.installmentDeduction.toLocaleString("en-IN")}\n` : '') +
+      (complianceMode === "STATUTORY" ? `*Statutory Deductions (EPF/ESIC/PT):* -₹${payroll.epfDeduction + payroll.esicDeduction + payroll.ptDeduction}\n` : '') +
+      (member.heldArrears > 0 ? `*Held Balance (Khata):* ₹${member.heldArrears.toLocaleString("en-IN")}\n` : '') +
       `--------------------------------\n` +
-      `*NET TAKE-HOME: ₹${payroll.netSalary.toLocaleString("en-IN")}*\n` +
-      `Status: ${isPayrollLocked ? 'FINALIZED & PROCESSED' : 'ESTIMATED'}\n` +
+      `*NET PAYABLE: ₹${payroll.netSalary.toLocaleString("en-IN")}*\n` +
+      `*Status:* ${isPayrollLocked ? 'APPROVED & PROCESSED' : 'CALCULATED'}\n` +
       `--------------------------------\n` +
-      `Dhanyawad! Hotel White Bliss Management. 🙏`;
+      `Hotel White Bliss Management.`;
 
     window.open(`https://wa.me/91${cleanPhone || "7499934257"}?text=${encodeURIComponent(msg)}`, "_blank");
-    toast.success(`Opening WhatsApp Salary Slip for ${member.name}`);
-    logAction("Payslip Sent", `WhatsApp slip sent to ${member.name}`, "PAYROLL");
+    toast.success(`Salary slip opened for ${member.name}.`);
+    logAction("Payslip Generated", `WhatsApp slip sent to ${member.name}`, "PAYROLL");
   };
 
-  // NEFT Bank Transfer Excel Export (Screenshot 1)
   const handleExportBankNEFT = () => {
     const headers = ["Beneficiary Name,Account Number,IFSC Code,Amount (INR),Transaction Type,Remarks"];
     const rows = staff.map(s => {
@@ -796,15 +770,14 @@ export default function AttendoPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Hotel_White_Bliss_Bank_Payout_NEFT_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Bank_Payout_NEFT_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Bank Transfer Payout file generated for bulk upload!");
-    logAction("Bank NEFT Exported", "Bulk NEFT file downloaded for online banking", "PAYROLL");
+    toast.success("Bank NEFT file downloaded.");
+    logAction("Bank NEFT Exported", "Bulk NEFT file downloaded", "PAYROLL");
   };
 
-  // Indian Labor Inspection Muster Roll (Form T) CSV (Screenshot 4)
   const handleExportMusterReport = () => {
     const daysHeader = Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`).join(",");
     const headers = [`Emp ID,Employee Name,Designation,Dept,${daysHeader},Total Present,Total Leaves,Payable Days`];
@@ -812,10 +785,10 @@ export default function AttendoPage() {
     const rows = staff.map(s => {
       const p = calculatePayrollForMember(s);
       const daysMarks = Array.from({ length: 31 }, (_, i) => {
-        if (i % 7 === 0) return "WO"; // Weekly off
-        if (s.id === "st-2" && i === 4) return "PL"; // Paid Leave
-        if (s.id === "st-6" && i === 10) return "HD"; // Half day
-        if (s.id === "st-7" && i === 11) return "A"; // Absent
+        if (i % 7 === 0) return "WO";
+        if (s.id === "st-2" && i === 4) return "PL";
+        if (s.id === "st-6" && i === 10) return "HD";
+        if (s.id === "st-7" && i === 11) return "A";
         return "P";
       }).join(",");
 
@@ -826,15 +799,14 @@ export default function AttendoPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Form_T_Indian_Inspection_Muster_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Form_T_Inspection_Muster_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast.success("Inspection-ready Muster Roll (Form T) downloaded!");
-    logAction("Muster Form T Exported", "Indian Inspection Muster Roll exported", "SYSTEM");
+    toast.success("Muster Roll (Form T) downloaded.");
+    logAction("Muster Form T Exported", "Form T Muster Roll exported", "SYSTEM");
   };
 
-  // KPI Calculations
   const totalStaffCount = staff.length;
   const presentCount = Object.values(attendance).filter(a => a.status === "PRESENT").length;
   const halfDayCount = Object.values(attendance).filter(a => a.status === "HALF_DAY").length;
@@ -844,7 +816,6 @@ export default function AttendoPage() {
   const totalNetPayrollLiability = staff.reduce((acc, s) => acc + calculatePayrollForMember(s).netSalary, 0);
   const totalHeldArrearsAllStaff = staff.reduce((acc, s) => acc + s.heldArrears, 0);
 
-  // Filtered staff
   const filteredStaff = staff.filter(s => {
     const matchesDept = departmentFilter === "ALL" || s.department === departmentFilter;
     const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -853,411 +824,338 @@ export default function AttendoPage() {
   });
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 font-sans antialiased text-zinc-900">
+      
+      {/* Executive Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600 text-white rounded-2xl shadow-sm">
-              <UserCheck size={28} />
+            <div className="w-10 h-10 rounded-xl bg-zinc-900 text-white flex items-center justify-center shadow-xs">
+              <UserCheck size={20} strokeWidth={2} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-                  Attendo HR & Payroll Suite
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900">
+                  Staff & Payroll Engine
                 </h1>
-                <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Official Petpooja Attendo Matched
+                <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
+                  Attendo Enterprise
                 </span>
                 {isPayrollLocked && (
-                  <span className="text-xs bg-amber-100 text-amber-900 font-extrabold px-2.5 py-0.5 rounded-full border border-amber-300 flex items-center gap-1">
-                    <Lock size={12} /> Period Locked
+                  <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1">
+                    <Lock size={11} strokeWidth={2} /> Finalized
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-1">
-                Time & Attendance, Multi-Punch Breaks, Selfie Proof, Leave Approvals, Advance Installments, Form T Muster & Bank Payout
+              <p className="text-xs text-zinc-500 mt-0.5 font-normal">
+                Time tracking, punch regularization, advance schedules, compliance & statutory ledger
               </p>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
-          {/* Employee Self-Service Kiosk (Screenshot 6 Match) */}
           <button
             onClick={() => setIsSelfCheckOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
           >
-            <Smartphone size={15} /> Staff Self-Check
+            <Smartphone size={14} strokeWidth={1.75} className="text-zinc-500" />
+            <span>Kiosk Self-View</span>
           </button>
 
-          {/* Lock / Unlock Period Toggle (Screenshot 1) */}
           <button
             onClick={handleTogglePayrollLock}
-            className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold transition shadow-xs ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition border shadow-2xs ${
               isPayrollLocked 
-                ? "bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100" 
-                : "bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
+                ? "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100" 
+                : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
             }`}
           >
-            {isPayrollLocked ? <Lock size={15} /> : <Unlock size={15} />}
-            {isPayrollLocked ? "Locked (Finalised)" : "Lock Payroll"}
+            {isPayrollLocked ? <Lock size={14} strokeWidth={1.75} /> : <Unlock size={14} strokeWidth={1.75} />}
+            <span>{isPayrollLocked ? "Period Locked" : "Lock Period"}</span>
           </button>
 
-          {/* Arrears Modal Trigger (Screenshot 1) */}
           <button
             onClick={() => setIsArrearModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
           >
-            <DollarSign size={15} /> Khata / Arrears
+            <DollarSign size={14} strokeWidth={1.75} className="text-zinc-500" />
+            <span>Held Arrears</span>
           </button>
 
           <button
             onClick={() => setIsNewLeaveModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
           >
-            <Calendar size={15} /> + Apply Leave
+            <Calendar size={14} strokeWidth={1.75} className="text-zinc-500" />
+            <span>Apply Leave</span>
           </button>
 
           <button
             onClick={() => setIsAdvanceModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
           >
-            <CreditCard size={15} /> + Log Advance
+            <CreditCard size={14} strokeWidth={1.75} className="text-zinc-500" />
+            <span>Schedule Advance</span>
           </button>
 
           <button
             onClick={() => setIsAddStaffModalOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-95"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs"
           >
-            <Plus size={15} /> + Add Staff
+            <Plus size={14} strokeWidth={2} />
+            <span>Add Member</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        {/* Total Active Staff */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+      {/* KPI Metric Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Active Staff</span>
-            <div className="p-2 bg-gray-100 text-gray-700 rounded-xl">
-              <Users size={17} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Total Staff</span>
+            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
+              <Users size={14} strokeWidth={1.75} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
-            {totalStaffCount} Members
+          <div>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
+              {totalStaffCount}
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Active directory roster</p>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Kitchen & Floor Roster</p>
         </div>
 
-        {/* Today's Attendance */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Today's Present</span>
-            <div className="p-2 bg-green-50 text-green-600 rounded-xl">
-              <CheckCircle2 size={17} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Present Today</span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-100">
+              <CheckCircle2 size={14} strokeWidth={1.75} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-green-700">
-            {presentCount} / {totalStaffCount}
+          <div>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums flex items-baseline gap-1">
+              <span>{presentCount}</span>
+              <span className="text-xs text-zinc-400 font-normal">/ {totalStaffCount}</span>
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {halfDayCount > 0 ? `${halfDayCount} half-day · ` : ""}{absentCount} absent
+            </p>
           </div>
-          <p className="text-xs text-gray-500 mt-1">
-            {halfDayCount > 0 && `${halfDayCount} Half-day • `} {absentCount} Absent
-          </p>
         </div>
 
-        {/* Pending Leave Requests */}
-        <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden ${
-          pendingLeavesCount > 0 ? "bg-purple-50/70 border-purple-200" : "bg-white border-gray-200"
-        }`}>
+        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-900">Leave Requests</span>
-            <div className="p-2 bg-purple-600 text-white rounded-xl">
-              <Calendar size={17} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Pending Leaves</span>
+            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
+              <Calendar size={14} strokeWidth={1.75} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-purple-900">
-            {pendingLeavesCount} Pending
+          <div>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
+              {pendingLeavesCount}
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">
+              {pendingLeavesCount > 0 ? "Awaiting review" : "All records clear"}
+            </p>
           </div>
-          <p className="text-xs text-purple-700 mt-1">
-            {pendingLeavesCount > 0 ? "Needs Manager Approval" : "All Approved"}
-          </p>
         </div>
 
-        {/* Total Advance Deductions */}
-        <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden ${
-          totalAdvanceDeductionsMonth > 0 ? "bg-rose-50/70 border-rose-200" : "bg-white border-gray-200"
-        }`}>
+        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-rose-800">Advance Deducted</span>
-            <div className="p-2 bg-rose-600 text-white rounded-xl">
-              <CreditCard size={17} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Advance Deducted</span>
+            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
+              <CreditCard size={14} strokeWidth={1.75} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-rose-700">
-            ₹{totalAdvanceDeductionsMonth.toLocaleString("en-IN")}
+          <div>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
+              ₹{totalAdvanceDeductionsMonth.toLocaleString("en-IN")}
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Auto-deducted this cycle</p>
           </div>
-          <p className="text-xs text-rose-600 mt-1">Auto-deducted from cycle</p>
         </div>
 
-        {/* Held Arrears Khata (Screenshot 1) */}
-        <div className="bg-indigo-50/70 border border-indigo-200 p-5 rounded-2xl shadow-sm relative overflow-hidden">
+        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">Held Arrears</span>
-            <div className="p-2 bg-indigo-600 text-white rounded-xl">
-              <DollarSign size={17} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Held Arrears</span>
+            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
+              <DollarSign size={14} strokeWidth={1.75} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-indigo-900">
-            ₹{totalHeldArrearsAllStaff.toLocaleString("en-IN")}
+          <div>
+            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
+              ₹{totalHeldArrearsAllStaff.toLocaleString("en-IN")}
+            </div>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Retained staff deposit</p>
           </div>
-          <p className="text-xs text-indigo-700 mt-1">Pending Staff Deposits</p>
         </div>
       </div>
 
-      {/* Official Petpooja Attendo 9-Module Navigation Tabs */}
-      <div className="border-b border-gray-200 overflow-x-auto pb-px">
-        <div className="flex gap-1 min-w-max">
-          <button
-            onClick={() => setActiveTab("attendance")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "attendance"
-                ? "border-blue-600 text-blue-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Clock size={16} /> 01 Time & Attendance
-          </button>
-
-          <button
-            onClick={() => setActiveTab("shifts")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "shifts"
-                ? "border-amber-600 text-amber-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Award size={16} /> 02 Shifts & Roster
-          </button>
-
-          <button
-            onClick={() => setActiveTab("leaves")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "leaves"
-                ? "border-purple-600 text-purple-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Calendar size={16} /> 03 Leave & Holidays ({leaves.length})
-            {pendingLeavesCount > 0 && <span className="w-2 h-2 rounded-full bg-purple-600"></span>}
-          </button>
-
-          <button
-            onClick={() => setActiveTab("advances")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "advances"
-                ? "border-rose-600 text-rose-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <CreditCard size={16} /> 04 Advances ({advances.length})
-          </button>
-
-          <button
-            onClick={() => setActiveTab("payroll")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "payroll"
-                ? "border-emerald-600 text-emerald-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <DollarSign size={16} /> 04 Payroll & Payout
-          </button>
-
-          <button
-            onClick={() => setActiveTab("penalties")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "penalties"
-                ? "border-orange-600 text-orange-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <TrendingUp size={16} /> 05 Overtime & Penalties
-          </button>
-
-          <button
-            onClick={() => setActiveTab("compliance")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "compliance"
-                ? "border-cyan-600 text-cyan-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Percent size={16} /> 06 Compliance
-          </button>
-
-          <button
-            onClick={() => setActiveTab("reports")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "reports"
-                ? "border-violet-600 text-violet-600"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <FileSpreadsheet size={16} /> 08 Reports & Muster
-          </button>
-
-          <button
-            onClick={() => setActiveTab("admin_control")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "admin_control"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Shield size={16} /> 09 Admin Control
-          </button>
-
-          <button
-            onClick={() => setActiveTab("directory")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
-              activeTab === "directory"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            <Users size={16} /> Staff Directory
-          </button>
+      {/* Enterprise Tab Navigation */}
+      <div className="border-b border-zinc-200">
+        <div className="flex items-center gap-1 overflow-x-auto pb-px">
+          {[
+            { id: "attendance", label: "Time & Attendance", icon: Clock },
+            { id: "shifts", label: "Shifts & Roster", icon: Award },
+            { id: "leaves", label: "Leave & Holidays", icon: Calendar, badge: pendingLeavesCount },
+            { id: "advances", label: "Advances & Khata", icon: CreditCard, badge: advances.length },
+            { id: "payroll", label: "Payroll & Payout", icon: DollarSign },
+            { id: "penalties", label: "Overtime & Penalties", icon: TrendingUp },
+            { id: "compliance", label: "Compliance & Taxes", icon: Percent },
+            { id: "reports", label: "Muster & Reports", icon: FileSpreadsheet },
+            { id: "admin_control", label: "Admin Control", icon: Shield },
+            { id: "directory", label: "Directory", icon: Users }
+          ].map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`py-3 px-3.5 text-xs font-medium border-b-2 transition flex items-center gap-2 whitespace-nowrap ${
+                  isActive
+                    ? "border-zinc-900 text-zinc-900 font-semibold"
+                    : "border-transparent text-zinc-500 hover:text-zinc-800"
+                }`}
+              >
+                <Icon size={14} strokeWidth={isActive ? 2 : 1.75} className={isActive ? "text-zinc-900" : "text-zinc-400"} />
+                <span>{tab.label}</span>
+                {typeof tab.badge === "number" && tab.badge > 0 && (
+                  <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
+                    isActive ? "bg-zinc-900 text-white" : "bg-zinc-100 text-zinc-600"
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* TAB 1: 01 TIME & ATTENDANCE (Matches latest Screenshot deep-dive) */}
+      {/* TAB 1: TIME & ATTENDANCE */}
       {activeTab === "attendance" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
+        <div className="space-y-6">
           
-          {/* Top Hero Banner matching phone mockup from the screenshot */}
+          {/* Executive Floor Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             
-            {/* Live Working Hours Card (Floating dark card from screenshot) */}
-            <div className="bg-[#111827] text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden border border-gray-800">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs uppercase tracking-wider text-gray-400 font-bold flex items-center gap-1.5">
-                  <Timer size={14} className="text-amber-400" /> Working Hours (Active Shift)
+            {/* Real-Time Working Hours Card */}
+            <div className="bg-zinc-950 text-white p-5 rounded-xl border border-zinc-800 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-medium flex items-center gap-1.5">
+                  <Timer size={13} className="text-zinc-400" /> Active Floor Time
                 </span>
-                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Floor
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Running
                 </span>
               </div>
 
-              {/* Big Digital Clock (Matching 03 : 13 : 05) */}
-              <div className="py-2 text-center">
-                <div className="text-4xl sm:text-5xl font-mono font-black tracking-widest text-white flex items-center justify-center gap-2">
+              <div className="py-2">
+                <div className="text-4xl font-mono tracking-tight font-medium text-zinc-100 flex items-center gap-1">
                   <span>{timerDisplay.h}</span>
-                  <span className="text-gray-600 text-3xl">:</span>
+                  <span className="text-zinc-600">:</span>
                   <span>{timerDisplay.m}</span>
-                  <span className="text-gray-600 text-3xl">:</span>
-                  <span className="text-amber-400">{timerDisplay.s}</span>
+                  <span className="text-zinc-600">:</span>
+                  <span className="text-zinc-300">{timerDisplay.s}</span>
                 </div>
-                <div className="flex justify-center gap-8 text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                <div className="flex gap-7 text-[10px] font-medium text-zinc-500 uppercase tracking-widest mt-1">
                   <span>Hrs</span>
                   <span>Min</span>
                   <span>Sec</span>
                 </div>
               </div>
 
-              {/* Break Time Pill from Mockup */}
-              <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
-                <div className="inline-flex items-center gap-2 bg-gray-800/80 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-200">
-                  <Coffee size={14} className="text-amber-400" />
-                  <span>Total Break Time - 40m</span>
+              <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between text-xs text-zinc-400">
+                <div className="inline-flex items-center gap-1.5 bg-zinc-900 px-2 py-1 rounded text-[11px] text-zinc-300 border border-zinc-800">
+                  <Coffee size={12} className="text-zinc-400" />
+                  <span>Break Time: 40m</span>
                 </div>
-                <span className="text-[11px] text-gray-400">Lunch + Tea pause</span>
+                <span className="text-[11px] text-zinc-500">Split Shift Interval</span>
               </div>
             </div>
 
-            {/* Visual Proof / No Buddy-Punching Card */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
+            {/* Visual Proof / Anti-Proxy Card */}
+            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
-                  <Camera size={22} />
+                <div className="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center mb-2.5">
+                  <Camera size={16} strokeWidth={1.75} />
                 </div>
-                <h4 className="font-bold text-gray-900 text-base">Visual Proof Selfie Punching</h4>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  A photo is captured automatically every time an employee punches from the app. Visual proof of every entry. <strong>Zero buddy-punching</strong>.
+                <h4 className="font-semibold text-zinc-900 text-sm">Visual Entry Verification</h4>
+                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                  Automatic photo capture upon entry. Prevents proxy punching across both floor and kitchen rosters.
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
-                <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 size={13} /> 100% Photo Verified
+              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-xs">
+                <span className="text-emerald-700 font-medium bg-emerald-50 px-2 py-0.5 rounded text-[11px] border border-emerald-200/60 inline-flex items-center gap-1">
+                  <CheckCircle2 size={11} /> Photo Verified
                 </span>
-                <span className="text-gray-400 font-medium">GPS Geo-Fenced</span>
+                <span className="text-zinc-400 text-[11px]">Geo-fenced Floor</span>
               </div>
             </div>
 
-            {/* Attendance Modes Card ("Modes That Match Your Floor") */}
-            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
+            {/* Attendance Roster Mode Selector */}
+            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
               <div>
-                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
-                  <Sparkles size={22} />
+                <div className="w-8 h-8 rounded-lg bg-zinc-100 text-zinc-700 flex items-center justify-center mb-2.5">
+                  <Filter size={16} strokeWidth={1.75} />
                 </div>
-                <h4 className="font-bold text-gray-900 text-base">Modes That Match Your Floor</h4>
-                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
-                  Choose how punches are read — count every punch & break, take only first and last, or single tap present.
+                <h4 className="font-semibold text-zinc-900 text-sm">Roster Punch Mode</h4>
+                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+                  Configure calculation logic for kitchen split shifts, single continuous floor, or quick express sign-ins.
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-gray-100">
+              <div className="mt-4 pt-3 border-t border-zinc-100">
                 <select
                   value={attendanceMode}
                   onChange={e => {
                     setAttendanceMode(e.target.value as any);
-                    toast.success(`Floor punch mode set to: ${e.target.value}`);
+                    toast.success(`Punch mode set to ${e.target.value.replace("_", " ")}`);
                   }}
-                  className="w-full text-xs font-bold py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none"
+                  className="w-full text-xs font-medium py-1.5 px-2.5 border border-zinc-200 rounded-lg bg-zinc-50 text-zinc-800 outline-none"
                 >
-                  <option value="MULTI_PUNCH">🔄 Multi-Punch with Break Tracking (Kitchen Split)</option>
-                  <option value="FIRST_LAST">⏱️ First In & Last Out of the Day (Floor)</option>
-                  <option value="SINGLE_PUNCH">⚡ Single Tap (Express Present)</option>
+                  <option value="MULTI_PUNCH">Multi-Punch with Break Tracking (Kitchen Split)</option>
+                  <option value="FIRST_LAST">First In & Last Out (Continuous Floor)</option>
+                  <option value="SINGLE_PUNCH">Single Tap Present (Express)</option>
                 </select>
               </div>
             </div>
 
           </div>
 
-          {/* Attendance Controls Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+          {/* Roster Controls Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
             <div>
-              <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <span>⏱️</span> Daily Attendance & Punch Matrix: <span className="text-blue-600">{todayStr}</span>
+              <h3 className="font-semibold text-zinc-900 text-sm">
+                Daily Attendance Roster · <span className="text-zinc-600 font-mono">{todayStr}</span>
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Click <strong>"Timeline & Punches"</strong> to view multi-punch intervals, breaks, and selfie regularization.
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Review daily records, overtime additions, late penalties, or open full punch timelines.
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold px-3 py-1.5 bg-green-100 text-green-800 rounded-xl border border-green-200">
-                {presentCount} of {staff.length} Present Today
-              </span>
+            <div className="text-xs text-zinc-600 font-medium bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200">
+              <span className="font-semibold text-zinc-900 font-mono">{presentCount}</span> of {staff.length} Active Staff Checked In
             </div>
           </div>
 
-          {/* Main Attendance Table */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+          {/* Table */}
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                 <tr>
-                  <th className="py-3.5 px-5">Employee</th>
-                  <th className="py-3.5 px-4">Shift & Dept</th>
-                  <th className="py-3.5 px-4">In-Time</th>
-                  <th className="py-3.5 px-4 text-center">Multi-Punch & Regularize</th>
-                  <th className="py-3.5 px-4 text-center">Overtime / Penalty</th>
-                  <th className="py-3.5 px-5 text-right">Daily Attendance Punch</th>
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-3">Shift & Dept</th>
+                  <th className="py-3 px-3">Check-In</th>
+                  <th className="py-3 px-3 text-center">Punch Timeline</th>
+                  <th className="py-3 px-3 text-center">Overtime / Late</th>
+                  <th className="py-3 px-4 text-right">Attendance Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100">
                 {staff.map(member => {
                   const rec = attendance[member.id] || {
                     status: "PRESENT",
@@ -1267,80 +1165,80 @@ export default function AttendoPage() {
                   };
 
                   return (
-                    <tr key={member.id} className="hover:bg-gray-50/70 transition">
-                      <td className="py-4 px-5">
-                        <div className="font-bold text-gray-900">{member.name}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">📱 {member.phone}</div>
+                    <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-zinc-900">{member.name}</div>
+                        <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{member.phone}</div>
                       </td>
-                      <td className="py-4 px-4">
-                        <span className="font-semibold text-gray-800 text-xs block">{member.role}</span>
-                        <span className="text-[11px] text-gray-400">{member.shiftTiming}</span>
+                      <td className="py-3.5 px-3">
+                        <span className="font-medium text-zinc-800">{member.role}</span>
+                        <span className="text-[11px] text-zinc-400 block mt-0.5">{member.shiftTiming}</span>
                       </td>
-                      <td className="py-4 px-4 text-xs font-medium text-gray-600">
+                      <td className="py-3.5 px-3 font-mono text-zinc-600">
                         {rec.inTime}
                       </td>
-                      <td className="py-4 px-4 text-center">
+                      <td className="py-3.5 px-3 text-center">
                         <button
                           onClick={() => handleOpenRegularizeModal(member)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition border border-gray-200 shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-zinc-50 text-zinc-700 font-medium rounded-md border border-zinc-200 shadow-2xs text-[11px]"
                         >
-                          <Clock size={13} className="text-blue-600" />
-                          <span>Punches & Breaks</span>
+                          <Clock size={12} strokeWidth={1.75} className="text-zinc-500" />
+                          <span>Timeline & Breaks</span>
                         </button>
                       </td>
-                      <td className="py-4 px-4 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="py-3.5 px-3 text-center">
+                        <div className="inline-flex items-center gap-1">
                           <button
                             onClick={() => handleAddOvertime(member.id)}
-                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg border border-blue-200"
-                            title={`Add 1 Hour Overtime (+₹${overtimeRules.ratePerHour})`}
+                            className="px-2 py-0.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-medium rounded text-[11px]"
+                            title="Add 1 Hour Overtime (+₹60)"
                           >
                             +{rec.overtimeHours}h OT
                           </button>
                           <button
                             onClick={() => handleToggleLatePenalty(member.id)}
-                            className={`px-2 py-1 text-xs font-bold rounded-lg border transition ${
+                            className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
                               rec.latePenalty > 0
-                                ? "bg-rose-100 text-rose-800 border-rose-300"
-                                : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                                ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
                             }`}
-                            title={`Toggle Late Penalty (₹${overtimeRules.latePenaltyAmount})`}
+                            title="Toggle Late Penalty (₹50)"
                           >
                             {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
                           </button>
                         </div>
                       </td>
-                      <td className="py-4 px-5 text-right">
-                        <div className="inline-flex p-1 bg-gray-100 rounded-xl gap-1">
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60">
                           <button
                             onClick={() => handleSetStatus(member.id, "PRESENT")}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
                               rec.status === "PRESENT"
-                                ? "bg-green-600 text-white shadow-sm"
-                                : "text-gray-600 hover:text-green-700"
+                                ? "bg-white text-emerald-800 shadow-2xs font-semibold"
+                                : "text-zinc-500 hover:text-zinc-900"
                             }`}
                           >
-                            🟢 Present
+                            Present
                           </button>
                           <button
                             onClick={() => handleSetStatus(member.id, "HALF_DAY")}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
                               rec.status === "HALF_DAY"
-                                ? "bg-amber-500 text-white shadow-sm"
-                                : "text-gray-600 hover:text-amber-700"
+                                ? "bg-white text-amber-800 shadow-2xs font-semibold"
+                                : "text-zinc-500 hover:text-zinc-900"
                             }`}
                           >
-                            🟡 Half (0.5)
+                            Half Day
                           </button>
                           <button
                             onClick={() => handleSetStatus(member.id, "ABSENT")}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
                               rec.status === "ABSENT"
-                                ? "bg-rose-600 text-white shadow-sm"
-                                : "text-gray-600 hover:text-rose-700"
+                                ? "bg-white text-rose-800 shadow-2xs font-semibold"
+                                : "text-zinc-500 hover:text-zinc-900"
                             }`}
                           >
-                            🔴 Absent
+                            Absent
                           </button>
                         </div>
                       </td>
@@ -1353,95 +1251,71 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 2: 02 SHIFTS & ROSTER */}
+      {/* TAB 2: SHIFTS & ROSTER */}
       {activeTab === "shifts" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="bg-amber-50/70 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
-            <Award className="text-amber-700 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-bold text-amber-950 text-sm">Restaurant Shift Roster & Split Timing Config</h3>
-              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-                Configure specialized restaurant split shifts (lunch rush & dinner rush), continuous floor service, and morning preparation rosters.
-              </p>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-2">
-              <span className="text-xs font-bold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-md">Kitchen Split Shift</span>
-              <h4 className="text-base font-bold text-gray-900">10:00 AM - 11:00 PM (Break 3 PM - 7 PM)</h4>
-              <p className="text-xs text-gray-500">Staff Assigned: Ramesh Kumar (Head Chef), Manoj Patil (Tandoor Master)</p>
-              <div className="pt-2 text-xs text-emerald-600 font-bold">✓ 4 Paid Week-Offs/month Included</div>
+            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 block">Kitchen Split Shift</span>
+              <h4 className="text-sm font-semibold text-zinc-900 font-mono">10:00 AM – 11:00 PM (Break 3 PM – 7 PM)</h4>
+              <p className="text-xs text-zinc-500">Staff Assigned: Ramesh Kumar, Manoj Patil</p>
+              <div className="pt-2 text-[11px] text-zinc-600 font-medium">Standard 4 Paid Week-Offs included</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-2">
-              <span className="text-xs font-bold px-2.5 py-1 bg-blue-100 text-blue-800 rounded-md">Floor Service Shift</span>
-              <h4 className="text-base font-bold text-gray-900">12:00 PM - 11:30 PM (Continuous)</h4>
-              <p className="text-xs text-gray-500">Staff Assigned: Vikram Singh (Captain), Suresh Shinde (Captain)</p>
-              <div className="pt-2 text-xs text-emerald-600 font-bold">✓ Overtime applicable after 11:30 PM</div>
+            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 block">Floor Service Shift</span>
+              <h4 className="text-sm font-semibold text-zinc-900 font-mono">12:00 PM – 11:30 PM (Continuous)</h4>
+              <p className="text-xs text-zinc-500">Staff Assigned: Vikram Singh, Suresh Shinde</p>
+              <div className="pt-2 text-[11px] text-zinc-600 font-medium">Overtime applicable post-shift</div>
             </div>
 
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-2">
-              <span className="text-xs font-bold px-2.5 py-1 bg-green-100 text-green-800 rounded-md">Morning Prep & Housekeeping</span>
-              <h4 className="text-base font-bold text-gray-900">09:30 AM - 10:30 PM</h4>
-              <p className="text-xs text-gray-500">Staff Assigned: Ganesh Jadhav (Helper), Sandeep More (Dishwasher)</p>
-              <div className="pt-2 text-xs text-emerald-600 font-bold">✓ Morning attendance punch sync</div>
+            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 block">Prep & Sanitation</span>
+              <h4 className="text-sm font-semibold text-zinc-900 font-mono">09:30 AM – 10:30 PM</h4>
+              <p className="text-xs text-zinc-500">Staff Assigned: Ganesh Jadhav, Sandeep More</p>
+              <div className="pt-2 text-[11px] text-zinc-600 font-medium">Morning check-in sync enabled</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: 03 LEAVE & HOLIDAYS */}
+      {/* TAB 3: LEAVE & HOLIDAYS */}
       {activeTab === "leaves" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-2xl flex items-start gap-3">
-            <Calendar className="text-purple-700 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-bold text-purple-950 text-sm">Consolidated Leave Records & Approvals</h3>
-              <p className="text-xs text-purple-800 mt-0.5 leading-relaxed">
-                Every leave request, approval, and balance in one place. Approved leaves reflect instantly in that month's salary calculation without manual effort.
-              </p>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {leaves.map(req => {
               const isPending = req.status === "PENDING";
               const isApproved = req.status === "APPROVED";
 
               return (
-                <div key={req.id} className={`bg-white rounded-2xl border p-5 shadow-sm space-y-3 ${
-                  isPending ? "border-purple-300 ring-1 ring-purple-300" : "border-gray-200"
-                }`}>
-                  <div className="flex items-start justify-between border-b pb-3 border-gray-100">
+                <div key={req.id} className="bg-white rounded-xl border border-zinc-200/80 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3">
+                  <div className="flex items-start justify-between border-b pb-3 border-zinc-100">
                     <div>
-                      <h4 className="font-bold text-gray-900 text-base">{req.staffName}</h4>
-                      <span className="text-xs font-bold text-purple-700 bg-purple-100 px-2.5 py-0.5 rounded-md inline-block mt-1">
-                        {req.leaveType}
-                      </span>
+                      <h4 className="font-semibold text-zinc-900 text-sm">{req.staffName}</h4>
+                      <span className="text-[11px] font-medium text-zinc-500 mt-0.5 block">{req.leaveType}</span>
                     </div>
                     {isPending ? (
-                      <span className="text-xs font-black bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full animate-pulse">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
                         Pending
                       </span>
                     ) : isApproved ? (
-                      <span className="text-xs font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">
-                        Approved ✓
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded border border-emerald-200">
+                        Approved
                       </span>
                     ) : (
-                      <span className="text-xs font-bold bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full">
-                        Rejected ✕
+                      <span className="text-[10px] font-semibold uppercase tracking-wider bg-rose-50 text-rose-800 px-2 py-0.5 rounded border border-rose-200">
+                        Declined
                       </span>
                     )}
                   </div>
 
-                  <div className="bg-gray-50 p-3 rounded-xl text-xs space-y-1">
-                    <div className="flex justify-between text-gray-600">
+                  <div className="bg-zinc-50 p-3 rounded-lg text-xs space-y-1">
+                    <div className="flex justify-between text-zinc-600">
                       <span>Duration:</span>
-                      <strong className="text-gray-900">{req.days} Day(s) ({req.startDate} to {req.endDate})</strong>
+                      <strong className="text-zinc-900 font-mono">{req.days} Day(s) ({req.startDate} to {req.endDate})</strong>
                     </div>
-                    <div className="text-gray-500 pt-1">
-                      Reason: <span className="text-gray-800 italic">"{req.reason}"</span>
+                    <div className="text-zinc-500 pt-1">
+                      Reason: <span className="text-zinc-800 font-medium">"{req.reason}"</span>
                     </div>
                   </div>
 
@@ -1449,13 +1323,13 @@ export default function AttendoPage() {
                     <div className="flex gap-2 pt-1">
                       <button
                         onClick={() => handleLeaveAction(req.id, "REJECTED")}
-                        className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition"
+                        className="flex-1 py-1.5 bg-white hover:bg-zinc-50 text-zinc-700 text-xs font-medium rounded-lg border border-zinc-200 transition"
                       >
-                        Reject
+                        Decline
                       </button>
                       <button
                         onClick={() => handleLeaveAction(req.id, "APPROVED")}
-                        className="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                        className="flex-1 py-1.5 bg-zinc-900 hover:bg-black text-white text-xs font-medium rounded-lg transition"
                       >
                         Approve
                       </button>
@@ -1468,60 +1342,52 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 4: 04 ADVANCES & INSTALLMENTS */}
+      {/* TAB 4: ADVANCES & INSTALLMENTS */}
       {activeTab === "advances" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="bg-rose-50/70 border border-rose-200 p-4 rounded-2xl flex items-start gap-3">
-            <CreditCard className="text-rose-700 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-bold text-rose-950 text-sm">Log Advances & Automatic Installment Deductions</h3>
-              <p className="text-xs text-rose-800 mt-0.5 leading-relaxed">
-                Record each advance along with repayment installments. Each cycle's installment is automatically deducted until the loan clears!
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-sm">Staff Loan & Advance Repayment Ledger</h3>
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-4 border-b border-zinc-100 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-zinc-900 text-sm">Staff Loan & Advance Schedule</h3>
+                <p className="text-xs text-zinc-500">Installments are automatically subtracted from each payroll run.</p>
+              </div>
               <button
                 onClick={() => setIsAdvanceModalOpen(true)}
-                className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                className="px-3 py-1.5 bg-zinc-900 hover:bg-black text-white text-xs font-medium rounded-lg shadow-xs transition"
               >
-                + Log Advance
+                + Schedule Advance
               </button>
             </div>
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                 <tr>
-                  <th className="py-3.5 px-5">Staff Member</th>
-                  <th className="py-3.5 px-4">Date & Mode</th>
-                  <th className="py-3.5 px-4">Reason / Notes</th>
-                  <th className="py-3.5 px-4 text-center">Total Advance</th>
-                  <th className="py-3.5 px-4 text-center text-rose-600 font-bold">Monthly Installment</th>
-                  <th className="py-3.5 px-5 text-right font-black">Remaining Balance</th>
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-3">Date & Mode</th>
+                  <th className="py-3 px-3">Reason</th>
+                  <th className="py-3 px-3 text-right">Total Loan</th>
+                  <th className="py-3 px-3 text-right">Monthly Installment</th>
+                  <th className="py-3 px-4 text-right">Remaining Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100">
                 {advances.map(adv => (
-                  <tr key={adv.id} className="hover:bg-gray-50/70 transition">
-                    <td className="py-4 px-5 font-bold text-gray-900">
+                  <tr key={adv.id} className="hover:bg-zinc-50/50 transition">
+                    <td className="py-3.5 px-4 font-semibold text-zinc-900">
                       {adv.staffName}
                     </td>
-                    <td className="py-4 px-4 text-xs text-gray-500">
-                      <div>{adv.date}</div>
-                      <span className="font-bold text-gray-700 bg-gray-100 px-1.5 py-0.5 rounded text-[10px]">{adv.mode}</span>
+                    <td className="py-3.5 px-3 text-zinc-500 font-mono">
+                      {adv.date} <span className="text-[10px] text-zinc-400 font-sans">({adv.mode})</span>
                     </td>
-                    <td className="py-4 px-4 text-xs text-gray-700 max-w-xs font-medium">
+                    <td className="py-3.5 px-3 text-zinc-700">
                       {adv.reason}
                     </td>
-                    <td className="py-4 px-4 text-center font-bold text-gray-900">
+                    <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
                       ₹{adv.totalLoanAmount.toLocaleString("en-IN")}
                     </td>
-                    <td className="py-4 px-4 text-center font-extrabold text-rose-600 bg-rose-50/50">
-                      -₹{adv.monthlyInstallment.toLocaleString("en-IN")} / month
+                    <td className="py-3.5 px-3 text-right font-mono font-semibold text-rose-700">
+                      -₹{adv.monthlyInstallment.toLocaleString("en-IN")} / mo
                     </td>
-                    <td className="py-4 px-5 text-right font-black text-rose-700 text-base">
+                    <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
                       ₹{adv.remainingBalance.toLocaleString("en-IN")}
                     </td>
                   </tr>
@@ -1532,80 +1398,79 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 5: 04 PAYROLL & PAYOUT (Matching Screenshot 1 & 4) */}
+      {/* TAB 5: PAYROLL & PAYOUT */}
       {activeTab === "payroll" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <DollarSign className="text-emerald-700 mt-0.5 shrink-0" size={20} />
-              <div>
-                <h3 className="font-bold text-emerald-950 text-sm">
-                  Payroll Ready Before Month-End {isPayrollLocked && "(LOCKED & FINALISED)"}
-                </h3>
-                <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                  Automatic installment deductions, arrears calculation, and continuous payroll. Numbers approved stay on record.
-                </p>
-              </div>
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-zinc-900 text-sm">
+                Active Payroll Register · {new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}
+              </h3>
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Calculated automatically from attendance, advances, held arrears, and overtime.
+              </p>
             </div>
             
             <div className="flex items-center gap-2">
               <button
                 onClick={handleExportBankNEFT}
-                className="flex items-center gap-1.5 px-3 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs"
               >
-                <Download size={14} /> Bank Payout (NEFT File)
+                <Download size={13} />
+                <span>Export NEFT File</span>
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                 <tr>
-                  <th className="py-3.5 px-5">Staff Member</th>
-                  <th className="py-3.5 px-4 text-center">Monthly Base</th>
-                  <th className="py-3.5 px-4 text-center">Payable Days</th>
-                  <th className="py-3.5 px-4 text-center">Gross Earned</th>
-                  <th className="py-3.5 px-4 text-center text-rose-600">Advance Deducted</th>
-                  <th className="py-3.5 px-4 text-center text-indigo-700">Held Arrears</th>
-                  <th className="py-3.5 px-4 text-right font-black text-emerald-700">Net Payable</th>
-                  <th className="py-3.5 px-5 text-right">Instant WhatsApp Payslip</th>
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-3 text-right">Base Salary</th>
+                  <th className="py-3 px-3 text-center">Payable Days</th>
+                  <th className="py-3 px-3 text-right">Gross Earned</th>
+                  <th className="py-3 px-3 text-right">Advance Cut</th>
+                  <th className="py-3 px-3 text-right">Held Balance</th>
+                  <th className="py-3 px-3 text-right font-semibold text-zinc-900">Net Take-Home</th>
+                  <th className="py-3 px-4 text-right">Payslip</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100">
                 {staff.map(member => {
                   const p = calculatePayrollForMember(member);
 
                   return (
-                    <tr key={member.id} className="hover:bg-gray-50/70 transition">
-                      <td className="py-4 px-5">
-                        <div className="font-bold text-gray-900">{member.name}</div>
-                        <div className="text-xs text-gray-400">{member.role}</div>
+                    <tr key={member.id} className="hover:bg-zinc-50/50 transition">
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-zinc-900">{member.name}</div>
+                        <div className="text-[11px] text-zinc-400">{member.role}</div>
                       </td>
-                      <td className="py-4 px-4 text-center font-semibold text-gray-700">
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-700">
                         ₹{member.monthlySalary.toLocaleString("en-IN")}
                       </td>
-                      <td className="py-4 px-4 text-center font-bold text-gray-900">
+                      <td className="py-3.5 px-3 text-center font-mono font-medium text-zinc-900">
                         {p.payableDays} / 30
                       </td>
-                      <td className="py-4 px-4 text-center font-semibold text-gray-900">
+                      <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
                         ₹{p.grossEarned.toLocaleString("en-IN")}
                       </td>
-                      <td className="py-4 px-4 text-center font-bold text-rose-600 bg-rose-50/40">
-                        {p.installmentDeduction > 0 ? `-₹${p.installmentDeduction.toLocaleString("en-IN")}` : "₹0"}
+                      <td className="py-3.5 px-3 text-right font-mono text-rose-700">
+                        {p.installmentDeduction > 0 ? `-₹${p.installmentDeduction.toLocaleString("en-IN")}` : "—"}
                       </td>
-                      <td className="py-4 px-4 text-center font-bold text-indigo-700 bg-indigo-50/30">
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-600">
                         ₹{member.heldArrears.toLocaleString("en-IN")}
                       </td>
-                      <td className="py-4 px-4 text-right font-black text-base text-emerald-700 bg-emerald-50/60">
+                      <td className="py-3.5 px-3 text-right font-mono font-semibold text-sm text-zinc-900">
                         ₹{p.netSalary.toLocaleString("en-IN")}
                       </td>
-                      <td className="py-4 px-5 text-right">
+                      <td className="py-3.5 px-4 text-right">
                         <button
                           onClick={() => handleWhatsAppSalarySlip(member, p)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#25D366] hover:bg-[#1ebd5b] text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-zinc-50 text-zinc-800 text-[11px] font-medium rounded-md border border-zinc-200 shadow-2xs transition"
                         >
-                          <MessageCircle size={14} /> Send Slip
+                          <MessageSquare size={12} className="text-zinc-500" />
+                          <span>Send Slip</span>
                         </button>
                       </td>
                     </tr>
@@ -1617,173 +1482,117 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 6: 05 OVERTIME & PENALTIES (Matching Screenshot 2) */}
+      {/* TAB 6: OVERTIME & PENALTIES */}
       {activeTab === "penalties" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-orange-50/70 border border-orange-200 p-4 rounded-2xl flex items-start gap-3">
-            <TrendingUp className="text-orange-700 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-bold text-orange-950 text-sm">Overtime With Buffer & Rounding Intervals</h3>
-              <p className="text-xs text-orange-800 mt-0.5 leading-relaxed">
-                Set a grace window before overtime starts counting, and round to 15, 30, or 60-min intervals. Small overruns don't become payouts, and sustained extra hours are paid fairly.
-              </p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Total Overtime Perks</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">₹17,060</div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">Dinner rush extra hours</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Total Penalties</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">₹70</div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">Late check-in deductions</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Grace Window</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">{overtimeRules.graceMinutes}m</div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">Buffer before clocking</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Interval Rounding</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">{overtimeRules.roundingInterval}m</div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">Clock quantization</p>
             </div>
           </div>
 
-          {/* Perks & Penalties Summary Cards (From Screenshot 2 mockup) */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs font-bold text-emerald-600 uppercase tracking-wider block mb-1">Total Perks & OT</span>
-              <div className="text-2xl font-black text-emerald-700">₹17,060</div>
-              <p className="text-[11px] text-gray-400 mt-1">Dinner rush hours & festival bonus</p>
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-4 border-b border-zinc-100 flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-900 text-sm">Monthly Overtime & Penalty Ledger</h3>
+              <span className="text-xs text-zinc-500 font-mono">April 2026</span>
             </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs font-bold text-rose-600 uppercase tracking-wider block mb-1">Total Penalties</span>
-              <div className="text-2xl font-black text-rose-700">₹70</div>
-              <p className="text-[11px] text-gray-400 mt-1">Late arrivals & shift delays</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs font-bold text-blue-600 uppercase tracking-wider block mb-1">Grace Window</span>
-              <div className="text-2xl font-black text-gray-900">{overtimeRules.graceMinutes} Minutes</div>
-              <p className="text-[11px] text-gray-400 mt-1">Buffer before OT starts counting</p>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs font-bold text-purple-600 uppercase tracking-wider block mb-1">Rounding Interval</span>
-              <div className="text-2xl font-black text-gray-900">{overtimeRules.roundingInterval} Min Round</div>
-              <p className="text-[11px] text-gray-400 mt-1">Standardized clock rounding</p>
-            </div>
-          </div>
-
-          {/* Detailed Statement Table (Matching Screenshot 2 Mockup) */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-sm">Monthly Statements — Overtime & Penalties Log</h3>
-              <span className="text-xs text-gray-400 font-medium">April 2026 - Live Period</span>
-            </div>
-            <div className="divide-y divide-gray-100 text-sm">
-              <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    +
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Perk — Head Chef Weekend Rush OT</div>
-                    <div className="text-xs text-gray-400">20 Oct 2026 • 4 Extra Hours Dinner rush</div>
-                  </div>
+            <div className="divide-y divide-zinc-100 text-xs">
+              <div className="p-4 flex items-center justify-between hover:bg-zinc-50/50">
+                <div>
+                  <div className="font-semibold text-zinc-900">Overtime Perk — Head Chef Dinner Rush</div>
+                  <div className="text-[11px] text-zinc-500 font-mono mt-0.5">20 Oct 2026 · 4 extra hours dinner shift</div>
                 </div>
-                <div className="text-emerald-600 font-black text-base">+ ₹2,360</div>
+                <div className="font-mono font-semibold text-zinc-900 text-sm">+₹2,360</div>
               </div>
 
-              <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center font-bold text-xs">
-                    -
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Late Penalty — Manoj Patil (160 minutes late)</div>
-                    <div className="text-xs text-gray-400">11 Oct 2026 • Shift delayed without prior intimation</div>
-                  </div>
+              <div className="p-4 flex items-center justify-between hover:bg-zinc-50/50">
+                <div>
+                  <div className="font-semibold text-zinc-900">Late Penalty — Manoj Patil (160m late)</div>
+                  <div className="text-[11px] text-zinc-500 font-mono mt-0.5">11 Oct 2026 · Unscheduled late entry</div>
                 </div>
-                <div className="text-rose-600 font-black text-base">- ₹50</div>
+                <div className="font-mono font-semibold text-rose-700 text-sm">-₹50</div>
               </div>
 
-              <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs">
-                    +
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">Perk — Festival Full House Floor Service Bonus</div>
-                    <div className="text-xs text-gray-400">10 Oct 2026 • Diwali Rush Incentive</div>
-                  </div>
+              <div className="p-4 flex items-center justify-between hover:bg-zinc-50/50">
+                <div>
+                  <div className="font-semibold text-zinc-900">Perk — Weekend Housefull Floor Bonus</div>
+                  <div className="text-[11px] text-zinc-500 font-mono mt-0.5">10 Oct 2026 · Festival banquet floor service</div>
                 </div>
-                <div className="text-emerald-600 font-black text-base">+ ₹3,250</div>
+                <div className="font-mono font-semibold text-zinc-900 text-sm">+₹3,250</div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 7: 06 STATUTORY COMPLIANCE (Matching Screenshot 3) */}
+      {/* TAB 7: COMPLIANCE & TAXES */}
       {activeTab === "compliance" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-cyan-50/70 border border-cyan-200 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-cyan-950 text-sm">Indian Statutory Compliance (EPF, ESIC, PT, TDS)</h3>
-              <p className="text-xs text-cyan-800 mt-0.5 leading-relaxed">
-                Supports standard Indian statutory formulas (EPF 12%, ESIC 0.75%, State-wise PT) or Clean In-Hand Cash mode.
-              </p>
+              <h3 className="font-semibold text-zinc-900 text-sm">Statutory Tax & Compliance Mode</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Configure EPF, ESIC, and State Professional Tax.</p>
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-gray-600">Mode:</span>
               <button
                 onClick={() => setComplianceMode(complianceMode === "CASH_IN_HAND" ? "STATUTORY" : "CASH_IN_HAND")}
-                className={`px-3 py-1.5 rounded-xl text-xs font-extrabold border transition ${
-                  complianceMode === "STATUTORY"
-                    ? "bg-cyan-600 text-white border-cyan-700 shadow-xs"
-                    : "bg-white text-gray-700 border-gray-300"
-                }`}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 transition"
               >
-                {complianceMode === "STATUTORY" ? "🏛️ Statutory Mode (PF/ESIC/PT)" : "💵 Clean In-Hand Cash Mode"}
+                {complianceMode === "STATUTORY" ? "Mode: Statutory (EPF/ESIC/PT)" : "Mode: Net Take-Home (Cash In Hand)"}
               </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <h3 className="font-bold text-gray-900 text-sm">Compliance Payroll Breakdown</h3>
-                <span className="text-xs text-gray-500">State PT: <strong>{selectedState} (₹200)</strong></span>
-              </div>
-              <select
-                value={selectedState}
-                onChange={e => setSelectedState(e.target.value)}
-                className="text-xs font-semibold py-1.5 px-2.5 border border-gray-200 rounded-lg bg-gray-50"
-              >
-                <option value="Maharashtra">Maharashtra (PT ₹200)</option>
-                <option value="Gujarat">Gujarat (PT ₹200)</option>
-                <option value="Karnataka">Karnataka (PT ₹200)</option>
-                <option value="Delhi">Delhi (PT ₹0)</option>
-              </select>
-            </div>
-
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                 <tr>
-                  <th className="py-3.5 px-5">Employee</th>
-                  <th className="py-3.5 px-4 text-center">Gross Pay</th>
-                  <th className="py-3.5 px-4 text-center">EPF (12%)</th>
-                  <th className="py-3.5 px-4 text-center">ESIC (0.75%)</th>
-                  <th className="py-3.5 px-4 text-center">Prof. Tax (PT)</th>
-                  <th className="py-3.5 px-5 text-right font-black text-cyan-800">Net Take-Home</th>
+                  <th className="py-3 px-4">Employee</th>
+                  <th className="py-3 px-3 text-right">Gross Pay</th>
+                  <th className="py-3 px-3 text-right">EPF (12%)</th>
+                  <th className="py-3 px-3 text-right">ESIC (0.75%)</th>
+                  <th className="py-3 px-3 text-right">Prof. Tax</th>
+                  <th className="py-3 px-4 text-right">Net Take-Home</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100">
                 {staff.map(s => {
                   const p = calculatePayrollForMember(s);
                   return (
-                    <tr key={s.id} className="hover:bg-gray-50/70 transition">
-                      <td className="py-4 px-5">
-                        <div className="font-bold text-gray-900">{s.name}</div>
-                        <div className="text-xs text-gray-400">{s.role}</div>
+                    <tr key={s.id} className="hover:bg-zinc-50/50 transition">
+                      <td className="py-3.5 px-4 font-semibold text-zinc-900">{s.name}</td>
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-700">₹{p.grossEarned.toLocaleString("en-IN")}</td>
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                        {complianceMode === "STATUTORY" ? `-₹${p.epfDeduction}` : "—"}
                       </td>
-                      <td className="py-4 px-4 text-center font-bold text-gray-900">
-                        ₹{p.grossEarned.toLocaleString("en-IN")}
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                        {complianceMode === "STATUTORY" ? `-₹${p.esicDeduction}` : "—"}
                       </td>
-                      <td className="py-4 px-4 text-center text-xs font-semibold text-rose-600">
-                        {complianceMode === "STATUTORY" ? `-₹${p.epfDeduction}` : "₹0 (Exempt)"}
+                      <td className="py-3.5 px-3 text-right font-mono text-zinc-500">
+                        {complianceMode === "STATUTORY" ? `-₹${p.ptDeduction}` : "—"}
                       </td>
-                      <td className="py-4 px-4 text-center text-xs font-semibold text-rose-600">
-                        {complianceMode === "STATUTORY" ? `-₹${p.esicDeduction}` : "₹0 (Exempt)"}
-                      </td>
-                      <td className="py-4 px-4 text-center text-xs font-semibold text-rose-600">
-                        {complianceMode === "STATUTORY" ? `-₹${p.ptDeduction}` : "₹0"}
-                      </td>
-                      <td className="py-4 px-5 text-right font-black text-cyan-900 text-base">
+                      <td className="py-3.5 px-4 text-right font-mono font-semibold text-zinc-900">
                         ₹{p.netSalary.toLocaleString("en-IN")}
                       </td>
                     </tr>
@@ -1795,91 +1604,53 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 8: 08 REPORTS & INDIAN MUSTER (Matching Screenshot 4) */}
+      {/* TAB 8: MUSTER & REPORTS */}
       {activeTab === "reports" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-violet-50/70 border border-violet-200 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-4">
+          <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h3 className="font-bold text-violet-950 text-sm">Reports & Inspection Muster (Form T)</h3>
-              <p className="text-xs text-violet-800 mt-0.5 leading-relaxed">
-                Download the official muster in the format Indian Labor Inspectors demand — full days, half days, absents, week-offs, and leaves.
-              </p>
+              <h3 className="font-semibold text-zinc-900 text-sm">Inspection Muster Roll (Form T)</h3>
+              <p className="text-xs text-zinc-500 mt-0.5">Complies with Indian labor inspection standard format.</p>
             </div>
 
             <button
               onClick={handleExportMusterReport}
-              className="flex items-center gap-1.5 px-4 py-2 bg-violet-700 hover:bg-violet-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs"
             >
-              <Download size={14} /> Download Muster (Form T)
+              <Download size={13} />
+              <span>Download Form T (CSV)</span>
             </button>
           </div>
 
-          {/* Today's Insights Card (From Screenshot 4 Mockup) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs text-gray-500 font-bold block mb-1">Working / Present</span>
-              <div className="text-2xl font-black text-emerald-600">{presentCount}</div>
-              <p className="text-[11px] text-gray-400 mt-0.5">On floor & kitchen</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs text-gray-500 font-bold block mb-1">On Break / Half-Day</span>
-              <div className="text-2xl font-black text-amber-500">{halfDayCount}</div>
-              <p className="text-[11px] text-gray-400 mt-0.5">Split shift pause</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs text-gray-500 font-bold block mb-1">Time Off / Leaves</span>
-              <div className="text-2xl font-black text-purple-600">{absentCount}</div>
-              <p className="text-[11px] text-gray-400 mt-0.5">Approved medical/casual</p>
-            </div>
-
-            <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
-              <span className="text-xs text-gray-500 font-bold block mb-1">Biometrics / Punch Left</span>
-              <div className="text-2xl font-black text-blue-600">0</div>
-              <p className="text-[11px] text-gray-400 mt-0.5">100% staff accounted</p>
-            </div>
-          </div>
-
-          {/* Inspection Muster Table Preview */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h3 className="font-bold text-gray-900 text-sm">Muster Roll Preview — Form T Indian Inspection Standards</h3>
-              <span className="text-xs text-gray-500 font-semibold">P = Present | HD = Half Day | WO = Week Off | A = Absent</span>
-            </div>
-
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left">
-                <thead className="bg-gray-50 text-gray-600 font-bold border-b border-gray-200">
+              <table className="w-full text-[11px] text-left">
+                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold border-b border-zinc-200">
                   <tr>
-                    <th className="py-3 px-4 min-w-[150px]">Employee Name</th>
+                    <th className="py-2.5 px-3 min-w-[140px]">Employee</th>
                     {Array.from({ length: 15 }, (_, i) => (
-                      <th key={i} className="py-3 px-2 text-center">{i + 1}</th>
+                      <th key={i} className="py-2.5 px-1.5 text-center font-mono">{i + 1}</th>
                     ))}
-                    <th className="py-3 px-3 text-center bg-gray-100 font-black">Present</th>
-                    <th className="py-3 px-3 text-center bg-gray-100 font-black">Payable</th>
+                    <th className="py-2.5 px-3 text-center bg-zinc-100 font-semibold text-zinc-900">Present</th>
+                    <th className="py-2.5 px-3 text-center bg-zinc-100 font-semibold text-zinc-900">Payable</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-zinc-100 font-mono">
                   {staff.map(s => {
                     const p = calculatePayrollForMember(s);
                     return (
-                      <tr key={s.id} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 font-bold text-gray-900">{s.name}</td>
+                      <tr key={s.id} className="hover:bg-zinc-50/50">
+                        <td className="py-2.5 px-3 font-sans font-semibold text-zinc-900">{s.name}</td>
                         {Array.from({ length: 15 }, (_, i) => {
                           const isWO = i % 7 === 0;
                           return (
-                            <td key={i} className="py-3 px-2 text-center font-bold">
-                              {isWO ? (
-                                <span className="text-blue-500">WO</span>
-                              ) : (
-                                <span className="text-emerald-600">P</span>
-                              )}
+                            <td key={i} className="py-2.5 px-1.5 text-center text-zinc-600">
+                              {isWO ? "WO" : "P"}
                             </td>
                           );
                         })}
-                        <td className="py-3 px-3 text-center font-bold text-gray-900 bg-gray-50/50">13</td>
-                        <td className="py-3 px-3 text-center font-black text-emerald-700 bg-emerald-50/40">{p.payableDays}</td>
+                        <td className="py-2.5 px-3 text-center font-semibold text-zinc-900 bg-zinc-50/40">13</td>
+                        <td className="py-2.5 px-3 text-center font-semibold text-zinc-900 bg-zinc-50/40">{p.payableDays}</td>
                       </tr>
                     );
                   })}
@@ -1890,83 +1661,67 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 9: 09 ADMIN CONTROL & AUDIT LOGS (Matching Screenshot 5) */}
+      {/* TAB 9: ADMIN CONTROL & AUDIT LOGS */}
       {activeTab === "admin_control" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-gray-900 text-white p-5 rounded-2xl flex items-start gap-3 shadow-sm">
-            <Shield className="text-emerald-400 mt-0.5 shrink-0" size={22} />
-            <div>
-              <h3 className="font-bold text-base">User Management, Action-Level Rights & Activity Logs</h3>
-              <p className="text-xs text-gray-300 mt-0.5 leading-relaxed">
-                Control what staff can view, approve, or edit. Track every approval, loan installment, and payroll action with timestamp and actor name.
-              </p>
-            </div>
-          </div>
-
-          {/* Permissions Matrix */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100">
-              <h4 className="font-bold text-gray-900 text-sm">Role-Based Permission Matrix</h4>
+        <div className="space-y-4">
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-4 border-b border-zinc-100">
+              <h4 className="font-semibold text-zinc-900 text-sm">Role-Based Access Rights</h4>
             </div>
             <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-500 uppercase font-bold border-b border-gray-200">
+              <thead className="bg-zinc-50/75 text-zinc-500 uppercase text-[11px] font-semibold border-b border-zinc-200">
                 <tr>
-                  <th className="py-3 px-4">Role</th>
-                  <th className="py-3 px-3 text-center">Attendance Punch</th>
-                  <th className="py-3 px-3 text-center">Leave Approval</th>
-                  <th className="py-3 px-3 text-center">Salary Advance</th>
-                  <th className="py-3 px-3 text-center">Payroll Finalize</th>
+                  <th className="py-2.5 px-4">Role</th>
+                  <th className="py-2.5 px-3 text-center">Attendance</th>
+                  <th className="py-2.5 px-3 text-center">Leaves</th>
+                  <th className="py-2.5 px-3 text-center">Advances</th>
+                  <th className="py-2.5 px-3 text-center">Payroll</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-zinc-100">
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-gray-900">Hotel Owner (Superadmin)</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Full Access</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Full Access</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Full Access</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Full Access</td>
+                  <td className="py-3 px-4 font-semibold text-zinc-900">Owner (Superadmin)</td>
+                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
+                  <td className="py-3 px-3 text-center text-emerald-700 font-medium">Full Access</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-gray-900">Restaurant Manager</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Mark & Edit</td>
-                  <td className="py-3.5 px-3 text-center text-emerald-600 font-bold">✓ Approve/Reject</td>
-                  <td className="py-3.5 px-3 text-center text-amber-600 font-semibold">View Only</td>
-                  <td className="py-3.5 px-3 text-center text-rose-500 font-semibold">✕ No Access</td>
+                  <td className="py-3 px-4 font-semibold text-zinc-900">Restaurant Manager</td>
+                  <td className="py-3 px-3 text-center text-zinc-700">Mark & Edit</td>
+                  <td className="py-3 px-3 text-center text-zinc-700">Approve/Reject</td>
+                  <td className="py-3 px-3 text-center text-zinc-500">View Only</td>
+                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
                 </tr>
                 <tr>
-                  <td className="py-3.5 px-4 font-bold text-gray-900">Floor Captain</td>
-                  <td className="py-3.5 px-3 text-center text-blue-600 font-semibold">Self Only</td>
-                  <td className="py-3.5 px-3 text-center text-blue-600 font-semibold">Apply Only</td>
-                  <td className="py-3.5 px-3 text-center text-rose-500 font-semibold">✕ No Access</td>
-                  <td className="py-3.5 px-3 text-center text-rose-500 font-semibold">✕ No Access</td>
+                  <td className="py-3 px-4 font-semibold text-zinc-900">Floor Captain</td>
+                  <td className="py-3 px-3 text-center text-zinc-500">Self Only</td>
+                  <td className="py-3 px-3 text-center text-zinc-500">Apply Only</td>
+                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
+                  <td className="py-3 px-3 text-center text-zinc-400">—</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          {/* Activity Logs (From Screenshot 5) */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-              <h4 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <Activity size={16} className="text-blue-600" />
-                Immutable Activity & Audit Logs
-              </h4>
-              <span className="text-xs text-gray-400 font-semibold">{logs.length} logged actions</span>
+          <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+            <div className="p-4 border-b border-zinc-100 flex items-center justify-between">
+              <h4 className="font-semibold text-zinc-900 text-sm">System Audit Activity Trail</h4>
+              <span className="text-xs text-zinc-400 font-mono">{logs.length} events</span>
             </div>
-
-            <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+            <div className="divide-y divide-zinc-100 max-h-80 overflow-y-auto">
               {logs.map(lg => (
-                <div key={lg.id} className="p-4 flex items-start justify-between hover:bg-gray-50/70 transition">
+                <div key={lg.id} className="p-3.5 flex items-start justify-between hover:bg-zinc-50/50">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-gray-900">{lg.action}</span>
-                      <span className="text-[10px] bg-gray-100 text-gray-600 font-semibold px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-zinc-900">{lg.action}</span>
+                      <span className="text-[10px] bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded font-mono">
                         {lg.actor}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600 mt-1">{lg.details}</p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{lg.details}</p>
                   </div>
-                  <span className="text-[11px] text-gray-400 font-medium whitespace-nowrap ml-4">
+                  <span className="text-[11px] text-zinc-400 font-mono whitespace-nowrap ml-4">
                     {lg.timestamp}
                   </span>
                 </div>
@@ -1976,24 +1731,24 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* TAB 10: STAFF DIRECTORY */}
+      {/* TAB 10: DIRECTORY */}
       {activeTab === "directory" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={17} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={15} />
               <input
                 type="text"
-                placeholder="Search staff by name or role..."
+                placeholder="Search staff by name or designation..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none"
+                className="w-full pl-9 pr-4 py-1.5 text-xs bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900"
               />
             </div>
             <select
               value={departmentFilter}
               onChange={e => setDepartmentFilter(e.target.value)}
-              className="text-xs font-bold py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+              className="text-xs font-medium py-1.5 px-2.5 border border-zinc-200 rounded-lg bg-zinc-50 text-zinc-700"
             >
               <option value="ALL">All Departments</option>
               <option value="Kitchen">Kitchen</option>
@@ -2003,24 +1758,24 @@ export default function AttendoPage() {
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {filteredStaff.map(member => (
-              <div key={member.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-3">
-                <div className="flex items-start justify-between border-b pb-3 border-gray-100">
+              <div key={member.id} className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3">
+                <div className="flex items-start justify-between border-b pb-3 border-zinc-100">
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base">{member.name}</h3>
-                    <p className="text-xs text-blue-600 font-bold">{member.role}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{member.department} Dept • 📱 {member.phone}</p>
+                    <h3 className="font-semibold text-zinc-900 text-sm">{member.name}</h3>
+                    <p className="text-xs text-zinc-500 font-medium">{member.role} · {member.department}</p>
+                    <p className="text-[11px] text-zinc-400 font-mono mt-0.5">{member.phone}</p>
                   </div>
-                  <span className="text-xs font-bold px-2.5 py-1 bg-gray-100 text-gray-700 rounded-lg">
+                  <span className="text-xs font-mono font-semibold px-2 py-0.5 bg-zinc-100 text-zinc-800 rounded">
                     ₹{member.monthlySalary}/mo
                   </span>
                 </div>
-                <div className="text-xs text-gray-500 space-y-1">
-                  <div>⏰ Shift: <strong className="text-gray-700">{member.shiftTiming}</strong></div>
-                  <div>📅 Balance Leaves: <strong className="text-purple-700">{member.leaveBalance} Days Available</strong></div>
-                  <div>🏦 Bank: <strong className="text-gray-700">{member.bankAccount} ({member.bankIFSC})</strong></div>
-                  <div>💰 Held Arrears: <strong className="text-indigo-700">₹{member.heldArrears} with owner</strong></div>
+                <div className="text-xs text-zinc-500 space-y-1">
+                  <div>Shift: <strong className="text-zinc-800">{member.shiftTiming}</strong></div>
+                  <div>Leave Balance: <strong className="text-zinc-800">{member.leaveBalance} Days</strong></div>
+                  <div>Bank: <strong className="text-zinc-700 font-mono">{member.bankAccount}</strong></div>
+                  <div>Held Arrears: <strong className="text-zinc-900 font-mono">₹{member.heldArrears}</strong></div>
                 </div>
               </div>
             ))}
@@ -2028,79 +1783,196 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 1: LOG SALARY ADVANCE WITH INSTALLMENT */}
-      {isAdvanceModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-              <CreditCard className="text-rose-600" /> Log Advance & Installment Repayment
-            </h3>
-            <p className="text-xs text-gray-500">
-              Record each advance along with repayment installments. The system automatically deducts installments each payroll cycle until the loan clears.
-            </p>
-
-            <form onSubmit={handleAdvanceSubmit} className="space-y-4">
+      {/* MODAL: REGULARIZATION & PUNCH TIMELINE */}
+      {isRegularizeModalOpen && selectedStaffForRegularize && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-sm sm:max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <div className="flex items-center justify-between border-b pb-3 border-zinc-100">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Select Staff Member</label>
+                <h3 className="font-semibold text-sm text-zinc-900">
+                  Punch Regularization Timeline
+                </h3>
+                <p className="text-xs text-zinc-500">{selectedStaffForRegularize.name} · {selectedStaffForRegularize.role}</p>
+              </div>
+              <button
+                onClick={() => setIsRegularizeModalOpen(false)}
+                className="p-1 hover:bg-zinc-100 rounded text-zinc-400 hover:text-zinc-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="bg-zinc-950 text-white p-4 rounded-xl text-center border border-zinc-800">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400 block mb-0.5">
+                Logged Work Time
+              </span>
+              <div className="text-3xl font-mono font-medium tracking-tight text-zinc-100">
+                {timerDisplay.h}:{timerDisplay.m}:{timerDisplay.s}
+              </div>
+              <div className="mt-2 text-xs text-zinc-400 flex items-center justify-center gap-1.5">
+                <Coffee size={12} /> Total Break: 40m
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                Clocking Events Log
+              </div>
+
+              <div className="bg-zinc-50 rounded-lg p-2.5 divide-y divide-zinc-200/60 text-xs">
+                {DEFAULT_PUNCHES.map(p => (
+                  <div key={p.id} className="py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2 h-2 rounded-full ${p.type === "IN" ? "bg-emerald-500" : "bg-rose-500"}`} />
+                      <div>
+                        <div className="font-semibold text-zinc-900">
+                          {p.type === "IN" ? "Punch In" : "Punch Out"}
+                        </div>
+                        <div className="text-[10px] text-zinc-400">{p.notes}</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-mono text-zinc-800 font-medium">{p.time}</div>
+                      <span className="text-[10px] text-emerald-700 font-medium">Verified Photo</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  toast.success(`Regularization punch registered for ${selectedStaffForRegularize.name}`);
+                  setIsRegularizeModalOpen(false);
+                }}
+                className="w-full py-2 bg-zinc-900 hover:bg-black text-white text-xs font-medium rounded-lg transition"
+              >
+                + Register Regularized Punch
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: KIOSK SELF-CHECK */}
+      {isSelfCheckOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-sm sm:max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <div className="flex items-center justify-between border-b pb-3 border-zinc-100">
+              <div className="flex items-center gap-2">
+                <Smartphone size={16} className="text-zinc-700" />
+                <h3 className="font-semibold text-sm text-zinc-900">Staff Self-Check Portal</h3>
+              </div>
+              <button
+                onClick={() => setIsSelfCheckOpen(false)}
+                className="p-1 hover:bg-zinc-100 rounded text-zinc-400 hover:text-zinc-700"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-medium text-zinc-700">Select Employee</label>
+              <select className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium">
+                {staff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                ))}
+              </select>
+
+              <div className="bg-zinc-50 border border-zinc-200 p-3.5 rounded-lg text-xs space-y-2">
+                <div className="flex justify-between text-zinc-700">
+                  <span>Current Working Time:</span>
+                  <span className="font-mono font-semibold text-zinc-900">{timerDisplay.h}h {timerDisplay.m}m</span>
+                </div>
+                <div className="flex justify-between text-zinc-700">
+                  <span>Leave Balance:</span>
+                  <strong className="text-zinc-900 font-mono">4 Days Remaining</strong>
+                </div>
+                <div className="flex justify-between text-zinc-700">
+                  <span>Verified Punches:</span>
+                  <strong className="text-emerald-700">5 Events Recorded</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setIsSelfCheckOpen(false)}
+                className="w-full py-2 bg-zinc-900 hover:bg-black text-white text-xs font-medium rounded-lg"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: ADVANCE FORM */}
+      {isAdvanceModalOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <h3 className="font-semibold text-sm text-zinc-900">Schedule Salary Advance</h3>
+            <form onSubmit={handleAdvanceSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-medium text-zinc-700 mb-1">Employee</label>
                 <select
                   value={advanceForm.staffId}
                   onChange={e => setAdvanceForm({ ...advanceForm, staffId: e.target.value })}
                   required
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                 >
-                  <option value="">-- Choose Staff --</option>
+                  <option value="">-- Choose Employee --</option>
                   {staff.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.role} - Salary: ₹{s.monthlySalary})
-                    </option>
+                    <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Total Loan / Advance (₹)</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Advance Amount (₹)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 4000"
+                    placeholder="4000"
                     value={advanceForm.totalLoanAmount}
                     onChange={e => setAdvanceForm({ ...advanceForm, totalLoanAmount: e.target.value })}
                     required
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Monthly Installment (₹)</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Monthly Deduction (₹)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 2000"
+                    placeholder="2000"
                     value={advanceForm.monthlyInstallment}
                     onChange={e => setAdvanceForm({ ...advanceForm, monthlyInstallment: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Payment Mode</label>
+                <label className="block font-medium text-zinc-700 mb-1">Payment Method</label>
                 <select
                   value={advanceForm.mode}
                   onChange={e => setAdvanceForm({ ...advanceForm, mode: e.target.value as any })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                 >
-                  <option value="CASH">Cash Counter</option>
-                  <option value="UPI">UPI / Bank Transfer</option>
+                  <option value="CASH">Cash Payment</option>
+                  <option value="UPI">Bank / UPI Transfer</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Reason / Note</label>
+                <label className="block font-medium text-zinc-700 mb-1">Reason</label>
                 <input
                   type="text"
-                  placeholder="e.g. Family medical emergency (2 installments)"
+                  placeholder="e.g. Medical expense"
                   value={advanceForm.reason}
                   onChange={e => setAdvanceForm({ ...advanceForm, reason: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-rose-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs"
                 />
               </div>
 
@@ -2108,15 +1980,15 @@ export default function AttendoPage() {
                 <button
                   type="button"
                   onClick={() => setIsAdvanceModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                  className="flex-1 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-sm shadow-md"
+                  className="flex-1 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium"
                 >
-                  Confirm & Schedule
+                  Confirm
                 </button>
               </div>
             </form>
@@ -2124,56 +1996,48 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 2: ARREARS / HELD SALARY KHATA (Screenshot 1) */}
+      {/* MODAL: ARREARS KHATA */}
       {isArrearModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-              <DollarSign className="text-indigo-600" /> Arrears & Held Salary Khata
-            </h3>
-            <p className="text-xs text-gray-500">
-              Some staff keep a portion of their earned salary with the owner for village trips or lump-sum savings. Track pending arrears and settle in one go.
-            </p>
-
-            <form onSubmit={handleArrearSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <h3 className="font-semibold text-sm text-zinc-900">Held Salary Khata (Arrears)</h3>
+            <form onSubmit={handleArrearSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Select Staff Member</label>
+                <label className="block font-medium text-zinc-700 mb-1">Employee</label>
                 <select
                   value={arrearForm.staffId}
                   onChange={e => setArrearForm({ ...arrearForm, staffId: e.target.value })}
                   required
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                 >
-                  <option value="">-- Choose Staff --</option>
+                  <option value="">-- Choose Employee --</option>
                   {staff.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} (Current Held Arrears: ₹{s.heldArrears})
-                    </option>
+                    <option key={s.id} value={s.id}>{s.name} (Held: ₹{s.heldArrears})</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Action</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Action</label>
                   <select
                     value={arrearForm.actionType}
                     onChange={e => setArrearForm({ ...arrearForm, actionType: e.target.value as any })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                   >
-                    <option value="HOLD">📥 Keep With Owner (Save)</option>
-                    <option value="RELEASE">📤 Release & Pay to Staff</option>
+                    <option value="HOLD">Retain with Management</option>
+                    <option value="RELEASE">Disburse to Employee</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Amount (₹)</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Amount (₹)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 2000"
+                    placeholder="2000"
                     value={arrearForm.amount}
                     onChange={e => setArrearForm({ ...arrearForm, amount: e.target.value })}
                     required
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
               </div>
@@ -2182,15 +2046,15 @@ export default function AttendoPage() {
                 <button
                   type="button"
                   onClick={() => setIsArrearModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                  className="flex-1 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-sm shadow-md"
+                  className="flex-1 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium"
                 >
-                  Confirm Khata Entry
+                  Confirm Entry
                 </button>
               </div>
             </form>
@@ -2198,202 +2062,34 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 3: REGULARIZATION & PUNCH TIMELINE (Matches Phone Mockup from latest Screenshot!) */}
-      {isRegularizeModalOpen && selectedStaffForRegularize && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-sm sm:max-w-md p-6 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b pb-3 border-gray-100">
-              <div>
-                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-1.5">
-                  <span>‹</span> Regularization & Timeline
-                </h3>
-                <p className="text-xs text-gray-400">{todayStr} • {selectedStaffForRegularize.name} ({selectedStaffForRegularize.role})</p>
-              </div>
-              <button
-                onClick={() => setIsRegularizeModalOpen(false)}
-                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Dark Floating Widget (Exact Replica of Screenshot) */}
-            <div className="bg-[#111827] text-white p-5 rounded-2xl shadow-lg relative overflow-hidden text-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
-                Working Hours
-              </span>
-              <div className="text-3xl font-mono font-black tracking-widest text-white flex items-center justify-center gap-2">
-                <span>{timerDisplay.h}</span>
-                <span className="text-gray-600">:</span>
-                <span>{timerDisplay.m}</span>
-                <span className="text-gray-600">:</span>
-                <span className="text-amber-400">{timerDisplay.s}</span>
-              </div>
-              <div className="flex justify-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
-                <span>Hrs</span>
-                <span>Min</span>
-                <span>Sec</span>
-              </div>
-
-              <div className="mt-3 pt-2.5 border-t border-gray-800 flex justify-center">
-                <span className="inline-flex items-center gap-1.5 bg-gray-800/90 px-3 py-1 rounded-xl text-xs font-semibold text-amber-300">
-                  <Coffee size={13} /> Total Break Time - 40m
-                </span>
-              </div>
-            </div>
-
-            {/* Multi-Punch Activity List from Screenshot */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-gray-700 pb-1">
-                <span>Activity Timeline</span>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-                  📸 Visual Proof Active
-                </span>
-              </div>
-
-              <div className="bg-gray-50 rounded-2xl p-3 divide-y divide-gray-100 text-xs">
-                {DEFAULT_PUNCHES.map((p, idx) => (
-                  <div key={p.id} className="py-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
-                        p.type === "IN" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-                      }`}>
-                        {p.type === "IN" ? "→" : "←"}
-                      </span>
-                      <div>
-                        <div className="font-bold text-gray-900">
-                          {p.type === "IN" ? "Punch In" : "Punch Out"}
-                        </div>
-                        <div className="text-[10px] text-gray-400">{p.notes}</div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="font-bold text-gray-800">{p.time}</div>
-                      <span className="text-[9px] text-emerald-600 font-extrabold flex items-center gap-0.5 justify-end">
-                        <Camera size={10} /> Photo OK
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Regularization Action */}
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  toast.success(`Regularization punch logged for ${selectedStaffForRegularize.name}! Photo visual proof saved.`);
-                  setIsRegularizeModalOpen(false);
-                }}
-                className="w-full py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs transition"
-              >
-                + Add Punch (Regularize Missed Punch)
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 4: STAFF SELF-CHECK KIOSK (Screenshot 6 Match) */}
-      {isSelfCheckOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
-            <div className="flex items-center justify-between border-b pb-3 border-gray-100">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
-                  <Smartphone size={20} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-gray-900">Staff Attendance Self-View</h3>
-                  <p className="text-xs text-gray-400">View own hours & leave balance without contacting HR</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsSelfCheckOpen(false)}
-                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <label className="block text-xs font-bold text-gray-700">Choose Employee Profile</label>
-              <select
-                onChange={e => {
-                  const s = staff.find(sm => sm.id === e.target.value);
-                  if (s) {
-                    toast.success(`Viewing live records for ${s.name}`);
-                  }
-                }}
-                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold"
-              >
-                {staff.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
-                ))}
-              </select>
-
-              <div className="bg-sky-50/70 border border-sky-200 p-4 rounded-2xl text-xs space-y-2">
-                <div className="flex justify-between font-bold text-sky-950">
-                  <span>Today's Logged Hours:</span>
-                  <span className="font-mono text-sm">{timerDisplay.h}h {timerDisplay.m}m</span>
-                </div>
-                <div className="flex justify-between text-sky-800">
-                  <span>Available Leave Balance:</span>
-                  <strong className="text-sky-950">4 Paid Leaves</strong>
-                </div>
-                <div className="flex justify-between text-sky-800">
-                  <span>Punches Verified:</span>
-                  <strong className="text-emerald-700">✓ 5 Punches (Photo OK)</strong>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <button
-                onClick={() => setIsSelfCheckOpen(false)}
-                className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs shadow-xs"
-              >
-                Close Self-View
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL 5: APPLY LEAVE */}
+      {/* MODAL: APPLY LEAVE */}
       {isNewLeaveModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-              <Calendar className="text-purple-600" /> Apply Leave for Staff
-            </h3>
-
-            <form onSubmit={handleNewLeaveSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <h3 className="font-semibold text-sm text-zinc-900">Apply Leave Request</h3>
+            <form onSubmit={handleNewLeaveSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Select Staff Member</label>
+                <label className="block font-medium text-zinc-700 mb-1">Employee</label>
                 <select
                   value={leaveForm.staffId}
                   onChange={e => setLeaveForm({ ...leaveForm, staffId: e.target.value })}
                   required
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                 >
-                  <option value="">-- Choose Staff --</option>
+                  <option value="">-- Choose Employee --</option>
                   {staff.map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.role} - Balance: {s.leaveBalance} Days)
-                    </option>
+                    <option key={s.id} value={s.id}>{s.name} (Balance: {s.leaveBalance} Days)</option>
                   ))}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Leave Type</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Leave Type</label>
                   <select
                     value={leaveForm.leaveType}
                     onChange={e => setLeaveForm({ ...leaveForm, leaveType: e.target.value as any })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                   >
                     <option value="Casual Leave">Casual Leave</option>
                     <option value="Sick Leave">Sick Leave</option>
@@ -2402,25 +2098,25 @@ export default function AttendoPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Number of Days</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Days</label>
                   <input
                     type="number"
                     value={leaveForm.days}
                     onChange={e => setLeaveForm({ ...leaveForm, days: e.target.value })}
                     required
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-purple-500 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Reason for Leave</label>
+                <label className="block font-medium text-zinc-700 mb-1">Reason</label>
                 <input
                   type="text"
-                  placeholder="e.g. Family pooja / fever"
+                  placeholder="e.g. Family event"
                   value={leaveForm.reason}
                   onChange={e => setLeaveForm({ ...leaveForm, reason: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-purple-500 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs"
                 />
               </div>
 
@@ -2428,15 +2124,15 @@ export default function AttendoPage() {
                 <button
                   type="button"
                   onClick={() => setIsNewLeaveModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                  className="flex-1 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm shadow-md"
+                  className="flex-1 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium"
                 >
-                  Approve & Deduct
+                  Approve & Log
                 </button>
               </div>
             </form>
@@ -2444,34 +2140,31 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 6: ADD NEW STAFF MEMBER */}
+      {/* MODAL: ADD STAFF */}
       {isAddStaffModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
-              <Plus className="text-blue-600" /> Add New Staff Member
-            </h3>
-
-            <form onSubmit={handleAddStaffSubmit} className="space-y-4">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
+            <h3 className="font-semibold text-sm text-zinc-900">Add Staff Member</h3>
+            <form onSubmit={handleAddStaffSubmit} className="space-y-3 text-xs">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Employee Name</label>
+                <label className="block font-medium text-zinc-700 mb-1">Full Name</label>
                 <input
                   type="text"
                   placeholder="e.g. Rahul Verma"
                   value={newStaffForm.name}
                   onChange={e => setNewStaffForm({ ...newStaffForm, name: e.target.value })}
                   required
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Role / Designation</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Designation</label>
                   <select
                     value={newStaffForm.role}
                     onChange={e => setNewStaffForm({ ...newStaffForm, role: e.target.value as any })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                   >
                     <option value="Head Chef">Head Chef</option>
                     <option value="Tandoor Master">Tandoor Master</option>
@@ -2484,11 +2177,11 @@ export default function AttendoPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Department</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Department</label>
                   <select
                     value={newStaffForm.department}
                     onChange={e => setNewStaffForm({ ...newStaffForm, department: e.target.value as any })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-medium"
                   >
                     <option value="Kitchen">Kitchen</option>
                     <option value="Service">Service</option>
@@ -2498,38 +2191,38 @@ export default function AttendoPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">Monthly Salary (₹)</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Monthly Salary (₹)</label>
                   <input
                     type="number"
-                    placeholder="e.g. 15000"
+                    placeholder="15000"
                     value={newStaffForm.monthlySalary}
                     onChange={e => setNewStaffForm({ ...newStaffForm, monthlySalary: parseFloat(e.target.value) || 0 })}
                     required
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">WhatsApp Phone</label>
+                  <label className="block font-medium text-zinc-700 mb-1">Phone Number</label>
                   <input
                     type="tel"
-                    placeholder="e.g. 9822334455"
+                    placeholder="9822334455"
                     value={newStaffForm.phone}
                     onChange={e => setNewStaffForm({ ...newStaffForm, phone: e.target.value })}
-                    className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-gray-900 outline-none"
+                    className="w-full border border-zinc-200 rounded-lg p-2 text-xs font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Shift Timings</label>
+                <label className="block font-medium text-zinc-700 mb-1">Shift Timings</label>
                 <input
                   type="text"
-                  placeholder="e.g. 11:00 AM - 11:00 PM"
+                  placeholder="11:00 AM – 11:00 PM"
                   value={newStaffForm.shiftTiming}
                   onChange={e => setNewStaffForm({ ...newStaffForm, shiftTiming: e.target.value })}
-                  className="w-full border border-gray-200 rounded-xl p-2.5 text-sm focus:ring-2 focus:ring-gray-900 outline-none"
+                  className="w-full border border-zinc-200 rounded-lg p-2 text-xs"
                 />
               </div>
 
@@ -2537,13 +2230,13 @@ export default function AttendoPage() {
                 <button
                   type="button"
                   onClick={() => setIsAddStaffModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-sm"
+                  className="flex-1 py-2 bg-white hover:bg-zinc-50 border border-zinc-200 text-zinc-700 rounded-lg font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-xl text-sm shadow-md"
+                  className="flex-1 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg font-medium"
                 >
                   Save Employee
                 </button>
@@ -2552,6 +2245,7 @@ export default function AttendoPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
