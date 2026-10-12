@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 
 const target = (process.argv[2] || 'pos').toLowerCase();
 
@@ -8,13 +9,15 @@ const configs = {
     appId: 'com.hotelwhitebliss.pos',
     appName: 'Bliss POS',
     url: 'https://food-qr-gilt.vercel.app/pos',
-    scheme: 'com.hotelwhitebliss.pos'
+    scheme: 'com.hotelwhitebliss.pos',
+    iconSrc: 'icon-pos-512.png'
   },
   captain: {
     appId: 'com.hotelwhitebliss.captain',
     appName: 'Bliss Captain',
     url: 'https://food-qr-gilt.vercel.app/captain',
-    scheme: 'com.hotelwhitebliss.captain'
+    scheme: 'com.hotelwhitebliss.captain',
+    iconSrc: 'icon-captain-512.png'
   }
 };
 
@@ -84,4 +87,31 @@ if (fs.existsSync(assetsCapPath)) {
   console.log(`✓ Updated android assets capacitor.config.json`);
 }
 
-console.log(`\n🎉 Successfully configured build target for: ${cfg.appName} (${cfg.appId})\n`);
+// 5. Update Android Mipmap App Icons for the target app
+async function updateAndroidIcons() {
+  const srcIcon = path.join(rootDir, 'public', 'icons', cfg.iconSrc);
+  const resDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
+
+  if (fs.existsSync(srcIcon) && fs.existsSync(resDir)) {
+    const mipmaps = {
+      'mipmap-mdpi': 48,
+      'mipmap-hdpi': 72,
+      'mipmap-xhdpi': 96,
+      'mipmap-xxhdpi': 144,
+      'mipmap-xxxhdpi': 192
+    };
+
+    for (const [folder, size] of Object.entries(mipmaps)) {
+      const targetFolder = path.join(resDir, folder);
+      if (fs.existsSync(targetFolder)) {
+        await sharp(srcIcon).resize(size, size).toFile(path.join(targetFolder, 'ic_launcher.png'));
+        await sharp(srcIcon).resize(size, size).toFile(path.join(targetFolder, 'ic_launcher_round.png'));
+      }
+    }
+    console.log(`✓ Updated Android launcher icons for ${cfg.appName} using ${cfg.iconSrc}`);
+  }
+}
+
+updateAndroidIcons().then(() => {
+  console.log(`\n🎉 Successfully configured build target for: ${cfg.appName} (${cfg.appId})\n`);
+}).catch(console.error);
