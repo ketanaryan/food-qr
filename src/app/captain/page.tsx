@@ -51,6 +51,7 @@ export default function CaptainPortal() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [guestCount, setGuestCount] = useState<number>(2);
+  const [isPunching, setIsPunching] = useState(false);
 
   // Table Shift / Transfer Modal state
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
@@ -187,10 +188,13 @@ export default function CaptainPortal() {
   const cartItemCount = cartItems.reduce((acc, c) => acc + c.qty, 0);
   const cartSubtotal = cartItems.reduce((acc, c) => acc + (c.item.price * c.qty), 0);
 
-  // Send / Punch KOT to Kitchen
+  // Send / Punch KOT to Kitchen via backend API
   const handlePunchKOT = async () => {
     if (!selectedTable) return;
     if (cartItems.length === 0) return toast.error("Please add items to punch KOT");
+    if (isPunching) return;
+
+    setIsPunching(true);
 
     const formattedItems = cartItems.map(c => ({
       id: c.item.id,
@@ -210,20 +214,25 @@ export default function CaptainPortal() {
       });
     }
 
-    const orderNumber = Math.floor(1000 + Math.random() * 9000);
-
     try {
-      const { error } = await supabase.from("orders").insert([
-        {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-staff-access": "pos_secure_override"
+        },
+        body: JSON.stringify({
           table_number: selectedTable,
-          items: JSON.stringify(formattedItems),
-          total_amount: cartSubtotal,
-          status: "received",
-          order_number: orderNumber
-        }
-      ]);
+          items: formattedItems
+        })
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to punch KOT");
+      }
+
+      const orderNumber = data.orderNumber || Math.floor(1000 + Math.random() * 9000);
 
       toast.success(`KOT #${orderNumber} Punched for Table ${selectedTable}!`, {
         icon: "🚀",
@@ -236,6 +245,8 @@ export default function CaptainPortal() {
       fetchOrders();
     } catch (err: any) {
       toast.error(err.message || "Failed to punch KOT");
+    } finally {
+      setIsPunching(false);
     }
   };
 

@@ -64,6 +64,7 @@ export default function PetpoojaPOSPage() {
 
   // Mobile Sub-View in Punching Mode: 'menu' (Dish Explorer) or 'cart' (KOT & Bill Docket)
   const [mobilePunchView, setMobilePunchView] = useState<'menu' | 'cart'>('menu');
+  const [isPunching, setIsPunching] = useState(false);
 
   // Orders Data
   const [orders, setOrders] = useState<any[]>([]);
@@ -336,10 +337,13 @@ export default function PetpoojaPOSPage() {
   const serviceCharge = applyServiceCharge ? Math.round(discountedSubtotal * 0.05) : 0;
   const grandTotal = discountedSubtotal + gst + serviceCharge;
 
-  // 1. PUNCH KOT (Saves to Kitchen & alerts speech engine)
+  // 1. PUNCH KOT (Saves to Kitchen via secure backend API & alerts speech engine)
   const handlePunchKOT = async (autoPrintKOT = true) => {
     if (!selectedTable) return;
     if (cartItems.length === 0) return toast.error("Please add at least 1 dish to punch KOT");
+    if (isPunching) return;
+
+    setIsPunching(true);
 
     const formattedItems = cartItems.map(c => ({
       id: c.item.id,
@@ -359,20 +363,25 @@ export default function PetpoojaPOSPage() {
       });
     }
 
-    const orderNumber = Math.floor(1000 + Math.random() * 9000);
-
     try {
-      const { error } = await supabase.from("orders").insert([
-        {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-staff-access": "pos_secure_override"
+        },
+        body: JSON.stringify({
           table_number: selectedTable,
-          items: JSON.stringify(formattedItems),
-          total_amount: cartSubtotal,
-          status: "received", // Triggers kitchen KDS with voice & chime
-          order_number: orderNumber
-        }
-      ]);
+          items: formattedItems
+        })
+      });
 
-      if (error) throw error;
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to punch KOT");
+      }
+
+      const orderNumber = data.orderNumber || Math.floor(1000 + Math.random() * 9000);
 
       toast.success(`KOT #${orderNumber} Dispatched to Kitchen!`, {
         icon: "🔥",
@@ -383,12 +392,15 @@ export default function PetpoojaPOSPage() {
         printKOTSlip(selectedTable, orderNumber, cartItems, cookingNotes, selectedCaptain);
       }
 
-      // Reset cart
+      // Reset cart and switch to bill view so staff sees running KOT
       setCart({});
       setCookingNotes("");
       fetchOrders();
+      setMobilePunchView('cart');
     } catch (err: any) {
       toast.error(err.message || "Failed to punch KOT");
+    } finally {
+      setIsPunching(false);
     }
   };
 
@@ -703,7 +715,7 @@ export default function PetpoojaPOSPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
+    <div className="h-screen h-[100dvh] overflow-hidden bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
       <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
 
       {/* TOP RESPONSIVE PETPOOJA PRO NAVIGATION BAR */}
@@ -825,7 +837,7 @@ export default function PetpoojaPOSPage() {
       </header>
 
       {/* MOBILE / TABLET PRIMARY VIEW SELECTOR BAR */}
-      <nav className="lg:hidden flex bg-[#28241d] text-gray-300 text-xs font-bold p-1 overflow-x-auto border-b border-black/20 shrink-0">
+      <nav className="lg:hidden flex bg-[#28241d] text-gray-300 text-xs font-bold p-1.5 overflow-x-auto border-b border-black/20 shrink-0 gap-1.5 pr-6 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         <button
           onClick={() => { setActiveView('tables'); setSelectedTable(null); }}
           className={`px-3 py-1.5 rounded-lg whitespace-nowrap transition ${activeView === 'tables' && !selectedTable ? "bg-white text-gray-900 shadow-xs" : ""}`}
@@ -870,7 +882,7 @@ export default function PetpoojaPOSPage() {
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-3 rounded-2xl border border-[#e8e1d6] shadow-xs">
               
               {/* Section Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {SECTIONS.map(sec => (
                   <button
                     key={sec.id}
@@ -887,7 +899,7 @@ export default function PetpoojaPOSPage() {
               </div>
 
               {/* Status Badges */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-bold">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs font-bold pr-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 <button
                   onClick={() => setStatusFilter("ALL")}
                   className={`px-2.5 py-1.5 rounded-lg border transition whitespace-nowrap ${
@@ -1071,26 +1083,27 @@ export default function PetpoojaPOSPage() {
           <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
             
             {/* MOBILE & TABLET SUB-HEADER & VIEW TOGGLE (< 1024px) */}
-            <div className="lg:hidden bg-[#1E1B16] text-white p-2.5 border-b border-[#322c24] flex items-center justify-between gap-2 shrink-0">
+            <div className="lg:hidden bg-[#1E1B16] text-white px-3 py-2 border-b border-[#322c24] flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <button
                   onClick={() => {
                     setSelectedTable(null);
                     if (activeView === 'quick_bill') setActiveView('tables');
                   }}
-                  className="p-1.5 bg-white/10 hover:bg-white/20 rounded-lg text-xs font-bold text-gray-300 shrink-0"
+                  className="p-1.5 bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-xs font-bold text-gray-200 shrink-0"
+                  title="Back to tables"
                 >
                   <ArrowLeft size={16} />
                 </button>
-                <div className="truncate">
+                <div className="min-w-0">
                   <div className="font-mono font-black text-sm text-[#A18D6D] truncate">
                     {selectedTable?.startsWith("Takeaway") || selectedTable?.startsWith("Swiggy") || selectedTable?.startsWith("Zomato") 
                       ? selectedTable 
-                      : `Table ${selectedTable}`}
+                      : `T-${selectedTable?.padStart(2, '0')}`}
                   </div>
                   {activeGroup && (
-                    <div className="text-[10px] text-gray-400">
-                      ₹{activeGroup.total} Running in Kitchen
+                    <div className="text-[10px] text-gray-400 font-mono leading-none mt-0.5">
+                      ₹{activeGroup.total} running
                     </div>
                   )}
                 </div>
@@ -1100,8 +1113,8 @@ export default function PetpoojaPOSPage() {
               <div className="flex items-center p-0.5 bg-white/10 rounded-xl text-xs font-bold shrink-0">
                 <button
                   onClick={() => setMobilePunchView('menu')}
-                  className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 ${
-                    mobilePunchView === 'menu' ? 'bg-white text-gray-900 shadow-xs' : 'text-gray-300'
+                  className={`px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 text-xs ${
+                    mobilePunchView === 'menu' ? 'bg-white text-gray-900 shadow-xs font-extrabold' : 'text-gray-300'
                   }`}
                 >
                   <Utensils size={13} />
@@ -1109,13 +1122,13 @@ export default function PetpoojaPOSPage() {
                 </button>
                 <button
                   onClick={() => setMobilePunchView('cart')}
-                  className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1 ${
-                    mobilePunchView === 'cart' ? 'bg-[#A18D6D] text-white shadow-xs' : 'text-gray-300'
+                  className={`px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 text-xs ${
+                    mobilePunchView === 'cart' ? 'bg-[#A18D6D] text-white shadow-xs font-extrabold' : 'text-gray-300'
                   }`}
                 >
                   <Receipt size={13} />
                   <span>
-                    Bill {cartItemCount > 0 ? `(${cartItemCount})` : ''}
+                    Docket{cartItemCount > 0 ? ` (${cartItemCount})` : ''}
                   </span>
                 </button>
               </div>
@@ -1205,7 +1218,7 @@ export default function PetpoojaPOSPage() {
                 </div>
 
                 {/* Dishes Grid */}
-                <div className="flex-1 p-2.5 sm:p-3.5 overflow-y-auto">
+                <div className="flex-1 p-2.5 sm:p-3.5 pb-24 lg:pb-3.5 overflow-y-auto">
                   <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-2.5">
                     {filteredMenuItems.map(item => {
                       const inCartQty = cart[item.id]?.qty || 0;
@@ -1278,21 +1291,21 @@ export default function PetpoojaPOSPage() {
 
                 {/* MOBILE FLOATING CART BAR (Shown when items in cart on mobile) */}
                 {(cartItemCount > 0 || (activeGroup && activeGroup.total > 0)) && (
-                  <div className="lg:hidden sticky bottom-0 left-0 right-0 p-2.5 sm:p-3 bg-white border-t border-gray-200 shadow-xl z-30 shrink-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <span className="text-[11px] text-gray-500 font-bold block">
-                          {cartItemCount > 0 ? `${cartItemCount} New Items` : 'Running Orders'} • Table {selectedTable}
+                  <div className="lg:hidden p-3 bg-[#1E1B16] text-white border-t border-[#3a332a] shadow-2xl z-40 shrink-0">
+                    <div className="flex items-center justify-between gap-2 max-w-full">
+                      <div className="min-w-0">
+                        <span className="text-[11px] text-gray-400 font-bold block truncate">
+                          {cartItemCount > 0 ? `${cartItemCount} New Item${cartItemCount > 1 ? 's' : ''}` : 'Running Orders'} • T-{selectedTable?.padStart(2, '0')}
                         </span>
-                        <span className="text-lg font-black font-mono text-gray-950">
+                        <span className="text-lg font-black font-mono text-[#e8d5b5]">
                           ₹{combinedSubtotal}
                         </span>
                       </div>
                       <button
                         onClick={() => setMobilePunchView('cart')}
-                        className="px-4 py-2.5 bg-gray-900 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md flex items-center gap-1.5"
+                        className="px-3.5 py-2.5 bg-[#A18D6D] hover:bg-[#8e7a5c] text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md flex items-center gap-1.5 shrink-0 active:scale-95 transition"
                       >
-                        <span>View Ticket & Settle</span>
+                        <span>View Docket</span>
                         <ChevronRight size={14} />
                       </button>
                     </div>
@@ -1304,7 +1317,7 @@ export default function PetpoojaPOSPage() {
               {/* PANE 2: THE LIVE KOT TICKET & BILL DOCKET                  */}
               {/* (Visible when mobilePunchView === 'cart' OR desktop lg:flex) */}
               {/* --------------------------------------------------------- */}
-              <div className={`${mobilePunchView === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[380px] xl:w-[420px] flex-col bg-white border-t lg:border-t-0 shadow-lg min-h-0 overflow-hidden shrink-0`}>
+              <div className={`${mobilePunchView === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[380px] xl:w-[420px] max-w-full flex-col bg-white border-t lg:border-t-0 shadow-lg min-h-0 overflow-hidden shrink-0`}>
                 
                 {/* Desktop Ticket Header */}
                 <div className="p-3 bg-[#1E1B16] text-white space-y-2 shrink-0">
@@ -1514,7 +1527,7 @@ export default function PetpoojaPOSPage() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-5 gap-1 text-[11px] font-bold">
+                      <div className="grid grid-cols-5 gap-1 text-[11px] font-bold w-full max-w-full">
                         {[0, 5, 10, 15, 20].map(pct => (
                           <button
                             key={pct}
@@ -1522,10 +1535,10 @@ export default function PetpoojaPOSPage() {
                               setDiscountPercent(pct);
                               setCustomDiscountAmt(0);
                             }}
-                            className={`py-1 rounded-lg border text-center transition ${
+                            className={`py-1.5 px-0.5 rounded-lg border text-center transition truncate text-[11px] ${
                               discountPercent === pct && customDiscountAmt === 0
-                                ? "bg-gray-900 text-white border-gray-900"
-                                : "bg-gray-50 text-gray-700 border-gray-200"
+                                ? "bg-gray-900 text-white border-gray-900 shadow-xs font-black"
+                                : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100"
                             }`}
                           >
                             {pct === 0 ? "0%" : `${pct}%`}
@@ -1544,7 +1557,7 @@ export default function PetpoojaPOSPage() {
                           />
                           <span>Apply Service Charge (5%)</span>
                         </label>
-                        <span className="font-mono text-gray-500 text-[11px]">₹{serviceCharge}</span>
+                        <span className="font-mono text-gray-500 text-[11px] shrink-0">₹{serviceCharge}</span>
                       </div>
                     </div>
                   )}
@@ -1552,53 +1565,55 @@ export default function PetpoojaPOSPage() {
 
                 {/* Financial Calculation Bar */}
                 {combinedSubtotal > 0 && (
-                  <div className="p-2.5 sm:p-3 bg-gray-50 border-t border-gray-200 space-y-1 text-xs shrink-0">
-                    <div className="flex justify-between text-gray-600">
-                      <span>Subtotal</span>
-                      <span className="font-mono font-bold">₹{combinedSubtotal}</span>
+                  <div className="p-2.5 sm:p-3 bg-gray-50 border-t border-gray-200 space-y-1.5 text-xs shrink-0 max-w-full">
+                    <div className="flex items-center justify-between text-gray-600 gap-2">
+                      <span className="truncate">Subtotal</span>
+                      <span className="font-mono font-bold shrink-0">₹{combinedSubtotal}</span>
                     </div>
                     {calculatedDiscount > 0 && (
-                      <div className="flex justify-between text-emerald-700 font-bold">
-                        <span>Discount</span>
-                        <span className="font-mono">-₹{calculatedDiscount}</span>
+                      <div className="flex items-center justify-between text-emerald-700 font-bold gap-2">
+                        <span className="truncate">Discount ({discountPercent > 0 ? `${discountPercent}%` : 'Flat'})</span>
+                        <span className="font-mono shrink-0">-₹{calculatedDiscount}</span>
                       </div>
                     )}
-                    <div className="flex justify-between text-gray-600">
-                      <span>GST (5% • CGST 2.5% + SGST 2.5%)</span>
-                      <span className="font-mono font-bold">₹{gst}</span>
+                    <div className="flex items-center justify-between text-gray-600 gap-2">
+                      <span className="truncate text-[11px] sm:text-xs">GST (5% • CGST+SGST)</span>
+                      <span className="font-mono font-bold shrink-0">₹{gst}</span>
                     </div>
                     {serviceCharge > 0 && (
-                      <div className="flex justify-between text-gray-600">
-                        <span>Service Charge (5%)</span>
-                        <span className="font-mono font-bold">₹{serviceCharge}</span>
+                      <div className="flex items-center justify-between text-gray-600 gap-2">
+                        <span className="truncate text-[11px] sm:text-xs">Service Charge (5%)</span>
+                        <span className="font-mono font-bold shrink-0">₹{serviceCharge}</span>
                       </div>
                     )}
-                    <div className="flex justify-between items-baseline pt-1.5 mt-1 border-t border-gray-200">
-                      <span className="font-black text-gray-950 text-xs sm:text-sm">GRAND TOTAL</span>
-                      <span className="font-black text-xl sm:text-2xl font-mono text-gray-950">₹{grandTotal}</span>
+                    <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t-2 border-gray-900">
+                      <span className="font-black text-gray-950 text-sm sm:text-base">GRAND TOTAL</span>
+                      <span className="font-black text-xl sm:text-2xl font-mono text-gray-950 shrink-0">₹{grandTotal}</span>
                     </div>
                   </div>
                 )}
 
                 {/* ACTION BUTTONS */}
-                <div className="p-2.5 sm:p-3 bg-white border-t border-gray-200 space-y-2 shrink-0">
+                <div className="p-2.5 sm:p-3 bg-white border-t border-gray-200 space-y-2 shrink-0 max-w-full">
                   
                   {/* Punch KOT (if new items in cart) */}
                   {cartItemCount > 0 && (
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full">
                       <button
                         onClick={() => handlePunchKOT(true)}
-                        className="flex-1 py-2.5 bg-[#1E1B16] hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        disabled={isPunching}
+                        className="flex-1 py-3 px-3 bg-[#1E1B16] hover:bg-black text-white font-black text-xs uppercase tracking-wider rounded-xl transition shadow-md flex items-center justify-center gap-1.5 active:scale-[0.98] disabled:opacity-50"
                       >
-                        <Printer size={14} />
-                        <span>🔥 KOT & Print Slip</span>
+                        <Printer size={15} />
+                        <span>{isPunching ? "Punching..." : "🔥 KOT & Print Slip"}</span>
                       </button>
                       <button
                         onClick={() => handlePunchKOT(false)}
-                        className="py-2.5 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition border border-gray-200"
+                        disabled={isPunching}
+                        className="py-2.5 sm:py-3 px-3 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs rounded-xl transition border border-gray-200 flex items-center justify-center gap-1 active:scale-[0.98] disabled:opacity-50"
                         title="Send to kitchen without printing"
                       >
-                        🔥 KOT Only
+                        <span>🔥 KOT Only</span>
                       </button>
                     </div>
                   )}

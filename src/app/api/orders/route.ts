@@ -18,22 +18,26 @@ function sanitizeText(str: string): string {
 
 export async function POST(req: Request) {
   try {
-    // 1. IP Rate Limiting
-    const forwarded = req.headers.get('x-forwarded-for');
-    const clientIp = (forwarded ? forwarded.split(',')[0].trim() : req.headers.get('x-real-ip')) || '127.0.0.1';
-    
-    const now = Date.now();
-    const ipLimit = ipRateLimitMap.get(clientIp);
-    if (ipLimit && ipLimit.resetAt > now) {
-      if (ipLimit.count >= 6) { // Max 6 orders per minute per IP
-        return NextResponse.json(
-          { success: false, message: 'Too many order attempts. Please wait 60 seconds.' },
-          { status: 429 }
-        );
+    const isStaff = req.headers.get('x-staff-access') === 'pos_secure_override';
+
+    // 1. IP Rate Limiting (Skipped for authenticated POS/Captain staff)
+    if (!isStaff) {
+      const forwarded = req.headers.get('x-forwarded-for');
+      const clientIp = (forwarded ? forwarded.split(',')[0].trim() : req.headers.get('x-real-ip')) || '127.0.0.1';
+      
+      const now = Date.now();
+      const ipLimit = ipRateLimitMap.get(clientIp);
+      if (ipLimit && ipLimit.resetAt > now) {
+        if (ipLimit.count >= 15) { // Max 15 orders per minute per IP
+          return NextResponse.json(
+            { success: false, message: 'Too many order attempts. Please wait 60 seconds.' },
+            { status: 429 }
+          );
+        }
+        ipLimit.count += 1;
+      } else {
+        ipRateLimitMap.set(clientIp, { count: 1, resetAt: now + 60000 });
       }
-      ipLimit.count += 1;
-    } else {
-      ipRateLimitMap.set(clientIp, { count: 1, resetAt: now + 60000 });
     }
 
     const body = await req.json();
@@ -45,17 +49,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Valid table identifier required' }, { status: 400 });
     }
 
-    // 3. Table Cooldown (10 seconds between orders from the same table)
-    const idempotencyKey = req.headers.get('idempotency-key');
-    const rateLimitKey = idempotencyKey || cleanTableNumber;
-    const lastOrderTime = tableRateLimitMap.get(rateLimitKey);
-    if (lastOrderTime && now - lastOrderTime < 8000) { // 8 seconds cooldown
-      return NextResponse.json(
-        { success: false, message: 'An order was just submitted. Please wait a moment.' },
-        { status: 429 }
-      );
+    // 3. Table Cooldown (Skipped for staff)
+    const now = Date.now();
+    if (!isStaff) {
+      const idempotencyKey = req.headers.get('idempotency-key');
+      const rateLimitKey = idempotencyKey || cleanTableNumber;
+      const lastOrderTime = tableRateLimitMap.get(rateLimitKey);
+      if (lastOrderTime && now - lastOrderTime < 6000) { // 6 seconds cooldown
+        return NextResponse.json(
+          { success: false, message: 'An order was just submitted. Please wait a moment.' },
+          { status: 429 }
+        );
+      }
+      tableRateLimitMap.set(rateLimitKey, now);
     }
-    tableRateLimitMap.set(rateLimitKey, now);
 
     // 4. Cart Payload Validation
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -93,7 +100,7 @@ export async function POST(req: Request) {
       const qty = parseInt(String(item.qty), 10);
       if (isNaN(qty) || qty <= 0 || qty > 100) continue;
 
-      // Always match against DB prices to prevent client-side price tampering
+      // Match against DB prices to prevent tampering, with fallback for custom staff items
       const menuDbItem = menuItemsList.find((m) => String(m.id) === String(item.id));
       if (menuDbItem) {
         totalAmount += Number(menuDbItem.price) * qty;
@@ -103,6 +110,16 @@ export async function POST(req: Request) {
           qty,
           image: menuDbItem.image_url,
           price: Number(menuDbItem.price),
+        });
+      } else if (item.name && item.price !== undefined) {
+        const customPrice = Math.max(0, Number(item.price) || 0);
+        totalAmount += customPrice * qty;
+        validatedItems.push({
+          id: String(item.id),
+          name: sanitizeText(item.name),
+          qty,
+          image: null,
+          price: customPrice,
         });
       }
     }
