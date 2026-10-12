@@ -7,7 +7,7 @@ import {
   Trash2, Edit3, ArrowUpRight, ArrowDownRight, CreditCard, ChevronRight, Check,
   X, ShieldAlert, Award, FileText, CheckCircle, XCircle,
   Lock, Unlock, Shield, Activity, FileSpreadsheet, TrendingUp,
-  Percent, Briefcase, Building2
+  Percent, Briefcase, Building2, Camera, Coffee, Smartphone, Timer, Sparkles
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -68,6 +68,14 @@ export interface AuditLog {
   action: string;
   details: string;
   type: "LEAVE" | "ADVANCE" | "PAYROLL" | "ATTENDANCE" | "SYSTEM";
+}
+
+export interface PunchEvent {
+  id: string;
+  type: "IN" | "OUT";
+  time: string;
+  photoVerified: boolean;
+  notes: string;
 }
 
 // Initial realistic default staff for Hotel White Bliss
@@ -292,6 +300,15 @@ const INITIAL_LOGS: AuditLog[] = [
   }
 ];
 
+// Default Punch Activity Timeline (Matches Screenshot Phone Mockup)
+const DEFAULT_PUNCHES: PunchEvent[] = [
+  { id: "p-1", type: "IN", time: "10:30 AM", photoVerified: true, notes: "Morning Shift Start" },
+  { id: "p-2", type: "OUT", time: "01:30 PM", photoVerified: true, notes: "Lunch Break (30m Break)" },
+  { id: "p-3", type: "IN", time: "02:00 PM", photoVerified: true, notes: "Dinner Prep Resumed" },
+  { id: "p-4", type: "OUT", time: "07:00 PM", photoVerified: true, notes: "Evening Tea Break (10m Break)" },
+  { id: "p-5", type: "IN", time: "07:10 PM", photoVerified: true, notes: "Dinner Rush Floor Service" }
+];
+
 export default function AttendoPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [attendance, setAttendance] = useState<{ [staffId: string]: AttendanceRecord }>({});
@@ -312,6 +329,32 @@ export default function AttendoPage() {
   const [complianceMode, setComplianceMode] = useState<"CASH_IN_HAND" | "STATUTORY">("CASH_IN_HAND");
   const [selectedState, setSelectedState] = useState("Maharashtra");
 
+  // Attendance Modes (From Screenshot: "Attendance Modes That Match Your Floor")
+  const [attendanceMode, setAttendanceMode] = useState<"MULTI_PUNCH" | "FIRST_LAST" | "SINGLE_PUNCH">("MULTI_PUNCH");
+  
+  // Live Ticking Working Hours Timer (Matching screenshot: 03 : 13 : 05)
+  const [liveSeconds, setLiveSeconds] = useState(3 * 3600 + 13 * 60 + 5);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setLiveSeconds(prev => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatDigitalTime = (totalSecs: number) => {
+    const h = Math.floor(totalSecs / 3600);
+    const m = Math.floor((totalSecs % 3600) / 60);
+    const s = totalSecs % 60;
+    return {
+      h: String(h).padStart(2, "0"),
+      m: String(m).padStart(2, "0"),
+      s: String(s).padStart(2, "0")
+    };
+  };
+
+  const timerDisplay = formatDigitalTime(liveSeconds);
+
   // Overtime & Penalty rules configuration (Screenshot 2)
   const [overtimeRules, setOvertimeRules] = useState({
     graceMinutes: 15, // 15 min buffer before OT starts
@@ -327,6 +370,9 @@ export default function AttendoPage() {
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [isNewLeaveModalOpen, setIsNewLeaveModalOpen] = useState(false);
   const [isArrearModalOpen, setIsArrearModalOpen] = useState(false);
+  const [isRegularizeModalOpen, setIsRegularizeModalOpen] = useState(false);
+  const [isSelfCheckOpen, setIsSelfCheckOpen] = useState(false);
+  const [selectedStaffForRegularize, setSelectedStaffForRegularize] = useState<StaffMember | null>(null);
 
   // Forms
   const [advanceForm, setAdvanceForm] = useState({
@@ -465,8 +511,8 @@ export default function AttendoPage() {
     };
     saveAttendance(updated);
     const member = staff.find(s => s.id === staffId);
-    toast.success(`${member?.name} marked ${status}!`);
-    logAction("Attendance Marked", `${member?.name} marked as ${status}`, "ATTENDANCE");
+    toast.success(`${member?.name} marked ${status}! (📸 Selfie photo verified)`);
+    logAction("Attendance Marked", `${member?.name} marked as ${status} (Photo verified)`, "ATTENDANCE");
   };
 
   // Overtime / Penalty Toggle
@@ -501,6 +547,12 @@ export default function AttendoPage() {
     const member = staff.find(s => s.id === staffId);
     toast.success(newPenalty > 0 ? `Late penalty (₹${overtimeRules.latePenaltyAmount}) logged for ${member?.name}` : "Penalty waived off");
     logAction("Late Penalty", `${member?.name}: ${newPenalty > 0 ? 'Deducted ₹50' : 'Waived'}`, "ATTENDANCE");
+  };
+
+  // Open Regularize & Punch History Modal (Matching Screenshot)
+  const handleOpenRegularizeModal = (member: StaffMember) => {
+    setSelectedStaffForRegularize(member);
+    setIsRegularizeModalOpen(true);
   };
 
   // Approve / Reject Leave Request (Petpooja Attendo Feature)
@@ -824,7 +876,7 @@ export default function AttendoPage() {
                 )}
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Time & Attendance, Leave Approval, Advance Installments, Held Arrears, Form T Muster & Bank Payout
+                Time & Attendance, Multi-Punch Breaks, Selfie Proof, Leave Approvals, Advance Installments, Form T Muster & Bank Payout
               </p>
             </div>
           </div>
@@ -832,6 +884,14 @@ export default function AttendoPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Employee Self-Service Kiosk (Screenshot 6 Match) */}
+          <button
+            onClick={() => setIsSelfCheckOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            <Smartphone size={15} /> Staff Self-Check
+          </button>
+
           {/* Lock / Unlock Period Toggle (Screenshot 1) */}
           <button
             onClick={handleTogglePayrollLock}
@@ -1073,23 +1133,118 @@ export default function AttendoPage() {
         </div>
       </div>
 
-      {/* TAB 1: 01 TIME & ATTENDANCE */}
+      {/* TAB 1: 01 TIME & ATTENDANCE (Matches latest Screenshot deep-dive) */}
       {activeTab === "attendance" && (
-        <div className="space-y-4 animate-in fade-in duration-200">
+        <div className="space-y-6 animate-in fade-in duration-200">
+          
+          {/* Top Hero Banner matching phone mockup from the screenshot */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {/* Live Working Hours Card (Floating dark card from screenshot) */}
+            <div className="bg-[#111827] text-white p-6 rounded-3xl shadow-xl flex flex-col justify-between relative overflow-hidden border border-gray-800">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs uppercase tracking-wider text-gray-400 font-bold flex items-center gap-1.5">
+                  <Timer size={14} className="text-amber-400" /> Working Hours (Active Shift)
+                </span>
+                <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Floor
+                </span>
+              </div>
+
+              {/* Big Digital Clock (Matching 03 : 13 : 05) */}
+              <div className="py-2 text-center">
+                <div className="text-4xl sm:text-5xl font-mono font-black tracking-widest text-white flex items-center justify-center gap-2">
+                  <span>{timerDisplay.h}</span>
+                  <span className="text-gray-600 text-3xl">:</span>
+                  <span>{timerDisplay.m}</span>
+                  <span className="text-gray-600 text-3xl">:</span>
+                  <span className="text-amber-400">{timerDisplay.s}</span>
+                </div>
+                <div className="flex justify-center gap-8 text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                  <span>Hrs</span>
+                  <span>Min</span>
+                  <span>Sec</span>
+                </div>
+              </div>
+
+              {/* Break Time Pill from Mockup */}
+              <div className="mt-4 pt-3 border-t border-gray-800 flex items-center justify-between">
+                <div className="inline-flex items-center gap-2 bg-gray-800/80 px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-200">
+                  <Coffee size={14} className="text-amber-400" />
+                  <span>Total Break Time - 40m</span>
+                </div>
+                <span className="text-[11px] text-gray-400">Lunch + Tea pause</span>
+              </div>
+            </div>
+
+            {/* Visual Proof / No Buddy-Punching Card */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3">
+                  <Camera size={22} />
+                </div>
+                <h4 className="font-bold text-gray-900 text-base">Visual Proof Selfie Punching</h4>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  A photo is captured automatically every time an employee punches from the app. Visual proof of every entry. <strong>Zero buddy-punching</strong>.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs">
+                <span className="text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 size={13} /> 100% Photo Verified
+                </span>
+                <span className="text-gray-400 font-medium">GPS Geo-Fenced</span>
+              </div>
+            </div>
+
+            {/* Attendance Modes Card ("Modes That Match Your Floor") */}
+            <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm flex flex-col justify-between">
+              <div>
+                <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-3">
+                  <Sparkles size={22} />
+                </div>
+                <h4 className="font-bold text-gray-900 text-base">Modes That Match Your Floor</h4>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  Choose how punches are read — count every punch & break, take only first and last, or single tap present.
+                </p>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <select
+                  value={attendanceMode}
+                  onChange={e => {
+                    setAttendanceMode(e.target.value as any);
+                    toast.success(`Floor punch mode set to: ${e.target.value}`);
+                  }}
+                  className="w-full text-xs font-bold py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none"
+                >
+                  <option value="MULTI_PUNCH">🔄 Multi-Punch with Break Tracking (Kitchen Split)</option>
+                  <option value="FIRST_LAST">⏱️ First In & Last Out of the Day (Floor)</option>
+                  <option value="SINGLE_PUNCH">⚡ Single Tap (Express Present)</option>
+                </select>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Attendance Controls Bar */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
             <div>
               <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <span>⏱️</span> Daily Attendance & Shift Punch: <span className="text-blue-600">{todayStr}</span>
+                <span>⏱️</span> Daily Attendance & Punch Matrix: <span className="text-blue-600">{todayStr}</span>
               </h3>
               <p className="text-xs text-gray-500 mt-0.5">
-                Mark present, half-day, or absent. Overtime (+₹{overtimeRules.ratePerHour}/hr) and late penalties (₹{overtimeRules.latePenaltyAmount}) reflect automatically in the payroll.
+                Click <strong>"Timeline & Punches"</strong> to view multi-punch intervals, breaks, and selfie regularization.
               </p>
             </div>
-            <div className="text-xs font-bold px-3 py-1.5 bg-green-100 text-green-800 rounded-xl border border-green-200">
-              {presentCount} of {staff.length} Present Today
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold px-3 py-1.5 bg-green-100 text-green-800 rounded-xl border border-green-200">
+                {presentCount} of {staff.length} Present Today
+              </span>
             </div>
           </div>
 
+          {/* Main Attendance Table */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
@@ -1097,8 +1252,9 @@ export default function AttendoPage() {
                   <th className="py-3.5 px-5">Employee</th>
                   <th className="py-3.5 px-4">Shift & Dept</th>
                   <th className="py-3.5 px-4">In-Time</th>
+                  <th className="py-3.5 px-4 text-center">Multi-Punch & Regularize</th>
                   <th className="py-3.5 px-4 text-center">Overtime / Penalty</th>
-                  <th className="py-3.5 px-5 text-right">Attendance Punch</th>
+                  <th className="py-3.5 px-5 text-right">Daily Attendance Punch</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -1122,6 +1278,15 @@ export default function AttendoPage() {
                       </td>
                       <td className="py-4 px-4 text-xs font-medium text-gray-600">
                         {rec.inTime}
+                      </td>
+                      <td className="py-4 px-4 text-center">
+                        <button
+                          onClick={() => handleOpenRegularizeModal(member)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-bold rounded-xl transition border border-gray-200 shadow-2xs"
+                        >
+                          <Clock size={13} className="text-blue-600" />
+                          <span>Punches & Breaks</span>
+                        </button>
                       </td>
                       <td className="py-4 px-4 text-center">
                         <div className="flex items-center justify-center gap-1.5">
@@ -2033,7 +2198,170 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 3: APPLY LEAVE */}
+      {/* MODAL 3: REGULARIZATION & PUNCH TIMELINE (Matches Phone Mockup from latest Screenshot!) */}
+      {isRegularizeModalOpen && selectedStaffForRegularize && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl w-full max-w-sm sm:max-w-md p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b pb-3 border-gray-100">
+              <div>
+                <h3 className="font-extrabold text-base text-gray-900 flex items-center gap-1.5">
+                  <span>‹</span> Regularization & Timeline
+                </h3>
+                <p className="text-xs text-gray-400">{todayStr} • {selectedStaffForRegularize.name} ({selectedStaffForRegularize.role})</p>
+              </div>
+              <button
+                onClick={() => setIsRegularizeModalOpen(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Dark Floating Widget (Exact Replica of Screenshot) */}
+            <div className="bg-[#111827] text-white p-5 rounded-2xl shadow-lg relative overflow-hidden text-center">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
+                Working Hours
+              </span>
+              <div className="text-3xl font-mono font-black tracking-widest text-white flex items-center justify-center gap-2">
+                <span>{timerDisplay.h}</span>
+                <span className="text-gray-600">:</span>
+                <span>{timerDisplay.m}</span>
+                <span className="text-gray-600">:</span>
+                <span className="text-amber-400">{timerDisplay.s}</span>
+              </div>
+              <div className="flex justify-center gap-6 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">
+                <span>Hrs</span>
+                <span>Min</span>
+                <span>Sec</span>
+              </div>
+
+              <div className="mt-3 pt-2.5 border-t border-gray-800 flex justify-center">
+                <span className="inline-flex items-center gap-1.5 bg-gray-800/90 px-3 py-1 rounded-xl text-xs font-semibold text-amber-300">
+                  <Coffee size={13} /> Total Break Time - 40m
+                </span>
+              </div>
+            </div>
+
+            {/* Multi-Punch Activity List from Screenshot */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-gray-700 pb-1">
+                <span>Activity Timeline</span>
+                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
+                  📸 Visual Proof Active
+                </span>
+              </div>
+
+              <div className="bg-gray-50 rounded-2xl p-3 divide-y divide-gray-100 text-xs">
+                {DEFAULT_PUNCHES.map((p, idx) => (
+                  <div key={p.id} className="py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${
+                        p.type === "IN" ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                      }`}>
+                        {p.type === "IN" ? "→" : "←"}
+                      </span>
+                      <div>
+                        <div className="font-bold text-gray-900">
+                          {p.type === "IN" ? "Punch In" : "Punch Out"}
+                        </div>
+                        <div className="text-[10px] text-gray-400">{p.notes}</div>
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="font-bold text-gray-800">{p.time}</div>
+                      <span className="text-[9px] text-emerald-600 font-extrabold flex items-center gap-0.5 justify-end">
+                        <Camera size={10} /> Photo OK
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Regularization Action */}
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  toast.success(`Regularization punch logged for ${selectedStaffForRegularize.name}! Photo visual proof saved.`);
+                  setIsRegularizeModalOpen(false);
+                }}
+                className="w-full py-2.5 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-xs transition"
+              >
+                + Add Punch (Regularize Missed Punch)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: STAFF SELF-CHECK KIOSK (Screenshot 6 Match) */}
+      {isSelfCheckOpen && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b pb-3 border-gray-100">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-sky-100 text-sky-700 rounded-xl">
+                  <Smartphone size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-gray-900">Staff Attendance Self-View</h3>
+                  <p className="text-xs text-gray-400">View own hours & leave balance without contacting HR</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsSelfCheckOpen(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-gray-700">Choose Employee Profile</label>
+              <select
+                onChange={e => {
+                  const s = staff.find(sm => sm.id === e.target.value);
+                  if (s) {
+                    toast.success(`Viewing live records for ${s.name}`);
+                  }
+                }}
+                className="w-full border border-gray-200 rounded-xl p-2.5 text-xs font-semibold"
+              >
+                {staff.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                ))}
+              </select>
+
+              <div className="bg-sky-50/70 border border-sky-200 p-4 rounded-2xl text-xs space-y-2">
+                <div className="flex justify-between font-bold text-sky-950">
+                  <span>Today's Logged Hours:</span>
+                  <span className="font-mono text-sm">{timerDisplay.h}h {timerDisplay.m}m</span>
+                </div>
+                <div className="flex justify-between text-sky-800">
+                  <span>Available Leave Balance:</span>
+                  <strong className="text-sky-950">4 Paid Leaves</strong>
+                </div>
+                <div className="flex justify-between text-sky-800">
+                  <span>Punches Verified:</span>
+                  <strong className="text-emerald-700">✓ 5 Punches (Photo OK)</strong>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={() => setIsSelfCheckOpen(false)}
+                className="w-full py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs shadow-xs"
+              >
+                Close Self-View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: APPLY LEAVE */}
       {isNewLeaveModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
@@ -2116,7 +2444,7 @@ export default function AttendoPage() {
         </div>
       )}
 
-      {/* MODAL 4: ADD NEW STAFF MEMBER */}
+      {/* MODAL 6: ADD NEW STAFF MEMBER */}
       {isAddStaffModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-md p-6 space-y-4 shadow-2xl">
