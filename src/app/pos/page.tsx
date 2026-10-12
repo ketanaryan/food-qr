@@ -7,7 +7,8 @@ import {
   RotateCcw, Printer, Send, Smartphone, DollarSign, Split, 
   Layers, Users, Bell, BellOff, RefreshCw, ChevronRight, 
   Sparkles, ArrowLeft, CheckCircle2, ShieldCheck, Utensils, 
-  ShoppingBag, Bike, Coffee, Flame, AlertCircle, FileText
+  ShoppingBag, Bike, Coffee, Flame, AlertCircle, FileText,
+  Lock, KeyRound, Shield
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -112,6 +113,58 @@ export default function PetpoojaPOSPage() {
   const [waPhone, setWaPhone] = useState('');
   const [cashTendered, setCashTendered] = useState<number>(0);
   const [splitCashAmt, setSplitCashAmt] = useState<number>(0);
+
+  // Manager PIN Security Modal for Admin Back-Office
+  const [isAdminPinModalOpen, setIsAdminPinModalOpen] = useState(false);
+  const [adminPinInput, setAdminPinInput] = useState("");
+  const [adminPinError, setAdminPinError] = useState("");
+
+  // Online & Delivery Channels (Takeaway / Swiggy / Zomato)
+  const [isDeliveryChannelModalOpen, setIsDeliveryChannelModalOpen] = useState(false);
+  const [selectedChannel, setSelectedChannel] = useState<'TAKEAWAY' | 'SWIGGY' | 'ZOMATO'>('TAKEAWAY');
+  const [onlineOrderId, setOnlineOrderId] = useState("");
+  const [deliveryRiderName, setDeliveryRiderName] = useState("");
+
+  const handleVerifyAdminPin = (inputPin?: string) => {
+    const pinToTest = inputPin ?? adminPinInput;
+    const savedPin = typeof window !== 'undefined' ? localStorage.getItem('wb_manager_pin') || '1234' : '1234';
+    if (pinToTest === savedPin) {
+      toast.success("Manager Access Granted! Redirecting to Admin...", { icon: "🔐" });
+      setIsAdminPinModalOpen(false);
+      setAdminPinInput("");
+      setAdminPinError("");
+      window.location.href = "/admin/dashboard";
+    } else {
+      setAdminPinError("Invalid PIN! Access Denied.");
+      toast.error("Incorrect Manager PIN! (Default: 1234)", { icon: "❌" });
+      setAdminPinInput("");
+    }
+  };
+
+  const handleStartDeliveryOrder = (channelOverride?: 'TAKEAWAY' | 'SWIGGY' | 'ZOMATO', customId?: string) => {
+    const channel = channelOverride || selectedChannel;
+    const prefix = channel === 'SWIGGY' ? 'Swiggy' : channel === 'ZOMATO' ? 'Zomato' : 'Takeaway';
+    const cleanId = (customId ?? onlineOrderId).trim();
+    const rand = Math.floor(100 + Math.random() * 900);
+    const token = cleanId ? `#${cleanId}` : String(rand);
+    const tableId = `${prefix}-${token}`;
+
+    setSelectedTable(tableId);
+    if (deliveryRiderName.trim()) {
+      setCustomerName(deliveryRiderName.trim());
+    } else {
+      setCustomerName(channel === 'SWIGGY' ? 'Swiggy Order' : channel === 'ZOMATO' ? 'Zomato Order' : 'Direct Parcel');
+    }
+    setActiveView('quick_bill');
+    setMobilePunchView('menu');
+    setCart({});
+    setIsDeliveryChannelModalOpen(false);
+    setOnlineOrderId("");
+    setDeliveryRiderName("");
+    toast.success(`Started ${prefix} Order ${token}`, { 
+      icon: channel === 'SWIGGY' ? '🟠' : channel === 'ZOMATO' ? '🔴' : '🥡' 
+    });
+  };
 
   // Clock Update
   useEffect(() => {
@@ -764,17 +817,19 @@ export default function PetpoojaPOSPage() {
           </button>
           <button
             onClick={() => {
-              setActiveView('quick_bill');
-              setSelectedTable(`Takeaway-${Math.floor(100 + Math.random() * 900)}`);
-              setMobilePunchView('menu');
-              setCart({});
+              if (activeView === 'quick_bill' && selectedTable) {
+                setActiveView('quick_bill');
+              } else {
+                setSelectedChannel('TAKEAWAY');
+                setIsDeliveryChannelModalOpen(true);
+              }
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
               activeView === 'quick_bill' ? "bg-white text-gray-900 shadow font-extrabold" : "text-gray-300 hover:text-white"
             }`}
           >
             <ShoppingBag size={14} />
-            <span>Takeaway / Quick Bill</span>
+            <span>Takeaway / Online</span>
           </button>
           <button
             onClick={() => { setActiveView('live_kots'); setSelectedTable(null); }}
@@ -834,13 +889,18 @@ export default function PetpoojaPOSPage() {
             <span className="hidden xl:inline">Waiter</span>
           </a>
 
-          <a
-            href="/admin/dashboard"
-            className="p-1.5 sm:p-2 bg-[#A18D6D] hover:bg-[#8e7a5c] text-white rounded-xl text-xs font-bold flex items-center gap-1 shadow"
-            title="Admin"
+          <button
+            onClick={() => {
+              setAdminPinInput("");
+              setAdminPinError("");
+              setIsAdminPinModalOpen(true);
+            }}
+            className="p-1.5 sm:p-2 bg-gradient-to-r from-[#A18D6D] to-[#8e7a5c] hover:brightness-110 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow"
+            title="Owner Back-Office (Manager PIN Protected)"
           >
+            <Lock size={12} className="text-amber-200" />
             <span>Admin</span>
-          </a>
+          </button>
         </div>
       </header>
 
@@ -854,14 +914,16 @@ export default function PetpoojaPOSPage() {
         </button>
         <button
           onClick={() => {
-            setActiveView('quick_bill');
-            setSelectedTable(`Takeaway-${Math.floor(100 + Math.random() * 900)}`);
-            setMobilePunchView('menu');
-            setCart({});
+            if (activeView === 'quick_bill' && selectedTable) {
+              setActiveView('quick_bill');
+            } else {
+              setSelectedChannel('TAKEAWAY');
+              setIsDeliveryChannelModalOpen(true);
+            }
           }}
           className={`py-1.5 px-0.5 rounded-lg text-center transition truncate ${activeView === 'quick_bill' ? "bg-white text-gray-900 shadow-xs font-extrabold" : "hover:text-white"}`}
         >
-          Takeaway
+          Takeaway / Online
         </button>
         <button
           onClick={() => { setActiveView('live_kots'); setSelectedTable(null); }}
@@ -970,37 +1032,102 @@ export default function PetpoojaPOSPage() {
               </div>
             </div>
 
-            {/* Delivery / Online Orders Strip */}
-            {deliveryGroups.length > 0 && (
-              <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 space-y-2">
-                <div className="flex items-center justify-between text-xs font-bold text-purple-900">
-                  <span className="flex items-center gap-1.5">
-                    <Bike size={15} /> Active Takeaway & Online Orders ({deliveryGroups.length})
-                  </span>
+            {/* Online Aggregators & Parcel Quick Action Bar */}
+            <div className="bg-[#1E1B16] text-white rounded-2xl p-3 sm:p-3.5 space-y-2.5 shadow-md border border-[#322c24]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-[#A18D6D]/20 border border-[#A18D6D]/40 flex items-center justify-center text-[#A18D6D]">
+                    <Bike size={16} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-black tracking-wide flex items-center gap-2">
+                      <span>Online & Parcel Desk</span>
+                      {deliveryGroups.length > 0 && (
+                        <span className="bg-amber-400 text-gray-950 font-black text-[10px] px-2 py-0.5 rounded-full font-mono">
+                          {deliveryGroups.length} Active
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-gray-400">Swiggy • Zomato • Parcel Takeaway Orders</div>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {deliveryGroups.map((g: any) => (
-                    <button
-                      key={g.table}
-                      onClick={() => {
-                        setSelectedTable(g.table);
-                        setMobilePunchView('cart');
-                        setCart({});
-                      }}
-                      className="p-2.5 bg-white border border-purple-200 rounded-xl text-left hover:border-purple-400 shadow-xs flex justify-between items-center"
-                    >
-                      <div>
-                        <div className="font-extrabold text-xs text-purple-900 truncate">{g.table}</div>
-                        <div className="text-[10px] text-gray-500">{g.orders.length} KOTs</div>
-                      </div>
-                      <div className="text-right font-black text-xs text-purple-950 font-mono">
-                        ₹{g.total}
-                      </div>
-                    </button>
-                  ))}
+
+                {/* Quick Channel Buttons */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <button
+                    onClick={() => { setSelectedChannel('TAKEAWAY'); setIsDeliveryChannelModalOpen(true); }}
+                    className="px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-xs"
+                  >
+                    <ShoppingBag size={13} />
+                    <span>+ Takeaway</span>
+                  </button>
+                  <button
+                    onClick={() => { setSelectedChannel('SWIGGY'); setIsDeliveryChannelModalOpen(true); }}
+                    className="px-2.5 py-1.5 bg-[#FC8019] hover:bg-[#e06f14] text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-xs"
+                  >
+                    <Bike size={13} />
+                    <span>+ Swiggy</span>
+                  </button>
+                  <button
+                    onClick={() => { setSelectedChannel('ZOMATO'); setIsDeliveryChannelModalOpen(true); }}
+                    className="px-2.5 py-1.5 bg-[#E23744] hover:bg-[#c92b37] text-white rounded-xl text-xs font-bold flex items-center gap-1 transition shadow-xs"
+                  >
+                    <Utensils size={13} />
+                    <span>+ Zomato</span>
+                  </button>
                 </div>
               </div>
-            )}
+
+              {/* Active Delivery Orders Grid */}
+              {deliveryGroups.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 pt-1 border-t border-white/10">
+                  {deliveryGroups.map((g: any) => {
+                    const isSwiggy = g.table.toLowerCase().includes('swiggy');
+                    const isZomato = g.table.toLowerCase().includes('zomato');
+                    const isTakeaway = g.table.toLowerCase().includes('takeaway');
+
+                    const badgeColor = isSwiggy 
+                      ? 'bg-[#FC8019] text-white' 
+                      : isZomato 
+                      ? 'bg-[#E23744] text-white' 
+                      : 'bg-amber-600 text-white';
+
+                    const borderHover = isSwiggy 
+                      ? 'border-[#FC8019]/40 hover:border-[#FC8019]' 
+                      : isZomato 
+                      ? 'border-[#E23744]/40 hover:border-[#E23744]' 
+                      : 'border-amber-400/40 hover:border-amber-500';
+
+                    return (
+                      <button
+                        key={g.table}
+                        onClick={() => {
+                          setSelectedTable(g.table);
+                          setMobilePunchView('cart');
+                          setCart({});
+                        }}
+                        className={`p-2.5 bg-white text-gray-900 border rounded-xl text-left shadow-xs flex justify-between items-center transition ${borderHover}`}
+                      >
+                        <div className="min-w-0 pr-1">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded uppercase ${badgeColor}`}>
+                              {isSwiggy ? 'Swiggy' : isZomato ? 'Zomato' : 'Parcel'}
+                            </span>
+                          </div>
+                          <div className="font-extrabold text-xs text-gray-900 truncate font-mono">
+                            {g.table}
+                          </div>
+                          <div className="text-[10px] text-gray-500">{g.orders.length} KOTs</div>
+                        </div>
+                        <div className="text-right font-black text-xs text-gray-900 font-mono shrink-0">
+                          ₹{g.total}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* 15 TABLE TILES GRID (RESPONSIVE) */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5 sm:gap-3.5">
@@ -1727,36 +1854,85 @@ export default function PetpoojaPOSPage() {
                           <Split size={14} /> Split
                         </button>
                       </div>
+
+                      {/* Dedicated Online Settle Buttons */}
+                      {activeGroup.table.toLowerCase().includes('swiggy') && (
+                        <button
+                          onClick={() => markPaid(activeGroup.table, activeGroup.orders.map((o: any) => o.id), 'SWIGGY')}
+                          className="w-full py-2.5 bg-[#FC8019] hover:bg-[#e06f14] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <Bike size={14} /> Settle Swiggy Paid (₹{grandTotal})
+                        </button>
+                      )}
+
+                      {activeGroup.table.toLowerCase().includes('zomato') && (
+                        <button
+                          onClick={() => markPaid(activeGroup.table, activeGroup.orders.map((o: any) => o.id), 'ZOMATO')}
+                          className="w-full py-2.5 bg-[#E23744] hover:bg-[#c92b37] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <Utensils size={14} /> Settle Zomato Paid (₹{grandTotal})
+                        </button>
+                      )}
                     </div>
                   )}
 
                   {/* Quick Bill instant settle */}
                   {activeView === 'quick_bill' && cartItemCount > 0 && (
                     <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={async () => {
-                          await handlePunchKOT(false);
-                          const group = tableGroups[selectedTable || ''];
-                          if (group) {
-                            markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'CASH');
-                          }
-                        }}
-                        className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
-                      >
-                        <DollarSign size={14} /> Settle Cash
-                      </button>
-                      <button
-                        onClick={async () => {
-                          await handlePunchKOT(false);
-                          const group = tableGroups[selectedTable || ''];
-                          if (group) {
-                            markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'UPI');
-                          }
-                        }}
-                        className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
-                      >
-                        <Smartphone size={14} /> Settle UPI
-                      </button>
+                      {selectedTable?.toLowerCase().includes('swiggy') ? (
+                        <button
+                          onClick={async () => {
+                            await handlePunchKOT(false);
+                            const group = tableGroups[selectedTable || ''];
+                            if (group) {
+                              markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'SWIGGY');
+                            }
+                          }}
+                          className="col-span-2 py-2.5 bg-[#FC8019] hover:bg-[#e06f14] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <Bike size={14} /> Instant Settle Swiggy Order
+                        </button>
+                      ) : selectedTable?.toLowerCase().includes('zomato') ? (
+                        <button
+                          onClick={async () => {
+                            await handlePunchKOT(false);
+                            const group = tableGroups[selectedTable || ''];
+                            if (group) {
+                              markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'ZOMATO');
+                            }
+                          }}
+                          className="col-span-2 py-2.5 bg-[#E23744] hover:bg-[#c92b37] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
+                        >
+                          <Utensils size={14} /> Instant Settle Zomato Order
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            onClick={async () => {
+                              await handlePunchKOT(false);
+                              const group = tableGroups[selectedTable || ''];
+                              if (group) {
+                                markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'CASH');
+                              }
+                            }}
+                            className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
+                          >
+                            <DollarSign size={14} /> Settle Cash
+                          </button>
+                          <button
+                            onClick={async () => {
+                              await handlePunchKOT(false);
+                              const group = tableGroups[selectedTable || ''];
+                              if (group) {
+                                markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'UPI');
+                              }
+                            }}
+                            className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
+                          >
+                            <Smartphone size={14} /> Settle UPI
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2172,6 +2348,256 @@ export default function PetpoojaPOSPage() {
                   Cancel (Keep Table)
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL: MANAGER / OWNER SECURITY PIN (PETPOOJA STANDARD)       */}
+      {/* ------------------------------------------------------------- */}
+      {isAdminPinModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#1E1B16] text-white border border-[#3a3328] rounded-3xl w-full max-w-sm p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center text-white shadow-md">
+                <Lock size={22} />
+              </div>
+              <h3 className="font-playfair text-lg font-bold tracking-wide text-white pt-2">
+                Manager / Owner Access
+              </h3>
+              <p className="text-xs text-gray-400">
+                Enter 4-digit security PIN to unlock Admin Back-Office & Reports
+              </p>
+            </div>
+
+            {/* PIN Display */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-center gap-3">
+                {[0, 1, 2, 3].map((idx) => {
+                  const filled = adminPinInput.length > idx;
+                  return (
+                    <div
+                      key={idx}
+                      className={`w-11 h-12 rounded-xl border-2 flex items-center justify-center text-xl font-bold font-mono transition ${
+                        filled 
+                          ? 'border-[#A18D6D] bg-[#A18D6D]/20 text-[#e8d5b5]' 
+                          : 'border-white/10 bg-white/5 text-transparent'
+                      }`}
+                    >
+                      {filled ? '●' : '—'}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {adminPinError && (
+                <p className="text-[11px] text-red-400 font-bold text-center animate-bounce">
+                  {adminPinError}
+                </p>
+              )}
+            </div>
+
+            {/* Touch Screen Keypad (0-9, C, Backspace) */}
+            <div className="grid grid-cols-3 gap-2">
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  onClick={() => {
+                    if (adminPinInput.length < 4) {
+                      const next = adminPinInput + num;
+                      setAdminPinInput(next);
+                      setAdminPinError("");
+                      if (next.length === 4) handleVerifyAdminPin(next);
+                    }
+                  }}
+                  className="py-3 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl font-mono text-lg font-bold text-white transition"
+                >
+                  {num}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => { setAdminPinInput(""); setAdminPinError(""); }}
+                className="py-3 bg-red-500/20 hover:bg-red-500/30 active:scale-95 text-red-300 rounded-xl text-xs font-black uppercase transition"
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (adminPinInput.length < 4) {
+                    const next = adminPinInput + "0";
+                    setAdminPinInput(next);
+                    setAdminPinError("");
+                    if (next.length === 4) handleVerifyAdminPin(next);
+                  }
+                }}
+                className="py-3 bg-white/10 hover:bg-white/20 active:scale-95 rounded-xl font-mono text-lg font-bold text-white transition"
+              >
+                0
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAdminPinInput(prev => prev.slice(0, -1));
+                  setAdminPinError("");
+                }}
+                className="py-3 bg-white/10 hover:bg-white/20 active:scale-95 text-gray-300 rounded-xl text-xs font-black transition flex items-center justify-center"
+              >
+                ⌫
+              </button>
+            </div>
+
+            <div className="pt-1 space-y-2">
+              <div className="text-[10px] text-gray-400 text-center">
+                Default Master PIN: <span className="font-mono text-amber-300 font-bold">1234</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAdminPinModalOpen(false);
+                  setAdminPinInput("");
+                  setAdminPinError("");
+                }}
+                className="w-full py-2 text-xs font-bold text-gray-400 hover:text-white transition"
+              >
+                Cancel / Return to POS
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL: START TAKEAWAY / SWIGGY / ZOMATO ORDER                  */}
+      {/* ------------------------------------------------------------- */}
+      {isDeliveryChannelModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white text-gray-900 rounded-3xl w-full max-w-md p-5 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <div>
+                <h3 className="text-base font-black text-gray-900 flex items-center gap-2">
+                  <Bike className="text-gray-900" size={18} /> New Delivery / Parcel Docket
+                </h3>
+                <p className="text-xs text-gray-500">Select order channel & punch items for Kitchen</p>
+              </div>
+              <button
+                onClick={() => setIsDeliveryChannelModalOpen(false)}
+                className="p-1.5 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-700 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* 3 Channel Options */}
+            <div className="grid grid-cols-3 gap-2.5">
+              {/* Takeaway */}
+              <button
+                type="button"
+                onClick={() => setSelectedChannel('TAKEAWAY')}
+                className={`p-3 rounded-2xl border-2 text-center transition flex flex-col items-center justify-center gap-1.5 ${
+                  selectedChannel === 'TAKEAWAY'
+                    ? 'border-amber-600 bg-amber-50 text-amber-950 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-gray-50/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedChannel === 'TAKEAWAY' ? 'bg-amber-600 text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <ShoppingBag size={20} />
+                </div>
+                <div className="font-extrabold text-xs">Direct Parcel</div>
+                <div className="text-[10px] text-gray-500">Takeaway</div>
+              </button>
+
+              {/* Swiggy */}
+              <button
+                type="button"
+                onClick={() => setSelectedChannel('SWIGGY')}
+                className={`p-3 rounded-2xl border-2 text-center transition flex flex-col items-center justify-center gap-1.5 ${
+                  selectedChannel === 'SWIGGY'
+                    ? 'border-[#FC8019] bg-orange-50 text-orange-950 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-gray-50/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedChannel === 'SWIGGY' ? 'bg-[#FC8019] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <Bike size={20} />
+                </div>
+                <div className="font-extrabold text-xs text-[#FC8019]">Swiggy</div>
+                <div className="text-[10px] text-gray-500">Online Order</div>
+              </button>
+
+              {/* Zomato */}
+              <button
+                type="button"
+                onClick={() => setSelectedChannel('ZOMATO')}
+                className={`p-3 rounded-2xl border-2 text-center transition flex flex-col items-center justify-center gap-1.5 ${
+                  selectedChannel === 'ZOMATO'
+                    ? 'border-[#E23744] bg-red-50 text-red-950 shadow-sm'
+                    : 'border-gray-200 hover:border-gray-300 text-gray-600 bg-gray-50/50'
+                }`}
+              >
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedChannel === 'ZOMATO' ? 'bg-[#E23744] text-white' : 'bg-gray-200 text-gray-600'}`}>
+                  <Utensils size={20} />
+                </div>
+                <div className="font-extrabold text-xs text-[#E23744]">Zomato</div>
+                <div className="text-[10px] text-gray-500">Online Order</div>
+              </button>
+            </div>
+
+            {/* Inputs */}
+            <div className="space-y-3 pt-1">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  {selectedChannel === 'SWIGGY' ? 'Swiggy Order ID / Token #' : selectedChannel === 'ZOMATO' ? 'Zomato Order ID / Token #' : 'Token / Customer Token #'}:
+                </label>
+                <input
+                  type="text"
+                  placeholder={selectedChannel === 'SWIGGY' ? 'e.g. 4821 (from Swiggy device)' : selectedChannel === 'ZOMATO' ? 'e.g. 9102 (from Zomato device)' : 'Optional Token # or Name'}
+                  value={onlineOrderId}
+                  onChange={(e) => setOnlineOrderId(e.target.value)}
+                  className="w-full border-2 border-gray-200 focus:border-gray-900 rounded-xl p-2.5 text-xs font-bold font-mono outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">
+                  {selectedChannel === 'TAKEAWAY' ? 'Customer Name / Phone (Optional)' : 'Rider / Delivery Partner Name (Optional)'}:
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rider Manoj / 9876543210"
+                  value={deliveryRiderName}
+                  onChange={(e) => setDeliveryRiderName(e.target.value)}
+                  className="w-full border-2 border-gray-200 focus:border-gray-900 rounded-xl p-2.5 text-xs font-medium outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => handleStartDeliveryOrder()}
+                className={`w-full py-3 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-2 ${
+                  selectedChannel === 'SWIGGY'
+                    ? 'bg-[#FC8019] hover:bg-[#e06f14]'
+                    : selectedChannel === 'ZOMATO'
+                    ? 'bg-[#E23744] hover:bg-[#c92b37]'
+                    : 'bg-amber-600 hover:bg-amber-700'
+                }`}
+              >
+                <Check size={16} />
+                <span>Start Punching {selectedChannel === 'SWIGGY' ? 'Swiggy' : selectedChannel === 'ZOMATO' ? 'Zomato' : 'Takeaway'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDeliveryChannelModalOpen(false)}
+                className="w-full py-1 text-xs font-bold text-gray-400 hover:text-gray-600 transition"
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>

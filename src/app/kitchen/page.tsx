@@ -316,7 +316,22 @@ export default function KitchenDashboard() {
                             #{order.order_number}
                           </span>
                           <div className="mt-1 font-bold text-gray-900 text-xl">
-                            Table {order.table_number}
+                            {order.table_number?.match(/^(Swiggy|Zomato|Takeaway)/i) ? (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {order.table_number.toLowerCase().includes("swiggy") && (
+                                  <span className="bg-[#FC8019] text-white text-[11px] px-2 py-0.5 rounded font-black tracking-wider">SWIGGY</span>
+                                )}
+                                {order.table_number.toLowerCase().includes("zomato") && (
+                                  <span className="bg-[#E23744] text-white text-[11px] px-2 py-0.5 rounded font-black tracking-wider">ZOMATO</span>
+                                )}
+                                {order.table_number.toLowerCase().includes("takeaway") && (
+                                  <span className="bg-amber-600 text-white text-[11px] px-2 py-0.5 rounded font-black tracking-wider">PARCEL</span>
+                                )}
+                                <span>{order.table_number}</span>
+                              </div>
+                            ) : (
+                              `Table ${order.table_number}`
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center text-xs text-gray-500">

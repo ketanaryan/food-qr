@@ -79,7 +79,8 @@ export async function POST(req: Request) {
     }
 
     // 5. Handle Status Update & Payment Recording
-    const cleanPaymentMethod = paymentMethod === 'UPI' ? 'UPI' : paymentMethod === 'CASH' ? 'CASH' : null;
+    const validMethods = ['UPI', 'CASH', 'SWIGGY', 'ZOMATO', 'SPLIT'];
+    const cleanPaymentMethod = validMethods.includes(paymentMethod) ? paymentMethod : null;
     const cleanPhone = customerPhone ? String(customerPhone).replace(/\D/g, '').slice(-15) : null;
 
     if (cleanPaymentMethod || cleanPhone) {
