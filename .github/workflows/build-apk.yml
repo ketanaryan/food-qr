@@ -1,19 +1,13 @@
-name: Build Android APK (Capacitor)
+name: Android Build
 
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      notes:
-        description: 'Release Notes / Version tag'
-        required: false
-        default: 'Manual Build'
 
 jobs:
-  build-apk:
-    name: Build & Package Android APK
+  build:
     runs-on: ubuntu-latest
 
     permissions:
@@ -23,59 +17,35 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: '22'
           cache: 'npm'
 
-      - name: Set up Java JDK 21
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Setup Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '21'
-          cache: 'gradle'
 
-      - name: Setup Android SDK Platforms
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Build Android App (APK)
+        working-directory: android
         run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-34" "platforms;android-35" "build-tools;34.0.0" || true
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
 
-      - name: Install Dependencies
-        run: |
-          npm ci || npm install
-
-      - name: Set Executable Permissions on Gradle Wrapper
-        run: |
-          chmod +x android/gradlew
-
-      - name: Sync Capacitor Android Project
-        run: |
-          npx cap sync android
-
-      - name: Build Android APK with Gradle
-        run: |
-          cd android
-          ./gradlew assembleDebug --no-daemon
-
-      - name: Prepare APK Output
-        run: |
-          mkdir -p release-apk
-          APK_PATH=$(find android/app/build/outputs/apk/debug -name "*.apk" | head -n 1)
-          if [ -f "$APK_PATH" ]; then
-            cp "$APK_PATH" release-apk/Hotel-White-Bliss-POS.apk
-            echo "APK ready at release-apk/Hotel-White-Bliss-POS.apk"
-          else
-            echo "ERROR: APK not found"
-            exit 1
-          fi
-
-      - name: Upload APK as Artifact
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Hotel-White-Bliss-Android-APK
-          path: release-apk/Hotel-White-Bliss-POS.apk
-          retention-days: 30
+          name: hotel-white-bliss-android-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Create GitHub Release with APK
         uses: softprops/action-gh-release@v2
@@ -85,13 +55,7 @@ jobs:
           name: "Hotel White Bliss POS v1.0.${{ github.run_number }}"
           body: |
             ### 🏨 Hotel White Bliss — Android POS & Staff App
-            
-            Directly installable APK for Hotel White Bliss:
-            - **Live Sync**: Automatically syncs with live cloud deployment
-            - **Modules**: Captain Table Ordering, Attendo Attendance, Cashier Settlement, Kitchen KDS
-            
-            #### 📥 Download:
-            Download `Hotel-White-Bliss-POS.apk` attached below and install on any Android phone or tablet.
-          files: release-apk/Hotel-White-Bliss-POS.apk
+            Download `app-debug.apk` and install on any Android phone or tablet.
+          files: android/app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
