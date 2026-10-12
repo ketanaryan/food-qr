@@ -35,7 +35,7 @@ export default function KitchenDashboard() {
     const { data: activeData, error: activeError } = await supabase
       .from("orders")
       .select("*")
-      .in("status", ["received", "preparing", "ready"])
+      .in("status", ["received", "pending", "preparing", "ready"])
       .order("created_at", { ascending: false });
 
     // Fetch limited served orders to prevent memory leak

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, Menu, BarChart, CalendarDays, Users, Boxes, UserCheck } from "lucide-react";
+import { LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, Menu, BarChart, CalendarDays, Users, Boxes, UserCheck, Receipt } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -11,6 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const links = [
+    { name: "Staff POS", href: "/pos", icon: Receipt },
     { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
     { name: "Sales Report", href: "/admin/sales", icon: BarChart },
     { name: "Guest CRM", href: "/admin/crm", icon: Users },

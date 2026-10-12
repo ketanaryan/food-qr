@@ -218,7 +218,7 @@ export default function CaptainPortal() {
           table_number: selectedTable,
           items: JSON.stringify(formattedItems),
           total_amount: cartSubtotal,
-          status: "pending",
+          status: "received",
           order_number: orderNumber
         }
       ]);
