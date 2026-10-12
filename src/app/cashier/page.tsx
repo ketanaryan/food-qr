@@ -275,9 +275,16 @@ export default function CashierDashboard() {
               border: 1px dashed #999;
               border-radius: 6px;
             }
+            @media print {
+              .no-print { display: none !important; }
+            }
           </style>
         </head>
         <body>
+          <div class="no-print" style="position: sticky; top: 0; background: #1E1B16; padding: 8px; margin: -12px -8px 10px -8px; display: flex; gap: 8px; justify-content: center; z-index: 9999; border-bottom: 2px solid #A18D6D;">
+            <button onclick="window.print()" style="background: #16a34a; color: white; border: none; padding: 7px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🖨️ Print Receipt (80mm)</button>
+            <button onclick="window.close()" style="background: #3f3f46; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">✖ Close</button>
+          </div>
           <!-- Brand Header -->
           <div class="text-center">
             <div class="header-title">Hotel White Bliss</div>
@@ -397,16 +404,16 @@ export default function CashierDashboard() {
             const doPrint = () => {
               if (printed) return;
               printed = true;
+              window.focus();
               window.print();
-              window.close();
             };
             if (img && !img.complete) {
               img.onload = doPrint;
               img.onerror = doPrint;
-              setTimeout(doPrint, 1800);
+              setTimeout(doPrint, 1500);
             } else {
               window.onload = doPrint;
-              setTimeout(doPrint, 800);
+              setTimeout(doPrint, 400);
             }
           </script>
         </body>

@@ -584,6 +584,9 @@ export default function PetpoojaPOSPage() {
           <style>
             @page { margin: 0; size: 80mm auto; }
             * { box-sizing: border-box; }
+            @media print {
+              .no-print { display: none !important; }
+            }
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, monospace;
               color: #000;
@@ -612,6 +615,10 @@ export default function PetpoojaPOSPage() {
           </style>
         </head>
         <body>
+          <div class="no-print" style="position: sticky; top: 0; background: #1E1B16; padding: 8px; margin: -12px -8px 10px -8px; display: flex; gap: 8px; justify-content: center; z-index: 9999; border-bottom: 2px solid #A18D6D;">
+            <button onclick="window.print()" style="background: #16a34a; color: white; border: none; padding: 7px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🖨️ Print Receipt (80mm)</button>
+            <button onclick="window.close()" style="background: #3f3f46; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">✖ Close</button>
+          </div>
           <div class="text-center">
             <div class="header-title">Hotel White Bliss</div>
             <div class="header-sub">Amrut Garden, Pathardi Phata, Nashik, Maharashtra 422009</div>
@@ -667,7 +674,10 @@ export default function PetpoojaPOSPage() {
           </div>
           <script>
             window.onload = function() {
-              setTimeout(function() { window.print(); window.close(); }, 800);
+              window.focus();
+              setTimeout(function() { 
+                window.print(); 
+              }, 400);
             };
           </script>
         </body>
@@ -697,6 +707,9 @@ export default function PetpoojaPOSPage() {
           <title>KOT #${escapeHtml(orderNumber)} - Table ${escapeHtml(tableNumber)}</title>
           <style>
             @page { margin: 0; size: 80mm auto; }
+            @media print {
+              .no-print { display: none !important; }
+            }
             body { font-family: monospace; width: 72mm; margin: 0 auto; padding: 10px; font-size: 12px; }
             .center { text-align: center; }
             .bold { font-weight: bold; }
@@ -704,6 +717,10 @@ export default function PetpoojaPOSPage() {
           </style>
         </head>
         <body>
+          <div class="no-print" style="position: sticky; top: 0; background: #000; padding: 6px; margin: -10px -10px 8px -10px; display: flex; gap: 8px; justify-content: center; z-index: 9999; border-bottom: 2px solid #555;">
+            <button onclick="window.print()" style="background: #ea580c; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;">🖨️ Print KOT</button>
+            <button onclick="window.close()" style="background: #333; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 12px; cursor: pointer;">✖ Close</button>
+          </div>
           <div class="center bold" style="font-size:18px;">*** KITCHEN ORDER TICKET ***</div>
           <div class="center" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
           <div class="divider"></div>
@@ -727,8 +744,10 @@ export default function PetpoojaPOSPage() {
           <div class="center" style="font-size:10px;">BlissPOS • Kitchen Dispatch</div>
           <script>
             window.onload = function() {
-              window.print();
-              window.close();
+              window.focus();
+              setTimeout(function() {
+                window.print();
+              }, 300);
             };
           </script>
         </body>
