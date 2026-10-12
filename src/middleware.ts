@@ -1,34 +1,57 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { isStaffAuthorized, getStaffSessionToken } from '@/lib/staffAuth';
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.pathname;
 
-  // Protect sensitive routes
-  if (url.startsWith('/kitchen') || url.startsWith('/cashier') || url.startsWith('/admin') || url.startsWith('/pos') || url.startsWith('/captain') || url.startsWith('/api/admin')) {
-    const basicAuth = req.headers.get('authorization')
-    
-    if (basicAuth) {
-      const authValue = basicAuth.split(' ')[1]
-      // Basic auth string is base64 encoded "username:password"
-      const [user, pwd] = atob(authValue).split(':')
+  // Security Headers Helper
+  const applySecurityHeaders = (res: NextResponse) => {
+    res.headers.set('X-Frame-Options', 'SAMEORIGIN');
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.headers.set('X-XSS-Protection', '1; mode=block');
+    return res;
+  };
 
-      const expectedUser = process.env.ADMIN_USERNAME || 'admin';
-      const expectedPwd = process.env.ADMIN_PASSWORD || 'aryan123';
+  // Protect sensitive staff and admin routes
+  const isProtectedPath = 
+    url.startsWith('/kitchen') || 
+    url.startsWith('/cashier') || 
+    url.startsWith('/admin') || 
+    url.startsWith('/pos') || 
+    url.startsWith('/captain') || 
+    url.startsWith('/api/admin');
 
-      if (user === expectedUser && pwd === expectedPwd) {
-        return NextResponse.next()
-      }
+  if (isProtectedPath) {
+    if (isStaffAuthorized(req)) {
+      const response = NextResponse.next();
+      
+      // Ensure staff session cookie is active for seamless API fetch calls
+      response.cookies.set('staff_session', getStaffSessionToken(), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/'
+      });
+
+      return applySecurityHeaders(response);
     }
-    
-    // If not authenticated, prompt for password
-    return new NextResponse('Authentication required.', {
+
+    // If not authenticated, prompt browser for basic auth
+    const unauthorizedResponse = new NextResponse('Authentication required for Hotel White Bliss Staff Area.', {
       status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="Secure Admin Area"' }
-    })
+      headers: {
+        'WWW-Authenticate': 'Basic realm="Hotel White Bliss Staff Area"'
+      }
+    });
+
+    return applySecurityHeaders(unauthorizedResponse);
   }
 
-  return NextResponse.next()
+  const defaultResponse = NextResponse.next();
+  return applySecurityHeaders(defaultResponse);
 }
 
 export const config = {
@@ -38,7 +61,6 @@ export const config = {
     '/admin/:path*',
     '/pos/:path*',
     '/captain/:path*',
-    '/api/orders/update/:path*',
     '/api/admin/:path*'
   ],
-}
+};

@@ -423,13 +423,13 @@ export default function PetpoojaPOSPage() {
     if (!group || group.orders.length === 0) return;
 
     try {
-      const orderIds = group.orders.map((o: any) => o.id);
-      const { error } = await supabase
-        .from("orders")
-        .update({ table_number: targetShiftTable })
-        .in("id", orderIds);
-
-      if (error) throw error;
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to shift table');
 
       toast.success(`Shifted Table ${selectedTable} ➜ Table ${targetShiftTable}!`, { icon: "🔄" });
       setIsShiftModalOpen(false);
@@ -440,6 +440,15 @@ export default function PetpoojaPOSPage() {
       toast.error("Failed to shift table");
     }
   };
+
+  function escapeHtml(str: any): string {
+    return String(str || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
 
   // 4. PRINT 80MM PETPOOJA GST INVOICE WITH DYNAMIC UPI QR
   const printOfficialInvoice = (
@@ -480,10 +489,10 @@ export default function PetpoojaPOSPage() {
       return parsed.filter((it: any) => it.id !== 'NOTE');
     }).map((it: any) => `
       <tr>
-        <td style="padding: 3px 0; text-align: left; word-break: break-word;">${it.name}</td>
-        <td style="padding: 3px 0; text-align: center;">${it.qty}</td>
-        <td style="padding: 3px 0; text-align: right;">${it.price}</td>
-        <td style="padding: 3px 0; text-align: right; font-weight: 600;">${it.price * it.qty}</td>
+        <td style="padding: 3px 0; text-align: left; word-break: break-word;">${escapeHtml(it.name)}</td>
+        <td style="padding: 3px 0; text-align: center;">${escapeHtml(it.qty)}</td>
+        <td style="padding: 3px 0; text-align: right;">${escapeHtml(it.price)}</td>
+        <td style="padding: 3px 0; text-align: right; font-weight: 600;">${Number(it.price) * Number(it.qty)}</td>
       </tr>
     `).join('');
 
@@ -603,7 +612,7 @@ export default function PetpoojaPOSPage() {
 
     const rows = items.map(c => `
       <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:bold; padding:4px 0; border-bottom:1px dashed #ccc;">
-        <span>${c.qty} x ${c.item.name}</span>
+        <span>${escapeHtml(c.qty)} x ${escapeHtml(c.item?.name)}</span>
       </div>
     `).join('');
 
@@ -611,7 +620,7 @@ export default function PetpoojaPOSPage() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>KOT #${orderNumber} - Table ${tableNumber}</title>
+          <title>KOT #${escapeHtml(orderNumber)} - Table ${escapeHtml(tableNumber)}</title>
           <style>
             @page { margin: 0; size: 80mm auto; }
             body { font-family: monospace; width: 72mm; margin: 0 auto; padding: 10px; font-size: 12px; }
@@ -625,19 +634,19 @@ export default function PetpoojaPOSPage() {
           <div class="center" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;">
-            <span>TABLE: ${tableNumber}</span>
-            <span>KOT: #${orderNumber}</span>
+            <span>TABLE: ${escapeHtml(tableNumber)}</span>
+            <span>KOT: #${escapeHtml(orderNumber)}</span>
           </div>
           <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:2px;">
-            <span>Time: ${timeStr}</span>
-            <span>Captain: ${captain}</span>
+            <span>Time: ${escapeHtml(timeStr)}</span>
+            <span>Captain: ${escapeHtml(captain)}</span>
           </div>
           <div class="divider"></div>
           <div style="margin: 8px 0;">${rows}</div>
           ${notes ? `
           <div class="divider"></div>
           <div style="font-weight:bold; font-size:12px; color:#000;">
-            INSTRUCTIONS: <span style="background:#000; color:#fff; padding:2px 4px;">${notes.toUpperCase()}</span>
+            INSTRUCTIONS: <span style="background:#000; color:#fff; padding:2px 4px;">${escapeHtml(notes.toUpperCase())}</span>
           </div>
           ` : ''}
           <div class="divider"></div>

@@ -268,12 +268,13 @@ export default function CaptainPortal() {
 
     try {
       const orderIds = group.orders.map((o: any) => o.id);
-      const { error } = await supabase
-        .from("orders")
-        .update({ table_number: targetShiftTable })
-        .in("id", orderIds);
-
-      if (error) throw error;
+      const res = await fetch('/api/orders/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || 'Failed to shift table');
 
       toast.success(`Table ${selectedTable} successfully shifted to Table ${targetShiftTable}!`, {
         icon: "🔄"
