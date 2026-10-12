@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 import NavBar from "@/components/common/NavBar";
 
 // Captains List
-const CAPTAINS = [
+const DEFAULT_CAPTAINS = [
   "Rahul (Lead Captain)",
   "Manoj (Captain)",
   "Vikram (Captain)",
@@ -40,7 +40,8 @@ const DEFAULT_MENU_ITEMS = [
 
 export default function CaptainPortal() {
   const [orders, setOrders] = useState<any[]>([]);
-  const [selectedCaptain, setSelectedCaptain] = useState<string>(CAPTAINS[0]);
+  const [captainsList, setCaptainsList] = useState<string[]>(DEFAULT_CAPTAINS);
+  const [selectedCaptain, setSelectedCaptain] = useState<string>(DEFAULT_CAPTAINS[0]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<any[]>(DEFAULT_MENU_ITEMS);
   const [statusFilter, setStatusFilter] = useState<"ALL" | "FREE" | "OCCUPIED" | "BILLING">("ALL");
@@ -64,11 +65,27 @@ export default function CaptainPortal() {
   const [isSettling, setIsSettling] = useState(false);
   const [customerPhone, setCustomerPhone] = useState("");
 
-  // Load orders and menu
+  // Load orders, menu, and dynamic captains list
   useEffect(() => {
+    // 1. Fetch dynamic captains from server
+    fetch("/api/admin/captains")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.captains) && data.captains.length > 0) {
+          setCaptainsList(data.captains);
+          const savedCaptain = typeof window !== 'undefined' ? localStorage.getItem('wb_selected_captain') : null;
+          if (savedCaptain && data.captains.includes(savedCaptain)) {
+            setSelectedCaptain(savedCaptain);
+          } else {
+            setSelectedCaptain(data.captains[0]);
+          }
+        }
+      })
+      .catch(() => {});
+
     if (typeof window !== 'undefined') {
       const savedCaptain = localStorage.getItem('wb_selected_captain');
-      if (savedCaptain && CAPTAINS.includes(savedCaptain)) {
+      if (savedCaptain) {
         setSelectedCaptain(savedCaptain);
       }
     }
@@ -408,7 +425,7 @@ export default function CaptainPortal() {
             }}
             className="bg-white/10 text-white text-xs font-bold py-1.5 px-3 rounded-xl border border-white/20 focus:outline-none focus:ring-1 focus:ring-[#A18D6D] cursor-pointer"
           >
-            {CAPTAINS.map(c => (
+            {captainsList.map(c => (
               <option key={c} value={c} className="bg-gray-900 text-white">
                 {c}
               </option>

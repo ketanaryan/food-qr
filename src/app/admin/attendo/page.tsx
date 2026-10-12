@@ -8,7 +8,8 @@ import {
   X, ShieldAlert, Award, FileText, CheckCircle, XCircle,
   Lock, Unlock, Shield, Activity, FileSpreadsheet, TrendingUp,
   Percent, Briefcase, Building2, Sparkles,
-  ArrowRight, ArrowLeft, MoreHorizontal, User, Filter, Zap, RotateCcw, Minus
+  ArrowRight, ArrowLeft, MoreHorizontal, User, Filter, Zap, RotateCcw, Minus,
+  ChefHat, ArrowUp, ArrowDown
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -297,8 +298,21 @@ export default function AttendoPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   
   const [activeTab, setActiveTab] = useState<
-    "attendance" | "leaves" | "advances" | "payroll" | "penalties" | "compliance" | "reports" | "admin_control" | "shifts" | "directory"
+    "attendance" | "leaves" | "advances" | "payroll" | "penalties" | "compliance" | "reports" | "admin_control" | "shifts" | "directory" | "captains"
   >("attendance");
+
+  // Captains & Waiters Floor Roster State
+  const [captainsRoster, setCaptainsRoster] = useState<string[]>([
+    "Rahul (Lead Captain)",
+    "Manoj (Captain)",
+    "Vikram (Captain)",
+    "Suresh (Captain)"
+  ]);
+  const [newCaptainName, setNewCaptainName] = useState("");
+  const [newCaptainRole, setNewCaptainRole] = useState("Captain");
+  const [isSavingCaptains, setIsSavingCaptains] = useState(false);
+  const [editingCaptainIndex, setEditingCaptainIndex] = useState<number | null>(null);
+  const [editingCaptainText, setEditingCaptainText] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("ALL");
@@ -385,7 +399,113 @@ export default function AttendoPage() {
     } else {
       initDefaultAttendance(INITIAL_STAFF);
     }
+
+    // Fetch dynamic captains roster from API
+    fetch("/api/admin/captains")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.captains) && data.captains.length > 0) {
+          setCaptainsRoster(data.captains);
+        }
+      })
+      .catch(() => {});
   }, []);
+
+  const handleSaveCaptains = async (rosterToSave?: string[]) => {
+    const listToSave = rosterToSave || captainsRoster;
+    if (!listToSave || listToSave.length === 0) {
+      toast.error("At least 1 Captain must be active!", { icon: "⚠️" });
+      return;
+    }
+    setIsSavingCaptains(true);
+    try {
+      const res = await fetch("/api/admin/captains", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ captains: listToSave })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCaptainsRoster(data.captains);
+        toast.success("Captains Roster Synced to Captain Portal & POS!", { icon: "✅" });
+      } else {
+        toast.error(data.message || "Failed to save captains", { icon: "❌" });
+      }
+    } catch {
+      toast.error("Network error while saving captains", { icon: "❌" });
+    } finally {
+      setIsSavingCaptains(false);
+    }
+  };
+
+  const handleAddCaptain = () => {
+    const trimmed = newCaptainName.trim();
+    if (!trimmed) {
+      toast.error("Please enter a Captain or Waiter name", { icon: "⚠️" });
+      return;
+    }
+    const fullName = newCaptainRole === "None" ? trimmed : `${trimmed} (${newCaptainRole})`;
+    if (captainsRoster.includes(fullName)) {
+      toast.error("Captain with this name already exists", { icon: "⚠️" });
+      return;
+    }
+    const updated = [...captainsRoster, fullName];
+    setCaptainsRoster(updated);
+    setNewCaptainName("");
+    handleSaveCaptains(updated);
+  };
+
+  const handleDeleteCaptain = (index: number) => {
+    if (captainsRoster.length <= 1) {
+      toast.error("Cannot delete. At least 1 Captain is required!", { icon: "⚠️" });
+      return;
+    }
+    const captainName = captainsRoster[index];
+    const updated = captainsRoster.filter((_, i) => i !== index);
+    setCaptainsRoster(updated);
+    toast.success(`Removed "${captainName}" from roster`, { icon: "🗑️" });
+    handleSaveCaptains(updated);
+  };
+
+  const handleMakeLead = (index: number) => {
+    const raw = captainsRoster[index].replace(/\s*\([^)]*\)/g, "").trim();
+    const newLeadName = `${raw} (Lead Captain)`;
+    const updated = captainsRoster.map((c, i) => {
+      if (i === index) return newLeadName;
+      if (c.toLowerCase().includes("lead captain")) {
+        return c.replace(/\(Lead Captain\)/i, "(Captain)");
+      }
+      return c;
+    });
+    setCaptainsRoster(updated);
+    toast.success(`Set "${raw}" as Lead Captain`, { icon: "👑" });
+    handleSaveCaptains(updated);
+  };
+
+  const handleMoveCaptain = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= captainsRoster.length) return;
+    const updated = [...captainsRoster];
+    const temp = updated[index];
+    updated[index] = updated[target];
+    updated[target] = temp;
+    setCaptainsRoster(updated);
+    handleSaveCaptains(updated);
+  };
+
+  const handleSaveCaptainEdit = (index: number) => {
+    const trimmed = editingCaptainText.trim();
+    if (!trimmed) {
+      toast.error("Name cannot be empty", { icon: "⚠️" });
+      return;
+    }
+    const updated = [...captainsRoster];
+    updated[index] = trimmed;
+    setCaptainsRoster(updated);
+    setEditingCaptainIndex(null);
+    setEditingCaptainText("");
+    handleSaveCaptains(updated);
+  };
 
   const initDefaultAttendance = (staffList: StaffMember[]) => {
     const initMap: { [id: string]: AttendanceRecord } = {};
@@ -1035,6 +1155,7 @@ export default function AttendoPage() {
         <div className="flex items-center gap-1 overflow-x-auto pb-px">
           {[
             { id: "attendance", label: "Time & Attendance", icon: Clock },
+            { id: "captains", label: "Captains & Waiters", icon: ChefHat, badge: captainsRoster.length },
             { id: "shifts", label: "Shifts & Roster", icon: Award },
             { id: "leaves", label: "Leave & Holidays", icon: Calendar, badge: pendingLeavesCount },
             { id: "advances", label: "Advances & Khata", icon: CreditCard, badge: advances.length },
@@ -1341,6 +1462,325 @@ export default function AttendoPage() {
                   })}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB: CAPTAINS & WAITERS FLOOR ROSTER */}
+      {activeTab === "captains" && (
+        <div className="space-y-6">
+          {/* Header Card */}
+          <div className="bg-gradient-to-r from-zinc-900 to-zinc-800 text-white p-5 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-amber-300">
+                <ChefHat size={24} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-white">Captains & Waiters Floor Roster</h3>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
+                    LIVE SYNC
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-300 mt-0.5">
+                  Configure active staff names who take orders on the <strong>Captain Portal (/captain)</strong> and <strong>POS Terminal (/pos)</strong>.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const defaultList = [
+                    "Rahul (Lead Captain)",
+                    "Manoj (Captain)",
+                    "Vikram (Captain)",
+                    "Suresh (Captain)"
+                  ];
+                  setCaptainsRoster(defaultList);
+                  handleSaveCaptains(defaultList);
+                }}
+                className="px-3 py-2 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition flex items-center gap-1.5"
+              >
+                <RotateCcw size={13} />
+                <span>Reset Defaults</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSaveCaptains()}
+                disabled={isSavingCaptains}
+                className="px-4 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950 rounded-xl shadow-md transition flex items-center gap-1.5 disabled:opacity-50"
+              >
+                <CheckCircle2 size={14} />
+                <span>{isSavingCaptains ? "Saving..." : "Save & Sync All Devices"}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left 2 Cols: Roster List & Add Form */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Add New Captain Card */}
+              <div className="bg-white p-4 sm:p-5 rounded-2xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-1.5">
+                    <Plus size={14} className="text-zinc-900" />
+                    Add Captain or Floor Waiter
+                  </h4>
+                  <span className="text-[11px] text-zinc-400">Total Active: {captainsRoster.length}</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+                  <div className="sm:col-span-6">
+                    <input
+                      type="text"
+                      placeholder="Captain / Waiter Name (e.g. Ramesh)"
+                      value={newCaptainName}
+                      onChange={e => setNewCaptainName(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddCaptain();
+                        }
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-zinc-50"
+                    />
+                  </div>
+                  <div className="sm:col-span-4">
+                    <select
+                      value={newCaptainRole}
+                      onChange={e => setNewCaptainRole(e.target.value)}
+                      className="w-full px-3 py-2 text-xs border border-zinc-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-zinc-50 text-zinc-700 font-medium"
+                    >
+                      <option value="Lead Captain">Lead Captain</option>
+                      <option value="Captain">Captain</option>
+                      <option value="Senior Steward">Senior Steward</option>
+                      <option value="Steward">Steward</option>
+                      <option value="Trainee">Trainee</option>
+                      <option value="None">No Suffix Tag</option>
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <button
+                      type="button"
+                      onClick={handleAddCaptain}
+                      className="w-full py-2 px-3 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1 shadow-sm"
+                    >
+                      <Plus size={14} />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Roster Table / List */}
+              <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+                  <div className="flex items-center gap-2">
+                    <Users size={15} className="text-zinc-600" />
+                    <span className="text-xs font-bold text-zinc-800">Current Floor Roster</span>
+                  </div>
+                  <span className="text-[11px] text-zinc-500">Order of appearance in Captain & POS dropdowns</span>
+                </div>
+
+                <div className="divide-y divide-zinc-100">
+                  {captainsRoster.map((captain, index) => {
+                    const isLead = captain.toLowerCase().includes("lead");
+                    const isEditing = editingCaptainIndex === index;
+
+                    return (
+                      <div key={index} className="p-3.5 sm:px-5 flex items-center justify-between gap-3 hover:bg-zinc-50/80 transition">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <span className="text-xs font-mono font-bold text-zinc-400 w-5">
+                            {index + 1}.
+                          </span>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                            isLead ? "bg-amber-100 text-amber-800 border border-amber-200" : "bg-zinc-100 text-zinc-700"
+                          }`}>
+                            {captain.charAt(0).toUpperCase()}
+                          </div>
+
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 flex-1 max-w-sm">
+                              <input
+                                type="text"
+                                value={editingCaptainText}
+                                onChange={e => setEditingCaptainText(e.target.value)}
+                                className="w-full px-2.5 py-1 text-xs border border-zinc-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-zinc-900 bg-white"
+                                autoFocus
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleSaveCaptainEdit(index)}
+                                className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                                title="Save"
+                              >
+                                <Check size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingCaptainIndex(null)}
+                                className="p-1.5 bg-zinc-200 hover:bg-zinc-300 text-zinc-700 rounded-lg"
+                                title="Cancel"
+                              >
+                                <X size={12} />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-xs font-semibold text-zinc-900 truncate">
+                                {captain}
+                              </span>
+                              {isLead && (
+                                <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-bold whitespace-nowrap">
+                                  👑 Lead
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {!isEditing && (
+                          <div className="flex items-center gap-1 shrink-0">
+                            {/* Make Lead */}
+                            {!isLead && (
+                              <button
+                                type="button"
+                                onClick={() => handleMakeLead(index)}
+                                className="px-2 py-1 text-[11px] font-semibold text-amber-800 hover:bg-amber-50 rounded-lg border border-amber-200 transition"
+                                title="Set as Lead Captain"
+                              >
+                                Set Lead
+                              </button>
+                            )}
+
+                            {/* Move Up */}
+                            <button
+                              type="button"
+                              disabled={index === 0}
+                              onClick={() => handleMoveCaptain(index, -1)}
+                              className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg disabled:opacity-20 transition"
+                              title="Move Up"
+                            >
+                              <ArrowUp size={13} />
+                            </button>
+
+                            {/* Move Down */}
+                            <button
+                              type="button"
+                              disabled={index === captainsRoster.length - 1}
+                              onClick={() => handleMoveCaptain(index, 1)}
+                              className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg disabled:opacity-20 transition"
+                              title="Move Down"
+                            >
+                              <ArrowDown size={13} />
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingCaptainIndex(index);
+                                setEditingCaptainText(captain);
+                              }}
+                              className="p-1.5 text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition"
+                              title="Rename"
+                            >
+                              <Edit3 size={13} />
+                            </button>
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCaptain(index)}
+                              className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                              title="Delete"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Col: Live Preview & Explainers */}
+            <div className="space-y-5">
+              {/* Preview Card */}
+              <div className="bg-zinc-900 text-white p-5 rounded-2xl shadow-md border border-zinc-800 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-amber-400" />
+                    Live Interface Preview
+                  </h4>
+                  <span className="text-[10px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full font-mono">
+                    Client Sync
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-[11px] text-zinc-400 block mb-1">
+                      Captain Mobile Dropdown Preview:
+                    </label>
+                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/20">
+                      <select
+                        disabled
+                        className="w-full bg-transparent text-white text-xs font-bold outline-none cursor-not-allowed"
+                      >
+                        {captainsRoster.map(c => (
+                          <option key={c} value={c} className="bg-zinc-900 text-white">
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] text-zinc-400 block mb-1">
+                      Cashier POS Punch Preview:
+                    </label>
+                    <div className="bg-white/10 rounded-xl p-2.5 border border-white/20">
+                      <select
+                        disabled
+                        className="w-full bg-transparent text-white text-xs font-bold outline-none cursor-not-allowed"
+                      >
+                        <option value="Cashier Counter" className="bg-zinc-900 text-white">
+                          Cashier Counter
+                        </option>
+                        {captainsRoster.map(c => (
+                          <option key={c} value={c} className="bg-zinc-900 text-white">
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-zinc-800 text-[11px] text-zinc-400 space-y-1">
+                  <p>✓ All changes auto-sync to floor devices via API.</p>
+                  <p>✓ Each captain&apos;s mobile remembers their own login/name.</p>
+                  <p>✓ Printed KOTs and Bills will display the selected Captain name.</p>
+                </div>
+              </div>
+
+              {/* Petpooja Standard Explanation */}
+              <div className="bg-amber-50/70 border border-amber-200/80 p-4 rounded-2xl text-xs space-y-2 text-amber-950">
+                <div className="flex items-center gap-1.5 font-bold text-amber-900">
+                  <Award size={14} className="text-amber-700" />
+                  Petpooja / Enterprise Standard:
+                </div>
+                <p className="text-[11.5px] leading-relaxed text-amber-900/90">
+                  In top restaurants, having named Captains ensures <strong>100% table accountability</strong>. When an order or KOT is punched, the Captain&apos;s name is stamped on the ticket. This avoids order confusion and allows management to track service performance per captain.
+                </p>
+              </div>
             </div>
           </div>
         </div>

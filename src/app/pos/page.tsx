@@ -20,7 +20,7 @@ const SECTIONS = [
   { id: "GARDEN", name: "Garden / Terrace (T11-T15)", tables: ["11", "12", "13", "14", "15"] }
 ];
 
-const CAPTAINS = [
+const DEFAULT_CAPTAINS = [
   "Cashier Counter",
   "Rahul (Lead Captain)",
   "Manoj (Captain)",
@@ -83,7 +83,8 @@ export default function PetpoojaPOSPage() {
 
   // Selected Active Punching Context
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
-  const [selectedCaptain, setSelectedCaptain] = useState<string>(CAPTAINS[0]);
+  const [captainsList, setCaptainsList] = useState<string[]>(DEFAULT_CAPTAINS);
+  const [selectedCaptain, setSelectedCaptain] = useState<string>(DEFAULT_CAPTAINS[0]);
   const [guestPax, setGuestPax] = useState<number>(2);
   const [customerName, setCustomerName] = useState<string>("");
   const [customerPhone, setCustomerPhone] = useState<string>("");
@@ -182,11 +183,22 @@ export default function PetpoojaPOSPage() {
     audioEnabledRef.current = audioEnabled;
   }, [audioEnabled]);
 
-  // Load orders & menu
+  // Load orders, menu & dynamic captains
   useEffect(() => {
     fetchOrders();
     fetchSettledOrders();
     fetchMenu();
+
+    // Fetch dynamic captains roster from admin API
+    fetch("/api/admin/captains")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.captains) && data.captains.length > 0) {
+          const list = ["Cashier Counter", ...data.captains.filter((c: string) => c !== "Cashier Counter")];
+          setCaptainsList(list);
+        }
+      })
+      .catch(() => {});
 
     const channel = supabase
       .channel("petpooja-pos-orders")
@@ -1558,7 +1570,7 @@ export default function PetpoojaPOSPage() {
                         onChange={e => setSelectedCaptain(e.target.value)}
                         className="w-full bg-white/10 text-white rounded-lg p-1 text-xs font-bold border border-white/20 focus:outline-none"
                       >
-                        {CAPTAINS.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
+                        {captainsList.map(c => <option key={c} value={c} className="bg-gray-900">{c}</option>)}
                       </select>
                     </div>
                     <div>
