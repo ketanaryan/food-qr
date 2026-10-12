@@ -107,9 +107,11 @@ export default function PetpoojaPOSPage() {
   const [waModal, setWaModal] = useState<{
     isOpen: boolean;
     data: any;
-    paymentMethod: 'CASH' | 'UPI' | null;
+    paymentMethod: 'CASH' | 'UPI' | 'SPLIT' | null;
   }>({ isOpen: false, data: null, paymentMethod: null });
   const [waPhone, setWaPhone] = useState('');
+  const [cashTendered, setCashTendered] = useState<number>(0);
+  const [splitCashAmt, setSplitCashAmt] = useState<number>(0);
 
   // Clock Update
   useEffect(() => {
@@ -411,7 +413,10 @@ export default function PetpoojaPOSPage() {
     try {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
         body: JSON.stringify({ 
           orderIds, 
           status: 'completed', 
@@ -447,7 +452,10 @@ export default function PetpoojaPOSPage() {
       const orderIds = group.orders.map((o: any) => o.id);
       const res = await fetch('/api/orders/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
         body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
       });
       const data = await res.json();
@@ -1665,9 +1673,10 @@ export default function PetpoojaPOSPage() {
                         <Printer size={14} /> Print Estimate / Bill
                       </button>
 
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 gap-1.5">
                         <button
                           onClick={() => {
+                            setCashTendered(grandTotal);
                             setWaModal({
                               isOpen: true,
                               data: {
@@ -1680,7 +1689,7 @@ export default function PetpoojaPOSPage() {
                           }}
                           className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
                         >
-                          <DollarSign size={14} /> Paid Cash
+                          <DollarSign size={14} /> Cash
                         </button>
 
                         <button
@@ -1697,7 +1706,25 @@ export default function PetpoojaPOSPage() {
                           }}
                           className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
                         >
-                          <Smartphone size={14} /> Paid UPI QR
+                          <Smartphone size={14} /> UPI QR
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            setSplitCashAmt(Math.round(grandTotal / 2));
+                            setWaModal({
+                              isOpen: true,
+                              data: {
+                                tableNumber: activeGroup.table,
+                                groupOrders: activeGroup.orders,
+                                grandTotal
+                              },
+                              paymentMethod: 'SPLIT'
+                            });
+                          }}
+                          className="py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
+                        >
+                          <Split size={14} /> Split
                         </button>
                       </div>
                     </div>
@@ -1974,58 +2001,170 @@ export default function PetpoojaPOSPage() {
       )}
 
       {/* ============================================================= */}
-      {/* MODAL 2: WHATSAPP BILL SENDING & INSTANT SETTLEMENT           */}
+      {/* MODAL 2: PETPOOJA SETTLEMENT, TENDER & DIGITAL BILL            */}
       {/* ============================================================= */}
-      {waModal.isOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150">
-            <div className="bg-[#25D366] p-4 text-white text-center">
-              <h3 className="font-black text-base sm:text-lg">Send Digital WhatsApp Bill</h3>
-              <p className="text-white/90 text-xs">Table {waModal.data?.tableNumber} • Paid via {waModal.paymentMethod}</p>
+      {waModal.isOpen && waModal.data && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl w-full max-w-sm sm:max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-150 max-h-[92vh] flex flex-col">
+            {/* Header */}
+            <div className={`p-3.5 text-white text-center ${
+              waModal.paymentMethod === 'CASH' ? 'bg-emerald-600' :
+              waModal.paymentMethod === 'UPI' ? 'bg-purple-600' : 'bg-blue-600'
+            }`}>
+              <h3 className="font-black text-base sm:text-lg">
+                Settle Table {waModal.data.tableNumber} • ₹{waModal.data.grandTotal}
+              </h3>
+              <p className="text-white/90 text-xs font-bold">
+                {waModal.paymentMethod === 'CASH' ? '💵 CASH SETTLEMENT' : waModal.paymentMethod === 'UPI' ? '📱 DYNAMIC UPI QR' : '🔀 SPLIT PAYMENT (CASH + UPI)'}
+              </p>
             </div>
 
-            <div className="p-5 space-y-3.5">
+            <div className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+              {/* CASH TENDER CALCULATOR */}
+              {waModal.paymentMethod === 'CASH' && (
+                <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-950">
+                    <span>Cash Tendered / Received:</span>
+                    <span className="font-mono text-sm text-emerald-900">Bill: ₹{waModal.data.grandTotal}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-gray-500 text-sm">₹</span>
+                    <input
+                      type="number"
+                      value={cashTendered || ''}
+                      onChange={(e) => setCashTendered(Number(e.target.value) || 0)}
+                      className="w-full bg-white border border-emerald-300 rounded-xl p-2 font-mono font-black text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder={String(waModal.data.grandTotal)}
+                    />
+                  </div>
+
+                  {/* Quick Denominations */}
+                  <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCashTendered(waModal.data.grandTotal)}
+                      className="px-2.5 py-1 bg-white hover:bg-emerald-100 border border-emerald-300 rounded-lg font-bold text-emerald-800 text-[11px]"
+                    >
+                      Exact (₹{waModal.data.grandTotal})
+                    </button>
+                    {[500, 1000, 2000].map(amt => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setCashTendered(amt)}
+                        className="px-2.5 py-1 bg-white hover:bg-emerald-100 border border-emerald-300 rounded-lg font-bold text-emerald-800 text-[11px]"
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Return Change Indicator */}
+                  <div className="pt-1.5 border-t border-emerald-200 flex items-center justify-between font-mono font-black">
+                    <span className="text-xs text-gray-700">Change to Return:</span>
+                    <span className={`text-base ${cashTendered >= waModal.data.grandTotal ? 'text-emerald-700' : 'text-red-600'}`}>
+                      {cashTendered >= waModal.data.grandTotal 
+                        ? `₹${cashTendered - waModal.data.grandTotal}` 
+                        : `Short by ₹${waModal.data.grandTotal - cashTendered}`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* DYNAMIC UPI QR DISPLAY */}
+              {waModal.paymentMethod === 'UPI' && (
+                <div className="bg-purple-50 border border-purple-200 p-3 rounded-2xl flex flex-col items-center text-center">
+                  <span className="text-xs font-bold text-purple-900 mb-1">Customer Counter Scan QR</span>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
+                    alt="UPI QR Code"
+                    className="w-36 h-36 my-1 border p-1 rounded-xl shadow-xs bg-white"
+                  />
+                  <div className="font-mono font-black text-sm text-purple-950">₹{waModal.data.grandTotal}</div>
+                  <div className="text-[10px] text-gray-500">Google Pay • PhonePe • Paytm • BHIM</div>
+                </div>
+              )}
+
+              {/* SPLIT PAYMENT (CASH + UPI) */}
+              {waModal.paymentMethod === 'SPLIT' && (
+                <div className="bg-blue-50 border border-blue-200 p-3 rounded-2xl space-y-2.5 text-xs">
+                  <div className="flex items-center justify-between font-bold text-blue-950">
+                    <span>Split Payment:</span>
+                    <span className="font-mono">Total: ₹{waModal.data.grandTotal}</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-gray-700 mb-1">Cash Part (₹):</label>
+                    <input
+                      type="number"
+                      value={splitCashAmt || ''}
+                      onChange={(e) => setSplitCashAmt(Math.min(waModal.data.grandTotal, Math.max(0, Number(e.target.value) || 0)))}
+                      className="w-full bg-white border border-blue-300 rounded-xl p-2 font-mono font-bold text-sm text-gray-900 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="p-2 bg-white rounded-xl border border-blue-200 flex items-center justify-between font-mono font-bold">
+                    <span className="text-gray-600">UPI Part:</span>
+                    <span className="text-purple-700">₹{Math.max(0, waModal.data.grandTotal - splitCashAmt)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Customer Mobile (Optional) */}
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Customer Mobile Number (Optional)</label>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Customer Mobile Number (Optional):</label>
                 <input
                   type="tel"
-                  autoFocus
-                  placeholder="e.g. 9876543210"
+                  placeholder="e.g. 9876543210 (for WhatsApp invoice)"
                   value={waPhone}
                   onChange={(e) => setWaPhone(e.target.value)}
-                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 font-mono font-bold text-gray-800 focus:border-[#25D366] outline-none text-sm"
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
+                  className="w-full border-2 border-gray-200 rounded-xl p-2.5 font-mono font-bold text-gray-800 focus:border-gray-900 outline-none text-xs"
                 />
               </div>
 
+              {/* Action Buttons */}
               <div className="space-y-2 pt-1">
                 <button
-                  onClick={handleSendWa}
-                  className="w-full bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold py-2.5 rounded-xl transition shadow-md text-xs flex items-center justify-center gap-2"
+                  onClick={() => {
+                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
+                    if (waPhone.replace(/\D/g, '').length >= 10) {
+                      handleSendWa();
+                    } else {
+                      markPaid(waModal.data.tableNumber, waModal.data.groupOrders.map((o: any) => o.id), payMode);
+                      setWaModal({ isOpen: false, data: null, paymentMethod: null });
+                      setWaPhone('');
+                    }
+                  }}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl transition shadow-md text-xs flex items-center justify-center gap-2"
                 >
-                  <Send size={14} /> Send on WhatsApp & Clear Table
+                  <CheckCircle2 size={15} /> Confirm Payment & Clear Table
                 </button>
+
                 <button
                   onClick={() => {
-                    if (!waModal.data) return;
                     const { tableNumber, groupOrders, grandTotal } = waModal.data;
                     const subtotal = groupOrders.reduce((a: any, o: any) => a + Number(o.total_amount || 0), 0);
                     const gstAmt = Math.round(subtotal * 0.05);
-                    printOfficialInvoice(tableNumber, groupOrders, subtotal, 0, gstAmt, 0, grandTotal, waModal.paymentMethod || undefined);
-                    markPaid(tableNumber, groupOrders.map((o: any) => o.id), waModal.paymentMethod || 'CASH');
+                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
+                    printOfficialInvoice(tableNumber, groupOrders, subtotal, 0, gstAmt, 0, grandTotal, payMode);
+                    markPaid(tableNumber, groupOrders.map((o: any) => o.id), payMode);
                     setWaModal({ isOpen: false, data: null, paymentMethod: null });
                     setWaPhone('');
                   }}
                   className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2"
                 >
-                  <Printer size={14} /> Print Receipt & Clear Table
+                  <Printer size={14} /> Print 80mm GST Invoice & Clear Table
                 </button>
-                <button
-                  onClick={handleSkipWa}
-                  className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-2.5 rounded-xl transition text-xs"
-                >
-                  Skip WhatsApp & Clear Table
-                </button>
+
+                {waPhone.replace(/\D/g, '').length >= 10 && (
+                  <button
+                    onClick={handleSendWa}
+                    className="w-full bg-[#25D366] hover:bg-[#1ebd5b] text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2"
+                  >
+                    <Send size={14} /> Send WhatsApp Bill & Clear Table
+                  </button>
+                )}
+
                 <button
                   onClick={() => { setWaModal({ isOpen: false, data: null, paymentMethod: null }); setWaPhone(''); }}
                   className="w-full text-gray-400 font-bold py-1 text-xs hover:text-gray-600 transition"

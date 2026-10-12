@@ -178,7 +178,10 @@ export default function KitchenDashboard() {
     try {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
         body: JSON.stringify({ orderIds: [id], status: newStatus })
       });
       const data = await res.json();
@@ -198,7 +201,10 @@ export default function KitchenDashboard() {
     try {
       await fetch('/api/orders/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
         body: JSON.stringify({ orderIds: ids, status: 'archived' })
       });
     } catch (error) {
