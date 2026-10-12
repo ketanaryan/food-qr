@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Hotel White Bliss</string>
-    <string name="title_activity_main">Hotel White Bliss</string>
+    <string name="app_name">Bliss POS</string>
+    <string name="title_activity_main">Bliss POS</string>
     <string name="package_name">com.hotelwhitebliss.pos</string>
     <string name="custom_url_scheme">com.hotelwhitebliss.pos</string>
 </resources>

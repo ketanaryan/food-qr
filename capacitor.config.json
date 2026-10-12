@@ -1,10 +1,10 @@
 {
   "appId": "com.hotelwhitebliss.pos",
-  "appName": "Hotel White Bliss",
+  "appName": "Bliss POS",
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
-    "url": "https://food-qr-gilt.vercel.app",
+    "url": "https://food-qr-gilt.vercel.app/pos",
     "cleartext": true
   },
   "android": {
