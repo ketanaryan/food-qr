@@ -45,7 +45,7 @@ export default function AppDownloadPage() {
   };
 
   const currentUrl = typeof window !== "undefined" ? window.location.origin : "https://food-qr-gilt.vercel.app";
-  const githubReleasesUrl = "https://github.com/ketanaryan/food-qr/releases";
+  const githubReleasesUrl = "https://github.com/ketanaryan/food-qr/actions/runs/38286595468";
   const githubActionsUrl = "https://github.com/ketanaryan/food-qr/actions";
 
   return (
