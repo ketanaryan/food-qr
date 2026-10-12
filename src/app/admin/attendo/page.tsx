@@ -1327,13 +1327,12 @@ export default function AttendoPage() {
               <table className="w-full text-left text-xs min-w-[720px]">
                 <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                   <tr>
-                    <th className="py-3 px-4">Employee</th>
-                    <th className="py-3 px-3">Role & Shift</th>
-                    <th className="py-3 px-3">In-Time</th>
+                    <th className="py-3 px-4 sticky left-0 bg-zinc-50 z-20">Employee</th>
+                    <th className="py-3 px-3 text-right">Today's Wage</th>
+                    <th className="py-3 px-4 text-center">Attendance Status</th>
+                    <th className="py-3 px-3 text-center">In-Time</th>
                     <th className="py-3 px-3 text-center">Overtime (+₹60/h)</th>
                     <th className="py-3 px-3 text-center">Late Penalty (-₹50)</th>
-                    <th className="py-3 px-3 text-right">Today's Wage</th>
-                    <th className="py-3 px-4 text-right">Attendance Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -1353,68 +1352,26 @@ export default function AttendoPage() {
 
                     return (
                       <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-zinc-900">{member.name}</div>
-                          <div className="text-[11px] text-zinc-400 font-mono mt-0.5">{member.phone}</div>
+                        {/* 1. Employee Name, Role & Shift */}
+                        <td className="py-3.5 px-4 sticky left-0 bg-white z-10 shadow-[1px_0_3px_rgba(0,0,0,0.04)]">
+                          <div className="font-semibold text-zinc-900 text-xs sm:text-sm">{member.name}</div>
+                          <div className="text-[11px] text-zinc-600 font-medium">{member.role}</div>
+                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{member.shiftTiming}</div>
                         </td>
-                        <td className="py-3.5 px-3">
-                          <span className="font-medium text-zinc-800">{member.role}</span>
-                          <span className="text-[11px] text-zinc-400 block mt-0.5">{member.shiftTiming}</span>
-                        </td>
-                        <td className="py-3.5 px-3">
-                          <input
-                            type="text"
-                            value={rec.inTime}
-                            onChange={e => handleUpdateInTime(member.id, e.target.value)}
-                            className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
-                          />
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
-                            {rec.overtimeHours > 0 && (
-                              <button
-                                onClick={() => handleSubtractOvertime(member.id)}
-                                className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
-                                title="Decrease OT"
-                              >
-                                <Minus size={11} strokeWidth={2} />
-                              </button>
-                            )}
-                            <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
-                              +{rec.overtimeHours}h
-                            </span>
-                            <button
-                              onClick={() => handleAddOvertime(member.id)}
-                              className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
-                              title="Add 1 Hour Overtime (+₹60)"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-3 text-center">
-                          <button
-                            onClick={() => handleToggleLatePenalty(member.id)}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
-                              rec.latePenalty > 0
-                                ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
-                                : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
-                            }`}
-                            title="Toggle Late Penalty (₹50)"
-                          >
-                            {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
-                          </button>
-                        </td>
-                        <td className="py-3.5 px-3 text-right">
-                          <div className="font-mono font-semibold text-zinc-900">
+
+                        {/* 2. Today's Wage */}
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                          <div className="font-mono font-bold text-zinc-900 text-xs sm:text-sm">
                             ₹{todayEarned.toLocaleString("en-IN")}
                           </div>
                           <div className="text-[10px] text-zinc-400 font-mono">
                             rate: ₹{member.dailyRate}/d
                           </div>
                         </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60">
+
+                        {/* 3. Attendance Status (Present / Half / Absent / Leave) */}
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60 shadow-xs">
                             <button
                               onClick={() => handleSetStatus(member.id, "PRESENT")}
                               className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
@@ -1456,6 +1413,56 @@ export default function AttendoPage() {
                               Leave
                             </button>
                           </div>
+                        </td>
+
+                        {/* 4. In-Time */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          <input
+                            type="text"
+                            value={rec.inTime}
+                            onChange={e => handleUpdateInTime(member.id, e.target.value)}
+                            className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
+                          />
+                        </td>
+
+                        {/* 5. Overtime (+₹60/h) */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
+                            {rec.overtimeHours > 0 && (
+                              <button
+                                onClick={() => handleSubtractOvertime(member.id)}
+                                className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
+                                title="Decrease OT"
+                              >
+                                <Minus size={11} strokeWidth={2} />
+                              </button>
+                            )}
+                            <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
+                              +{rec.overtimeHours}h
+                            </span>
+                            <button
+                              onClick={() => handleAddOvertime(member.id)}
+                              className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
+                              title="Add 1 Hour Overtime (+₹60)"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </td>
+
+                        {/* 6. Late Penalty (-₹50) */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          <button
+                            onClick={() => handleToggleLatePenalty(member.id)}
+                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
+                              rec.latePenalty > 0
+                                ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
+                                : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
+                            }`}
+                            title="Toggle Late Penalty (₹50)"
+                          >
+                            {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
+                          </button>
                         </td>
                       </tr>
                     );
