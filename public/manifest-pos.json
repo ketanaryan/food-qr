@@ -1,0 +1,26 @@
+{
+  "name": "Bliss POS",
+  "short_name": "Bliss POS",
+  "description": "Hotel White Bliss Cashier Billing Terminal & Petpooja POS",
+  "start_url": "/pos",
+  "id": "/pos",
+  "scope": "/pos",
+  "display": "standalone",
+  "background_color": "#18181b",
+  "theme_color": "#18181b",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-pos-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-pos-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

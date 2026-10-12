@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bliss POS | Billing Terminal",
+  title: "Bliss POS",
   description: "Hotel White Bliss - Cashier POS & Billing Terminal",
+  manifest: "/manifest-pos.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -19,5 +20,16 @@ export default function PosLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <head>
+        <title>Bliss POS</title>
+        <meta name="apple-mobile-web-app-title" content="Bliss POS" />
+        <meta name="application-name" content="Bliss POS" />
+        <link rel="manifest" href="/manifest-pos.json" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-pos.png" />
+      </head>
+      {children}
+    </>
+  );
 }

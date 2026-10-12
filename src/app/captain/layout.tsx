@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Bliss Captain | Waiter POS",
+  title: "Bliss Captain",
   description: "Hotel White Bliss - Waiter & Captain Order Taking App",
+  manifest: "/manifest-captain.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -19,5 +20,16 @@ export default function CaptainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return (
+    <>
+      <head>
+        <title>Bliss Captain</title>
+        <meta name="apple-mobile-web-app-title" content="Bliss Captain" />
+        <meta name="application-name" content="Bliss Captain" />
+        <link rel="manifest" href="/manifest-captain.json" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-captain.png" />
+      </head>
+      {children}
+    </>
+  );
 }
