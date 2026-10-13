@@ -66,9 +66,10 @@ function Footer() {
                         Staff Only
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
+                        <a href="/staff" className="block hover:text-[#A18D6D] cursor-pointer font-bold text-[#1E1B16]">Staff Hub / Launchpad</a>
+                        <a href="/pos" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-70 hover:opacity-100">POS Billing Desk</a>
                         <a href="/captain" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Captain Portal</a>
-                        <a href="/kitchen" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Portal</a>
-                        <a href="/cashier" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Cashier Portal</a>
+                        <a href="/kitchen" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Display (KDS)</a>
                         <a href="/admin/dashboard" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Admin Portal</a>
                     </ul>
                 </div>

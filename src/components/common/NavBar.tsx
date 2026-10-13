@@ -37,13 +37,25 @@ function NavBar() {
             ))}
           </nav>
 
-          <div className="hidden lg:flex items-center gap-4">
-            <Link href="/#reservation" className="border border-[#A18D6D] text-[#A18D6D] px-6 py-2 text-xs font-semibold hover:bg-[#A18D6D] hover:text-white transition-colors tracking-widest uppercase">
+          <div className="hidden lg:flex items-center gap-3">
+            <Link 
+              href="/staff" 
+              className="text-xs font-bold text-[#1E1B16] hover:text-[#A18D6D] px-4 py-2 rounded-lg border border-[#e8dfd3] bg-[#FAF7F2] hover:bg-[#F2ECE1] transition tracking-wider uppercase flex items-center gap-1.5"
+            >
+              <span>Staff Login</span>
+            </Link>
+            <Link href="/#reservation" className="border border-[#A18D6D] bg-[#A18D6D] text-white px-6 py-2 text-xs font-semibold hover:bg-black hover:border-black transition-colors tracking-widest uppercase">
               Book A Table
             </Link>
           </div>
 
-          <div className="flex items-center gap-4 lg:hidden">
+          <div className="flex items-center gap-2 lg:hidden">
+            <Link
+              href="/staff"
+              className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#e8dfd3] text-[#1E1B16] active:scale-95 transition"
+            >
+              Staff
+            </Link>
             <Button
               variant="ghost"
               size="icon"
@@ -61,7 +73,7 @@ function NavBar() {
           open ? "max-h-96 border-t border-[#e8e1d6]" : "max-h-0"
         )}
       >
-        <nav className="flex flex-col px-4 py-6 gap-6 bg-white">
+        <nav className="flex flex-col px-4 py-6 gap-5 bg-white">
           {links.map(link => (
             <Link
               key={link.name}
@@ -72,13 +84,22 @@ function NavBar() {
               {link.name}
             </Link>
           ))}
-          <Link 
-            href="/#reservation" 
-            onClick={() => setOpen(false)}
-            className="border border-[#A18D6D] text-[#A18D6D] px-6 py-3 text-center text-sm font-semibold hover:bg-[#A18D6D] hover:text-white transition-colors tracking-widest uppercase mt-4"
-          >
-            Book A Table
-          </Link>
+          <div className="pt-2 flex flex-col gap-2.5">
+            <Link
+              href="/staff"
+              onClick={() => setOpen(false)}
+              className="bg-[#1E1B16] text-[#F8F5F0] px-6 py-3 text-center text-xs font-bold tracking-widest uppercase rounded-lg hover:bg-black transition"
+            >
+              Staff Portal / POS Desk
+            </Link>
+            <Link 
+              href="/#reservation" 
+              onClick={() => setOpen(false)}
+              className="border border-[#A18D6D] text-[#A18D6D] px-6 py-3 text-center text-xs font-semibold hover:bg-[#A18D6D] hover:text-white transition-colors tracking-widest uppercase rounded-lg"
+            >
+              Book A Table
+            </Link>
+          </div>
         </nav>
       </div>
     </header>
