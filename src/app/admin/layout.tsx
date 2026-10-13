@@ -81,8 +81,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <>
         <head>
           <title>Bliss Owner App</title>
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
           <meta name="application-name" content="Bliss Owner" />
+          <meta name="theme-color" content="#14120E" />
           <link rel="manifest" href="/manifest-owner.json" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
         </head>
@@ -223,8 +226,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <>
       <head>
         <title>Bliss Owner App</title>
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
         <meta name="application-name" content="Bliss Owner" />
+        <meta name="theme-color" content="#14120E" />
         <link rel="manifest" href="/manifest-owner.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
       </head>
