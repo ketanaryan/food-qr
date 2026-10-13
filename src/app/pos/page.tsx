@@ -1510,7 +1510,7 @@ export default function PetpoojaPOSPage() {
               {/* PANE 2: THE LIVE KOT TICKET & BILL DOCKET                  */}
               {/* (Visible when mobilePunchView === 'cart' OR desktop lg:flex) */}
               {/* --------------------------------------------------------- */}
-              <div className={`${mobilePunchView === 'cart' ? 'flex' : 'hidden'} lg:flex w-full lg:w-[380px] xl:w-[420px] max-w-full flex-col bg-white border-t lg:border-t-0 shadow-lg min-h-0 overflow-hidden shrink-0`}>
+              <div className={`${mobilePunchView === 'cart' ? 'flex' : 'hidden'} lg:flex flex-1 w-full lg:w-[380px] xl:w-[420px] max-w-full flex-col bg-white border-t lg:border-t-0 shadow-lg min-h-0 h-full overflow-hidden`}>
                 
                 {/* Desktop Ticket Header */}
                 <div className="p-3 bg-[#1E1B16] text-white space-y-2 shrink-0">
@@ -1551,14 +1551,32 @@ export default function PetpoojaPOSPage() {
                     </div>
                   </div>
 
-                  {/* Mobile Shortcut to add more dishes */}
-                  <div className="lg:hidden flex justify-between items-center pt-1 border-t border-white/10">
+                  {/* Mobile Shortcut to add more dishes or Print Bill */}
+                  <div className="lg:hidden flex justify-between items-center pt-1.5 border-t border-white/10 gap-2">
                     <button
                       onClick={() => setMobilePunchView('menu')}
-                      className="text-xs text-[#e8d5b5] font-bold flex items-center gap-1 hover:underline"
+                      className="text-xs text-[#e8d5b5] font-bold flex items-center gap-1 hover:underline truncate"
                     >
-                      <Plus size={13} /> Add More Dishes from Menu
+                      <Plus size={13} /> Add Dishes
                     </button>
+                    {activeGroup && activeGroup.orders.length > 0 && (
+                      <button
+                        onClick={() => {
+                          printOfficialInvoice(
+                            activeGroup.table,
+                            activeGroup.orders,
+                            activeGroup.total,
+                            calculatedDiscount,
+                            gst,
+                            serviceCharge,
+                            grandTotal
+                          );
+                        }}
+                        className="px-3 py-1 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-extrabold text-xs rounded-lg shadow flex items-center gap-1.5 shrink-0 transition"
+                      >
+                        <Printer size={13} /> Print Bill
+                      </button>
+                    )}
                   </div>
 
                   {/* Captain & Pax Selectors */}
@@ -1787,7 +1805,7 @@ export default function PetpoojaPOSPage() {
                 )}
 
                 {/* ACTION BUTTONS */}
-                <div className="p-2.5 sm:p-3 bg-white border-t border-gray-200 space-y-2 shrink-0 max-w-full">
+                <div className="p-2.5 sm:p-3 bg-white border-t border-gray-200 space-y-2 shrink-0 max-w-full pb-6 sm:pb-3">
                   
                   {/* Punch KOT (if new items in cart) */}
                   {cartItemCount > 0 && (
