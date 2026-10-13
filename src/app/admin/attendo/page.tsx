@@ -334,6 +334,7 @@ export default function AttendoPage() {
   const [isAddStaffModalOpen, setIsAddStaffModalOpen] = useState(false);
   const [isNewLeaveModalOpen, setIsNewLeaveModalOpen] = useState(false);
   const [isArrearModalOpen, setIsArrearModalOpen] = useState(false);
+  const [isDetailedMode, setIsDetailedMode] = useState(false);
 
   const [advanceForm, setAdvanceForm] = useState({
     staffId: "",
@@ -982,7 +983,7 @@ export default function AttendoPage() {
   return (
     <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 font-sans antialiased text-zinc-900">
       
-      {/* Executive Header */}
+      {/* Executive Header - Simplified Restaurant Language */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-zinc-200">
         <div>
           <div className="flex items-center gap-3">
@@ -992,10 +993,10 @@ export default function AttendoPage() {
             <div>
               <div className="flex items-center gap-2.5">
                 <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-zinc-900">
-                  Staff & Payroll Engine
+                  Staff & Daily Attendance
                 </h1>
                 <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  Attendo Enterprise
+                  Hotel White Bliss
                 </span>
                 {isPayrollLocked && (
                   <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1">
@@ -1004,7 +1005,7 @@ export default function AttendoPage() {
                 )}
               </div>
               <p className="text-xs text-zinc-500 mt-0.5 font-normal">
-                Fast owner manual register, advance schedules, continuous payroll & statutory ledger
+                Daily staff haziri register, advances (उठान), and salary tracker
               </p>
             </div>
           </div>
@@ -1014,61 +1015,33 @@ export default function AttendoPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleMarkAllPresent}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-medium transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-xs active:scale-95"
             title="Mark all staff members present in 1 click"
           >
-            <Zap size={14} strokeWidth={2} />
+            <Zap size={14} strokeWidth={2.5} />
             <span>Mark All Present</span>
           </button>
 
           <button
-            onClick={handleTogglePayrollLock}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition border shadow-2xs ${
-              isPayrollLocked 
-                ? "bg-amber-50 text-amber-900 border-amber-200 hover:bg-amber-100" 
-                : "bg-white text-zinc-700 border-zinc-200 hover:bg-zinc-50"
-            }`}
-          >
-            {isPayrollLocked ? <Lock size={14} strokeWidth={1.75} /> : <Unlock size={14} strokeWidth={1.75} />}
-            <span>{isPayrollLocked ? "Period Locked" : "Lock Period"}</span>
-          </button>
-
-          <button
-            onClick={() => setIsArrearModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
-          >
-            <DollarSign size={14} strokeWidth={1.75} className="text-zinc-500" />
-            <span>Held Arrears</span>
-          </button>
-
-          <button
-            onClick={() => setIsNewLeaveModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
-          >
-            <Calendar size={14} strokeWidth={1.75} className="text-zinc-500" />
-            <span>Apply Leave</span>
-          </button>
-
-          <button
             onClick={() => setIsAdvanceModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs active:scale-95"
           >
             <CreditCard size={14} strokeWidth={1.75} className="text-zinc-500" />
-            <span>Schedule Advance</span>
+            <span>+ Give Advance (उठान)</span>
           </button>
 
           <button
             onClick={() => setIsAddStaffModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs active:scale-95"
           >
             <Plus size={14} strokeWidth={2} />
-            <span>Add Member</span>
+            <span>+ Add Staff</span>
           </button>
         </div>
       </div>
 
-      {/* KPI Metric Strip */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+      {/* Essential Restaurant KPI Strip */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Total Staff</span>
@@ -1080,7 +1053,7 @@ export default function AttendoPage() {
             <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
               {totalStaffCount}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Active directory roster</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Kitchen & Service team</p>
           </div>
         </div>
 
@@ -1104,25 +1077,8 @@ export default function AttendoPage() {
 
         <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Pending Leaves</span>
-            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
-              <Calendar size={14} strokeWidth={1.75} />
-            </div>
-          </div>
-          <div>
-            <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
-              {pendingLeavesCount}
-            </div>
-            <p className="text-[11px] text-zinc-500 mt-0.5">
-              {pendingLeavesCount > 0 ? "Awaiting review" : "All records clear"}
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Advance Deducted</span>
-            <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Advance (उठान)</span>
+            <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
               <CreditCard size={14} strokeWidth={1.75} />
             </div>
           </div>
@@ -1130,41 +1086,37 @@ export default function AttendoPage() {
             <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
               ₹{totalAdvanceDeductionsMonth.toLocaleString("en-IN")}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Auto-deducted this cycle</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Advance taken this month</p>
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Held Arrears</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Today's Wage Cost</span>
             <div className="w-7 h-7 rounded-lg bg-zinc-100 text-zinc-600 flex items-center justify-center">
               <DollarSign size={14} strokeWidth={1.75} />
             </div>
           </div>
           <div>
             <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
-              ₹{totalHeldArrearsAllStaff.toLocaleString("en-IN")}
+              ₹{todayEstimatedWages.toLocaleString("en-IN")}
             </div>
-            <p className="text-[11px] text-zinc-500 mt-0.5">Retained staff deposit</p>
+            <p className="text-[11px] text-zinc-500 mt-0.5">Estimated floor wage liability</p>
           </div>
         </div>
       </div>
 
-      {/* Enterprise Tab Navigation */}
+      {/* Restaurant Tab Navigation */}
       <div className="border-b border-zinc-200">
         <div className="flex items-center gap-1 overflow-x-auto pb-px">
           {[
-            { id: "attendance", label: "Time & Attendance", icon: Clock },
-            { id: "captains", label: "Captains & Waiters", icon: ChefHat, badge: captainsRoster.length },
-            { id: "shifts", label: "Shifts & Roster", icon: Award },
-            { id: "leaves", label: "Leave & Holidays", icon: Calendar, badge: pendingLeavesCount },
-            { id: "advances", label: "Advances & Khata", icon: CreditCard, badge: advances.length },
-            { id: "payroll", label: "Payroll & Payout", icon: DollarSign },
-            { id: "penalties", label: "Overtime & Penalties", icon: TrendingUp },
-            { id: "compliance", label: "Compliance & Taxes", icon: Percent },
+            { id: "attendance", label: "Daily Haziri (हाजिरी)", icon: Clock },
+            { id: "captains", label: "Captains & Floor", icon: ChefHat, badge: captainsRoster.length },
+            { id: "advances", label: "Advances & Khata (उठान)", icon: CreditCard, badge: advances.length },
+            { id: "payroll", label: "Salary & Payout (पगार)", icon: DollarSign },
+            { id: "leaves", label: "Leaves & Holidays", icon: Calendar, badge: pendingLeavesCount },
             { id: "reports", label: "Muster & Reports", icon: FileSpreadsheet },
-            { id: "admin_control", label: "Admin Control", icon: Shield },
-            { id: "directory", label: "Directory", icon: Users }
+            { id: "directory", label: "Staff Directory", icon: Users }
           ].map(tab => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1193,146 +1145,66 @@ export default function AttendoPage() {
         </div>
       </div>
 
-      {/* TAB 1: TIME & ATTENDANCE */}
+      {/* TAB 1: DAILY HAZIRI (TIME & ATTENDANCE) */}
       {activeTab === "attendance" && (
-        <div className="space-y-6">
+        <div className="space-y-4">
           
-          {/* Executive Floor Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            {/* Card 1: Fast Owner Register */}
-            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
-                    <Zap size={14} className="text-emerald-600" /> Owner Fast Register
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                    Manual Mode
-                  </span>
-                </div>
-                <h4 className="font-semibold text-zinc-900 text-sm">One-Tap Floor Attendance</h4>
-                <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
-                  Mark entire floor present in 1 tap. No employee punching or biometric friction needed.
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center gap-2">
-                <button
-                  onClick={handleMarkAllPresent}
-                  className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs"
-                >
-                  <Zap size={13} strokeWidth={2.5} />
-                  <span>Mark All Present ({staff.length})</span>
-                </button>
-                <button
-                  onClick={handleMarkAllAbsent}
-                  className="px-2.5 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-lg text-xs font-medium transition"
-                  title="Reset daily register to absent"
-                >
-                  <RotateCcw size={13} />
-                </button>
-              </div>
-            </div>
-
-            {/* Card 2: Daily Floor Wage Liability */}
-            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
-                    <DollarSign size={14} className="text-zinc-600" /> Today's Floor Wages
-                  </span>
-                  <span className="text-[11px] font-mono text-zinc-400">{todayStr}</span>
-                </div>
-                <div className="text-2xl font-semibold tracking-tight text-zinc-900 font-mono tabular-nums">
-                  ₹{todayEstimatedWages.toLocaleString("en-IN")}
-                </div>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Estimated floor salary liability for active duty staff today.
-                </p>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-zinc-100 flex items-center justify-between text-[11px] text-zinc-500">
-                <span>OT Bonus: <strong className="text-zinc-800 font-mono">+₹{totalTodayOvertimeHours * overtimeRules.ratePerHour}</strong></span>
-                <span>Late Penalty: <strong className="text-rose-700 font-mono">-₹{totalTodayLatePenalties}</strong></span>
-              </div>
-            </div>
-
-            {/* Card 3: Floor Attendance Tally */}
-            <div className="bg-white p-5 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] uppercase tracking-wider text-zinc-500 font-semibold flex items-center gap-1.5">
-                    <UserCheck size={14} className="text-zinc-600" /> Floor Tally
-                  </span>
-                  <span className="text-xs font-mono font-semibold text-zinc-700">
-                    {presentCount + halfDayCount} / {staff.length} on duty
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 pt-1 text-center">
-                  <div className="bg-emerald-50/60 border border-emerald-100 p-2 rounded-lg">
-                    <div className="text-base font-semibold text-emerald-800 font-mono">{presentCount}</div>
-                    <div className="text-[10px] text-emerald-700 font-medium">Present</div>
-                  </div>
-                  <div className="bg-amber-50/60 border border-amber-100 p-2 rounded-lg">
-                    <div className="text-base font-semibold text-amber-800 font-mono">{halfDayCount}</div>
-                    <div className="text-[10px] text-amber-700 font-medium">Half Day</div>
-                  </div>
-                  <div className="bg-rose-50/60 border border-rose-100 p-2 rounded-lg">
-                    <div className="text-base font-semibold text-rose-800 font-mono">{absentCount}</div>
-                    <div className="text-[10px] text-rose-700 font-medium">Absent</div>
-                  </div>
-                  <div className="bg-blue-50/60 border border-blue-100 p-2 rounded-lg">
-                    <div className="text-base font-semibold text-blue-800 font-mono">{paidLeaveCount}</div>
-                    <div className="text-[10px] text-blue-700 font-medium">Leave</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-zinc-100 text-[11px] text-zinc-400">
-                100% Floor staff accounted for in register
-              </div>
-            </div>
-
-          </div>
-
-          {/* Roster Controls Header */}
+          {/* Daily Controls Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
             <div>
-              <h3 className="font-semibold text-zinc-900 text-sm">
-                Daily Attendance Register · <span className="text-zinc-600 font-mono">{todayStr}</span>
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-zinc-900 text-sm">
+                  Daily Attendance Register · <span className="text-zinc-600 font-mono">{todayStr}</span>
+                </h3>
+                <span className="text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
+                  {presentCount} of {staff.length} Present
+                </span>
+              </div>
               <p className="text-xs text-zinc-500 mt-0.5">
-                Toggle status, adjust reporting in-time, add overtime (+₹60/h) or apply late penalty (-₹50).
+                Mark today&apos;s floor attendance in 1 click. Tap Present, Half Day, or Absent.
               </p>
             </div>
+
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setIsDetailedMode(!isDetailedMode)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border shadow-2xs ${
+                  isDetailedMode 
+                    ? "bg-zinc-900 text-white border-zinc-900" 
+                    : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
+                }`}
+                title="Toggle In-Time, Overtime & Late Penalty columns"
+              >
+                <span>{isDetailedMode ? "✓ Simple View" : "+ Show In-Time & OT"}</span>
+              </button>
+
+              <button
                 onClick={handleMarkAllPresent}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition shadow-2xs active:scale-95"
               >
                 <Zap size={13} strokeWidth={2.5} />
                 <span>Mark All Present</span>
               </button>
-              <div className="text-xs text-zinc-600 font-medium bg-zinc-50 px-3 py-1.5 rounded-lg border border-zinc-200">
-                <span className="font-semibold text-zinc-900 font-mono">{presentCount}</span> of {staff.length} Present
-              </div>
             </div>
           </div>
 
           {/* Table */}
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs min-w-[720px]">
+              <table className={`w-full text-left text-xs ${isDetailedMode ? "min-w-[720px]" : "min-w-[480px]"}`}>
                 <thead className="bg-zinc-50/75 text-zinc-500 font-semibold uppercase text-[11px] tracking-wider border-b border-zinc-200/80">
                   <tr>
                     <th className="py-3 px-4 sticky left-0 bg-zinc-50 z-20">Employee</th>
-                    <th className="py-3 px-3 text-right">Today's Wage</th>
+                    <th className="py-3 px-3 text-right">Today&apos;s Wage</th>
                     <th className="py-3 px-4 text-center">Attendance Status</th>
-                    <th className="py-3 px-3 text-center">In-Time</th>
-                    <th className="py-3 px-3 text-center">Overtime (+₹60/h)</th>
-                    <th className="py-3 px-3 text-center">Late Penalty (-₹50)</th>
+                    {isDetailedMode && (
+                      <>
+                        <th className="py-3 px-3 text-center">In-Time</th>
+                        <th className="py-3 px-3 text-center">Overtime (+₹60/h)</th>
+                        <th className="py-3 px-3 text-center">Late Penalty (-₹50)</th>
+                      </>
+                    )}
+                    <th className="py-3 px-3 text-center">Quick Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100">
@@ -1352,11 +1224,14 @@ export default function AttendoPage() {
 
                     return (
                       <tr key={member.id} className="hover:bg-zinc-50/50 transition-colors">
-                        {/* 1. Employee Name, Role & Shift */}
+                        {/* 1. Employee Name & Role - Clean, NO shift timing noise */}
                         <td className="py-3.5 px-4 sticky left-0 bg-white z-10 shadow-[1px_0_3px_rgba(0,0,0,0.04)]">
                           <div className="font-semibold text-zinc-900 text-xs sm:text-sm">{member.name}</div>
-                          <div className="text-[11px] text-zinc-600 font-medium">{member.role}</div>
-                          <div className="text-[10px] text-zinc-400 font-mono mt-0.5">{member.shiftTiming}</div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-[11px] text-zinc-600 font-medium">{member.role}</span>
+                            <span className="text-zinc-300">•</span>
+                            <span className="text-[10px] text-zinc-400">{member.department}</span>
+                          </div>
                         </td>
 
                         {/* 2. Today's Wage */}
@@ -1374,39 +1249,39 @@ export default function AttendoPage() {
                           <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60 shadow-xs">
                             <button
                               onClick={() => handleSetStatus(member.id, "PRESENT")}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                                 rec.status === "PRESENT"
-                                  ? "bg-white text-emerald-800 shadow-2xs font-semibold"
-                                  : "text-zinc-500 hover:text-zinc-900"
+                                  ? "bg-emerald-600 text-white shadow-xs font-semibold"
+                                  : "text-zinc-600 hover:text-zinc-900"
                               }`}
                             >
                               Present
                             </button>
                             <button
                               onClick={() => handleSetStatus(member.id, "HALF_DAY")}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                                 rec.status === "HALF_DAY"
-                                  ? "bg-white text-amber-800 shadow-2xs font-semibold"
-                                  : "text-zinc-500 hover:text-zinc-900"
+                                  ? "bg-amber-500 text-white shadow-xs font-semibold"
+                                  : "text-zinc-600 hover:text-zinc-900"
                               }`}
                             >
                               Half
                             </button>
                             <button
                               onClick={() => handleSetStatus(member.id, "ABSENT")}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
                                 rec.status === "ABSENT"
-                                  ? "bg-white text-rose-800 shadow-2xs font-semibold"
-                                  : "text-zinc-500 hover:text-zinc-900"
+                                  ? "bg-rose-600 text-white shadow-xs font-semibold"
+                                  : "text-zinc-600 hover:text-zinc-900"
                               }`}
                             >
                               Absent
                             </button>
                             <button
                               onClick={() => handleSetStatus(member.id, "PAID_LEAVE")}
-                              className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                              className={`px-2 py-1.5 rounded-md text-xs font-medium transition ${
                                 rec.status === "PAID_LEAVE"
-                                  ? "bg-white text-blue-800 shadow-2xs font-semibold"
+                                  ? "bg-blue-600 text-white shadow-xs font-semibold"
                                   : "text-zinc-500 hover:text-zinc-900"
                               }`}
                             >
@@ -1415,54 +1290,83 @@ export default function AttendoPage() {
                           </div>
                         </td>
 
-                        {/* 4. In-Time */}
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                          <input
-                            type="text"
-                            value={rec.inTime}
-                            onChange={e => handleUpdateInTime(member.id, e.target.value)}
-                            className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
-                          />
-                        </td>
+                        {/* Optional Detailed Columns */}
+                        {isDetailedMode && (
+                          <>
+                            {/* In-Time */}
+                            <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                              <input
+                                type="text"
+                                value={rec.inTime}
+                                onChange={e => handleUpdateInTime(member.id, e.target.value)}
+                                className="w-24 text-center font-mono py-1 px-2 bg-zinc-50 hover:bg-white border border-zinc-200 rounded text-xs text-zinc-800 focus:outline-none focus:ring-1 focus:ring-zinc-900 transition"
+                              />
+                            </td>
 
-                        {/* 5. Overtime (+₹60/h) */}
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                          <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
-                            {rec.overtimeHours > 0 && (
+                            {/* Overtime */}
+                            <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                              <div className="inline-flex items-center gap-1 bg-zinc-50 border border-zinc-200 rounded-lg p-0.5">
+                                {rec.overtimeHours > 0 && (
+                                  <button
+                                    onClick={() => handleSubtractOvertime(member.id)}
+                                    className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
+                                  >
+                                    <Minus size={11} strokeWidth={2} />
+                                  </button>
+                                )}
+                                <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
+                                  +{rec.overtimeHours}h
+                                </span>
+                                <button
+                                  onClick={() => handleAddOvertime(member.id)}
+                                  className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </td>
+
+                            {/* Late Penalty */}
+                            <td className="py-3.5 px-3 text-center whitespace-nowrap">
                               <button
-                                onClick={() => handleSubtractOvertime(member.id)}
-                                className="w-6 h-6 flex items-center justify-center text-zinc-500 hover:text-zinc-800 hover:bg-zinc-200 rounded transition"
-                                title="Decrease OT"
+                                onClick={() => handleToggleLatePenalty(member.id)}
+                                className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
+                                  rec.latePenalty > 0
+                                    ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
+                                    : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
+                                }`}
                               >
-                                <Minus size={11} strokeWidth={2} />
+                                {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
                               </button>
-                            )}
-                            <span className="px-2 py-0.5 font-mono text-xs font-semibold text-zinc-800 min-w-[36px] text-center">
-                              +{rec.overtimeHours}h
-                            </span>
+                            </td>
+                          </>
+                        )}
+
+                        {/* Quick Action (Advance / OT) */}
+                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              onClick={() => {
+                                setAdvanceForm(prev => ({ ...prev, staffId: member.id }));
+                                setIsAdvanceModalOpen(true);
+                              }}
+                              className="px-2.5 py-1 text-[11px] font-medium text-zinc-700 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition active:scale-95"
+                              title="Give Advance / Uthaan"
+                            >
+                              + Advance
+                            </button>
                             <button
                               onClick={() => handleAddOvertime(member.id)}
-                              className="w-6 h-6 flex items-center justify-center text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 rounded transition text-xs font-semibold"
+                              className={`px-2 py-1 text-[11px] font-medium rounded-lg transition border active:scale-95 ${
+                                rec.overtimeHours > 0 
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-200 font-semibold" 
+                                  : "bg-zinc-50 text-zinc-500 border-zinc-200 hover:bg-zinc-100"
+                              }`}
                               title="Add 1 Hour Overtime (+₹60)"
                             >
-                              +
+                              {rec.overtimeHours > 0 ? `+${rec.overtimeHours}h OT` : "+ OT"}
                             </button>
                           </div>
-                        </td>
-
-                        {/* 6. Late Penalty (-₹50) */}
-                        <td className="py-3.5 px-3 text-center whitespace-nowrap">
-                          <button
-                            onClick={() => handleToggleLatePenalty(member.id)}
-                            className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition border ${
-                              rec.latePenalty > 0
-                                ? "bg-rose-50 text-rose-700 border-rose-200 font-semibold"
-                                : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
-                            }`}
-                            title="Toggle Late Penalty (₹50)"
-                          >
-                            {rec.latePenalty > 0 ? "Late (-₹50)" : "On Time"}
-                          </button>
                         </td>
                       </tr>
                     );
