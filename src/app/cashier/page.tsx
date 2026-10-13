@@ -281,9 +281,13 @@ export default function CashierDashboard() {
           </style>
         </head>
         <body>
-          <div class="no-print" style="position: sticky; top: 0; background: #1E1B16; padding: 8px; margin: -12px -8px 10px -8px; display: flex; gap: 8px; justify-content: center; z-index: 9999; border-bottom: 2px solid #A18D6D;">
-            <button onclick="window.print()" style="background: #16a34a; color: white; border: none; padding: 7px 16px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">🖨️ Print Receipt (80mm)</button>
-            <button onclick="window.close()" style="background: #3f3f46; color: white; border: none; padding: 7px 14px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer;">✖ Close</button>
+          <div class="no-print" style="position: sticky; top: 0; background: #1E1B16; padding: 10px 8px; margin: -12px -8px 12px -8px; display: flex; gap: 8px; justify-content: space-between; align-items: center; z-index: 9999; border-bottom: 2px solid #A18D6D; box-shadow: 0 2px 8px rgba(0,0,0,0.3);">
+            <button onclick="handleBackOrClose()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              ⬅ Back to Counter
+            </button>
+            <button onclick="window.print()" style="background: #16a34a; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              🖨️ Print Receipt (80mm)
+            </button>
           </div>
           <!-- Brand Header -->
           <div class="text-center">
@@ -399,13 +403,32 @@ export default function CashierDashboard() {
           </div>
 
           <script>
+            function handleBackOrClose() {
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.close();
+                  return;
+                }
+              } catch(e) {}
+              try {
+                window.close();
+              } catch(e) {}
+              setTimeout(function() {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/pos';
+                }
+              }, 100);
+            }
+
             const img = document.getElementById('qrImg');
             let printed = false;
             const doPrint = () => {
               if (printed) return;
               printed = true;
               window.focus();
-              window.print();
+              try { window.print(); } catch(e){}
             };
             if (img && !img.complete) {
               img.onload = doPrint;
@@ -415,6 +438,14 @@ export default function CashierDashboard() {
               window.onload = doPrint;
               setTimeout(doPrint, 400);
             }
+
+            window.onafterprint = function() {
+              if (window.opener) {
+                setTimeout(function() {
+                  try { window.close(); } catch(e){}
+                }, 500);
+              }
+            };
           </script>
         </body>
       </html>

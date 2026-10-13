@@ -89,9 +89,13 @@ export default function KitchenDashboard() {
           </style>
         </head>
         <body>
-          <div class="no-print" style="position: sticky; top: 0; background: #000; padding: 8px; margin: -10px -10px 10px -10px; display: flex; gap: 8px; justify-content: center; z-index: 9999;">
-            <button onclick="window.print()" style="background: #ea580c; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">🖨️ Print KOT</button>
-            <button onclick="window.close()" style="background: #333; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">✖ Close</button>
+          <div class="no-print" style="position: sticky; top: 0; background: #000; padding: 10px 8px; margin: -10px -10px 10px -10px; display: flex; gap: 8px; justify-content: space-between; align-items: center; z-index: 9999; border-bottom: 2px solid #555;">
+            <button onclick="handleBackOrClose()" style="background: #ef4444; color: white; border: none; padding: 8px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              ⬅ Back to Kitchen
+            </button>
+            <button onclick="window.print()" style="background: #ea580c; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+              🖨️ Print KOT
+            </button>
           </div>
           <div class="center bold" style="font-size:18px; letter-spacing: 1px;">*** KITCHEN TICKET (KOT) ***</div>
           <div class="center bold" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
@@ -115,11 +119,38 @@ export default function KitchenDashboard() {
           <div class="divider"></div>
           <div class="center" style="font-size:11px; font-weight:bold;">Bliss KDS • Kitchen Dispatch</div>
           <script>
+            function handleBackOrClose() {
+              try {
+                if (window.opener && !window.opener.closed) {
+                  window.close();
+                  return;
+                }
+              } catch(e) {}
+              try {
+                window.close();
+              } catch(e) {}
+              setTimeout(function() {
+                if (window.history.length > 1) {
+                  window.history.back();
+                } else {
+                  window.location.href = '/kitchen';
+                }
+              }, 100);
+            }
+
             window.onload = function() {
               window.focus();
               setTimeout(function() {
-                window.print();
+                try { window.print(); } catch(e) {}
               }, 300);
+            };
+
+            window.onafterprint = function() {
+              if (window.opener) {
+                setTimeout(function() {
+                  try { window.close(); } catch(e) {}
+                }, 500);
+              }
             };
           </script>
         </body>
