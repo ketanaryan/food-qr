@@ -1005,7 +1005,7 @@ export default function AttendoPage() {
                 )}
               </div>
               <p className="text-xs text-zinc-500 mt-0.5 font-normal">
-                Daily staff haziri register, advances (उठान), and salary tracker
+                Daily staff attendance register, salary advances, and monthly payroll
               </p>
             </div>
           </div>
@@ -1027,7 +1027,7 @@ export default function AttendoPage() {
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-zinc-50 text-zinc-700 border border-zinc-200 rounded-lg text-xs font-medium transition shadow-2xs active:scale-95"
           >
             <CreditCard size={14} strokeWidth={1.75} className="text-zinc-500" />
-            <span>+ Give Advance (उठान)</span>
+            <span>+ Give Advance</span>
           </button>
 
           <button
@@ -1077,7 +1077,7 @@ export default function AttendoPage() {
 
         <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col justify-between">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Advance (उठान)</span>
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400">Advances Given</span>
             <div className="w-7 h-7 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-100">
               <CreditCard size={14} strokeWidth={1.75} />
             </div>
@@ -1110,10 +1110,10 @@ export default function AttendoPage() {
       <div className="border-b border-zinc-200">
         <div className="flex items-center gap-1 overflow-x-auto pb-px">
           {[
-            { id: "attendance", label: "Daily Haziri (हाजिरी)", icon: Clock },
+            { id: "attendance", label: "Daily Attendance", icon: Clock },
             { id: "captains", label: "Captains & Floor", icon: ChefHat, badge: captainsRoster.length },
-            { id: "advances", label: "Advances & Khata (उठान)", icon: CreditCard, badge: advances.length },
-            { id: "payroll", label: "Salary & Payout (पगार)", icon: DollarSign },
+            { id: "advances", label: "Staff Advances", icon: CreditCard, badge: advances.length },
+            { id: "payroll", label: "Salary & Payroll", icon: DollarSign },
             { id: "leaves", label: "Leaves & Holidays", icon: Calendar, badge: pendingLeavesCount },
             { id: "reports", label: "Muster & Reports", icon: FileSpreadsheet },
             { id: "directory", label: "Staff Directory", icon: Users }
@@ -1351,7 +1351,7 @@ export default function AttendoPage() {
                                 setIsAdvanceModalOpen(true);
                               }}
                               className="px-2.5 py-1 text-[11px] font-medium text-zinc-700 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg transition active:scale-95"
-                              title="Give Advance / Uthaan"
+                              title="Give Staff Advance"
                             >
                               + Advance
                             </button>
@@ -2329,7 +2329,7 @@ export default function AttendoPage() {
       {isArrearModalOpen && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs animate-in fade-in duration-150">
           <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-xl border border-zinc-200">
-            <h3 className="font-semibold text-sm text-zinc-900">Held Salary Khata (Arrears)</h3>
+            <h3 className="font-semibold text-sm text-zinc-900">Held Salary & Arrears Balance</h3>
             <form onSubmit={handleArrearSubmit} className="space-y-3 text-xs">
               <div>
                 <label className="block font-medium text-zinc-700 mb-1">Employee</label>
