@@ -1,8 +1,17 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { Bell, Clock, CheckCircle } from "lucide-react";
+import { Bell, Clock, CheckCircle, Printer } from "lucide-react";
 import NavBar from "@/components/common/NavBar";
+
+function escapeHtml(str: any): string {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 type Order = {
   id: number;
@@ -19,8 +28,14 @@ export default function KitchenDashboard() {
   const [activeMobileColumn, setActiveMobileColumn] = useState<'received' | 'preparing' | 'ready' | 'served'>('received');
   const [audioEnabled, setAudioEnabled] = useState(false); // Must be false so user explicitly clicks to unlock audio context on mobile
   const audioEnabledRef = useRef(false);
+  const [autoPrintKOT, setAutoPrintKOT] = useState(false);
+  const autoPrintKOTRef = useRef(false);
   const [isOnline, setIsOnline] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    autoPrintKOTRef.current = autoPrintKOT;
+  }, [autoPrintKOT]);
 
   useEffect(() => {
     audioEnabledRef.current = audioEnabled;
@@ -30,6 +45,88 @@ export default function KitchenDashboard() {
     // We'll create an audio element dynamically or use a ref to an existing one.
     audioRef.current = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
   }, []);
+
+  const printKOT = (order: Order) => {
+    let items: any[] = [];
+    try {
+      items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    } catch (e) {}
+    if (!Array.isArray(items)) items = [];
+
+    const notes = items.find((i: any) => i.id === 'NOTE')?.name || '';
+    const foodItems = items.filter((i: any) => i.id !== 'NOTE');
+
+    const printWindow = window.open('', '', 'width=380,height=520');
+    if (!printWindow) return;
+
+    const now = new Date(order.created_at || Date.now());
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    const rows = foodItems.map((c: any) => `
+      <div style="display:flex; justify-content:space-between; font-size:15px; font-weight:bold; padding:5px 0; border-bottom:1px dashed #bbb;">
+        <span>${escapeHtml(c.qty)}x ${escapeHtml(c.name)}</span>
+      </div>
+    `).join('');
+
+    const tableName = order.table_number?.match(/^(Swiggy|Zomato|Takeaway)/i)
+      ? order.table_number.toUpperCase()
+      : `TABLE ${order.table_number}`;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>KOT #${escapeHtml(order.order_number || order.id)} - ${escapeHtml(tableName)}</title>
+          <style>
+            @page { margin: 0; size: 80mm auto; }
+            @media print {
+              .no-print { display: none !important; }
+            }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace; width: 72mm; margin: 0 auto; padding: 10px; font-size: 13px; color: #000; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            .divider { border-bottom: 2px dashed #000; margin: 8px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="position: sticky; top: 0; background: #000; padding: 8px; margin: -10px -10px 10px -10px; display: flex; gap: 8px; justify-content: center; z-index: 9999;">
+            <button onclick="window.print()" style="background: #ea580c; color: white; border: none; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">🖨️ Print KOT</button>
+            <button onclick="window.close()" style="background: #333; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer;">✖ Close</button>
+          </div>
+          <div class="center bold" style="font-size:18px; letter-spacing: 1px;">*** KITCHEN TICKET (KOT) ***</div>
+          <div class="center bold" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
+          <div class="divider"></div>
+          <div style="display:flex; justify-content:space-between; font-weight:900; font-size:16px;">
+            <span>${escapeHtml(tableName)}</span>
+            <span>KOT #${escapeHtml(order.order_number || order.id)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-top:4px; color:#444;">
+            <span>Time: ${escapeHtml(timeStr)}</span>
+            <span>Station: MAIN KITCHEN</span>
+          </div>
+          <div class="divider"></div>
+          <div style="margin: 8px 0;">${rows}</div>
+          ${notes ? `
+          <div class="divider"></div>
+          <div style="font-weight:bold; font-size:12px; padding: 5px; background: #eee; border-left: 3px solid #000;">
+            SPECIAL INSTRUCTION: <span style="font-weight:900;">${escapeHtml(notes.toUpperCase())}</span>
+          </div>
+          ` : ''}
+          <div class="divider"></div>
+          <div class="center" style="font-size:11px; font-weight:bold;">Bliss KDS • Kitchen Dispatch</div>
+          <script>
+            window.onload = function() {
+              window.focus();
+              setTimeout(function() {
+                window.print();
+              }, 300);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   const fetchOrders = async () => {
     // Fetch active orders
@@ -74,7 +171,17 @@ export default function KitchenDashboard() {
         { event: "*", schema: "public", table: "orders" },
         (payload) => {
           if (payload.eventType === "INSERT") {
-            setOrders((prev) => [payload.new as Order, ...prev]);
+            const newOrder = payload.new as Order;
+            setOrders((prev) => [newOrder, ...prev]);
+
+            // Auto-Print KOT slip if enabled
+            if (autoPrintKOTRef.current) {
+              try {
+                printKOT(newOrder);
+              } catch (err) {
+                console.error("Auto KOT print error:", err);
+              }
+            }
             if (audioEnabledRef.current) {
               try {
                 const newOrder = payload.new as Order;
@@ -230,22 +337,44 @@ export default function KitchenDashboard() {
         </div>
       )}
 
-      <div className={`mb-4 sm:mb-6 flex items-center justify-between gap-3 ${!isOnline ? 'mt-8' : ''}`}>
-        <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Kitchen Display</h1>
-        <button
-          onClick={() => {
-            setAudioEnabled(!audioEnabled);
-            if (!audioEnabled && audioRef.current) {
-              audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
-            }
-          }}
-          className={`flex items-center gap-1.5 sm:gap-2 rounded-full px-3.5 py-2 sm:px-6 sm:py-3 text-xs sm:text-base font-bold text-white transition ${
-            audioEnabled ? "bg-green-600 hover:bg-green-700 shadow-[0_0_15px_rgba(22,163,74,0.5)]" : "bg-red-500 hover:bg-red-600 animate-pulse"
-          }`}
-        >
-          <Bell size={18} />
-          <span>{audioEnabled ? "Audio On" : "Enable Audio"}</span>
-        </button>
+      <div className={`mb-4 sm:mb-6 flex flex-wrap items-center justify-between gap-3 ${!isOnline ? 'mt-8' : ''}`}>
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">Kitchen Display (KDS & KOT)</h1>
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900 text-amber-400 font-mono text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            LIVE TICKETS
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setAutoPrintKOT(!autoPrintKOT)}
+            className={`flex items-center gap-1.5 sm:gap-2 rounded-full px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-bold transition shadow-sm ${
+              autoPrintKOT
+                ? "bg-amber-600 hover:bg-amber-700 text-white shadow-[0_0_15px_rgba(217,119,6,0.5)] ring-2 ring-amber-400"
+                : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-100"
+            }`}
+            title="Automatically trigger print dialog whenever a new KOT lands"
+          >
+            <Printer size={16} />
+            <span>{autoPrintKOT ? "Auto-KOT: ON" : "Auto-KOT: OFF"}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setAudioEnabled(!audioEnabled);
+              if (!audioEnabled && audioRef.current) {
+                audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
+              }
+            }}
+            className={`flex items-center gap-1.5 sm:gap-2 rounded-full px-3.5 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-bold text-white transition ${
+              audioEnabled ? "bg-green-600 hover:bg-green-700 shadow-[0_0_15px_rgba(22,163,74,0.5)]" : "bg-red-500 hover:bg-red-600 animate-pulse"
+            }`}
+          >
+            <Bell size={16} />
+            <span>{audioEnabled ? "Voice Call: ON" : "Enable Audio"}</span>
+          </button>
+        </div>
       </div>
 
       {/* MOBILE STATUS SWITCHER TABS (< 768px) */}
@@ -310,14 +439,24 @@ export default function KitchenDashboard() {
                       key={order.id}
                       className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md"
                     >
-                      <div className="mb-3 flex items-start justify-between border-b pb-3">
-                        <div>
-                          <span className="font-mono text-sm font-bold text-gray-500">
-                            #{order.order_number}
-                          </span>
-                          <div className="mt-1 font-bold text-gray-900 text-xl">
+                      <div className="mb-3 flex items-start justify-between border-b border-gray-100 pb-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs font-black px-2 py-0.5 rounded bg-zinc-900 text-amber-400">
+                              KOT #{order.order_number || order.id}
+                            </span>
+                            <button
+                              onClick={() => printKOT(order)}
+                              className="flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-900 border border-amber-300 hover:bg-amber-100 active:scale-95 transition"
+                              title="Print 80mm Physical Kitchen Ticket"
+                            >
+                              <Printer size={12} />
+                              <span>Print KOT</span>
+                            </button>
+                          </div>
+                          <div className="font-black text-gray-900 text-xl tracking-tight">
                             {order.table_number?.match(/^(Swiggy|Zomato|Takeaway)/i) ? (
-                              <div className="flex items-center gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                                 {order.table_number.toLowerCase().includes("swiggy") && (
                                   <span className="bg-[#FC8019] text-white text-[11px] px-2 py-0.5 rounded font-black tracking-wider">SWIGGY</span>
                                 )}
@@ -334,8 +473,8 @@ export default function KitchenDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Clock size={12} className="mr-1" />
+                        <div className="flex items-center text-xs text-gray-500 font-semibold bg-gray-50 px-2 py-1 rounded-md">
+                          <Clock size={12} className="mr-1 text-gray-400" />
                           {getTimeElapsed(order.created_at)}
                         </div>
                       </div>
