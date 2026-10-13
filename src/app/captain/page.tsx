@@ -305,7 +305,6 @@ export default function CaptainPortal() {
         icon: "🔔",
         duration: 4000
       });
-      setIsBillModalOpen(false);
       fetchOrders();
     } catch (e: any) {
       toast.error(e.message || "Failed to request bill");
@@ -605,7 +604,6 @@ export default function CaptainPortal() {
                   <button
                     onClick={() => {
                       setIsBillModalOpen(true);
-                      setBillSettlementTab('options');
                     }}
                     className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 border transition ${
                       selectedGroup.requestedBill
@@ -614,7 +612,7 @@ export default function CaptainPortal() {
                     }`}
                   >
                     <Receipt size={14} />
-                    <span>{selectedGroup.requestedBill ? "⏳ Bill Requested" : "🧾 Bill & Settle"}</span>
+                    <span>{selectedGroup.requestedBill ? "⏳ Bill Requested" : "🧾 Request Bill"}</span>
                   </button>
                 </>
               )}
@@ -864,7 +862,7 @@ export default function CaptainPortal() {
         </div>
       )}
 
-      {/* MODAL: BILLING & SETTLEMENT (2-IN-1: CASHIER ALERT OR DIRECT SETTLE) */}
+      {/* MODAL: BILL REQUEST DISPATCH TO CASHIER DESK */}
       {isBillModalOpen && selectedGroup && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm animate-in fade-in duration-150">
           <div className="bg-white rounded-3xl w-full max-w-md p-5 sm:p-6 space-y-4 shadow-2xl max-h-[92vh] overflow-y-auto">
@@ -873,7 +871,7 @@ export default function CaptainPortal() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-black text-lg text-gray-900">
-                    Table {selectedTable} Bill
+                    Table {selectedTable} Bill Request
                   </h3>
                   {selectedGroup.requestedBill && (
                     <span className="text-[10px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full">
@@ -886,10 +884,7 @@ export default function CaptainPortal() {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setIsBillModalOpen(false);
-                  setBillSettlementTab('options');
-                }}
+                onClick={() => setIsBillModalOpen(false)}
                 className="p-1.5 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100"
               >
                 <X size={18} />
@@ -910,18 +905,46 @@ export default function CaptainPortal() {
               </div>
             </div>
 
-            {billSettlementTab === 'options' ? (
-              <div className="space-y-3.5">
-                {/* OPTION 1: CASHIER COUNTER (FINE DINE) */}
-                <div className="border border-amber-200 bg-amber-50/60 rounded-2xl p-3.5 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0">
-                      <Bell size={15} />
+            {/* Items Breakdown Checklist */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                <span>Items Ordered ({selectedGroup.orders.length} KOTs)</span>
+                <span>Amount</span>
+              </div>
+              <div className="max-h-40 overflow-y-auto space-y-1.5 bg-gray-50 p-2.5 rounded-2xl border border-gray-100">
+                {selectedGroup.orders.map((ord: any) => {
+                  let items: any[] = [];
+                  try {
+                    items = typeof ord.items === "string" ? JSON.parse(ord.items) : ord.items;
+                  } catch (e) {}
+                  return (
+                    <div key={ord.id} className="space-y-1">
+                      {Array.isArray(items) && items.filter((i: any) => i.id !== "NOTE").map((it: any, idx: number) => (
+                        <div key={idx} className="flex justify-between text-xs font-medium text-gray-800">
+                          <span>{it.qty}x {it.name}</span>
+                          <span className="font-mono font-bold text-gray-900">₹{it.price * it.qty}</span>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <h4 className="text-xs font-black text-amber-950">Option 1: Alert Cashier Counter</h4>
-                      <p className="text-[10px] text-amber-800">
-                        Cashier ke POS screen par sound chime bajega aur wo counter se print slip nikal kar denge.
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Cashier Alert Action Section */}
+            <div className="space-y-3 pt-1">
+              {selectedGroup.requestedBill ? (
+                <div className="border border-amber-300 bg-amber-50 rounded-2xl p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <Bell size={18} className="animate-bounce" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-amber-950">
+                        Cashier Desk Alerted
+                      </h4>
+                      <p className="text-xs text-amber-900/80 leading-relaxed">
+                        The billing counter has been notified. The cashier is printing the official GST invoice slip. Please collect the printed bill booklet from the counter and present it to the guest.
                       </p>
                     </div>
                   </div>
@@ -930,96 +953,48 @@ export default function CaptainPortal() {
                     className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
                   >
                     <Bell size={14} />
-                    <span>{selectedGroup.requestedBill ? "🔔 Re-send Alert to Cashier" : "🔔 Send Bill Request to Cashier"}</span>
+                    <span>Re-send Alert Chime to Cashier</span>
                   </button>
                 </div>
-
-                {/* OPTION 2: DIRECT TABLE SETTLEMENT (QSR / PAY AT TABLE) */}
-                <div className="border border-blue-200 bg-blue-50/50 rounded-2xl p-3.5 space-y-3">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
-                      <DollarSign size={15} />
+              ) : (
+                <div className="border border-gray-200 bg-white rounded-2xl p-4 space-y-3 shadow-xs">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                      <Receipt size={18} />
                     </div>
-                    <div>
-                      <h4 className="text-xs font-black text-blue-950">Option 2: Direct Settle at Table</h4>
-                      <p className="text-[10px] text-blue-800">
-                        Customer se table par hi cash ya UPI QR scan karwa ke table ko turant Available banayein.
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-gray-900">
+                        Request Printed Bill Slip
+                      </h4>
+                      <p className="text-xs text-gray-600 leading-relaxed">
+                        Notify the cashier counter to generate and print the official thermal bill slip for Table {selectedTable}.
                       </p>
                     </div>
                   </div>
-
-                  {/* Customer Phone for WhatsApp bill (Optional) */}
-                  <div>
-                    <label className="block text-[11px] font-bold text-gray-700 mb-1">
-                      Customer Phone (Optional - for WhatsApp Bill):
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="e.g. 9876543210"
-                      value={customerPhone}
-                      onChange={e => setCustomerPhone(e.target.value)}
-                      className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none font-mono"
-                    />
-                  </div>
-
-                  {/* Direct Payment Buttons */}
-                  <div className="grid grid-cols-2 gap-2 pt-1">
-                    <button
-                      onClick={() => handleDirectSettle(selectedTable!, 'CASH')}
-                      disabled={isSettling}
-                      className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
-                    >
-                      <DollarSign size={14} />
-                      <span>💵 Cash (₹{selectedGroup.total})</span>
-                    </button>
-                    <button
-                      onClick={() => setBillSettlementTab('upi_qr')}
-                      className="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
-                    >
-                      <QrCode size={14} />
-                      <span>📱 Scan UPI QR</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* DYNAMIC UPI QR SCAN SUB-VIEW */
-              <div className="space-y-3.5 text-center">
-                <div className="p-3 bg-white border-2 border-dashed border-blue-300 rounded-2xl flex flex-col items-center">
-                  <span className="text-xs font-black text-blue-900 mb-1">
-                    Guest ko Mobile se Scan Karwayein:
-                  </span>
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${selectedGroup.total}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
-                    alt="UPI QR Code"
-                    className="w-44 h-44 my-2 border p-1 rounded-xl shadow-xs"
-                  />
-                  <div className="font-mono font-black text-lg text-gray-900">
-                    ₹{selectedGroup.total}
-                  </div>
-                  <div className="text-[10px] text-gray-500">
-                    Google Pay • PhonePe • Paytm • BHIM
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
                   <button
-                    onClick={() => setBillSettlementTab('options')}
-                    className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+                    onClick={() => handleAlertCashier(selectedTable!)}
+                    className="w-full py-3 px-3 bg-zinc-900 hover:bg-black active:scale-[0.99] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 transition"
                   >
-                    ← Back
-                  </button>
-                  <button
-                    onClick={() => handleDirectSettle(selectedTable!, 'UPI')}
-                    disabled={isSettling}
-                    className="flex-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5"
-                  >
-                    <CheckCircle2 size={15} />
-                    <span>Confirm UPI Paid & Free Table</span>
+                    <Bell size={15} />
+                    <span>Send Bill Request to Cashier</span>
                   </button>
                 </div>
+              )}
+
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-2xl text-[11px] text-gray-500 leading-relaxed flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                <span>
+                  Bill payment settlement & table clearance are handled by the Cashier at the POS billing counter.
+                </span>
               </div>
-            )}
+
+              <button
+                onClick={() => setIsBillModalOpen(false)}
+                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+              >
+                Close Window
+              </button>
+            </div>
           </div>
         </div>
       )}
