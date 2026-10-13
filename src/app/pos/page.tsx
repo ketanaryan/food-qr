@@ -920,18 +920,13 @@ export default function PetpoojaPOSPage() {
             <span className="hidden xl:inline">Waiter</span>
           </a>
 
-          <button
-            onClick={() => {
-              setAdminPinInput("");
-              setAdminPinError("");
-              setIsAdminPinModalOpen(true);
-            }}
-            className="p-1.5 sm:p-2 bg-gradient-to-r from-[#A18D6D] to-[#8e7a5c] hover:brightness-110 active:scale-95 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow"
-            title="Owner Back-Office (Manager PIN Protected)"
+          <a
+            href="/staff"
+            className="p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 active:scale-95 text-gray-300 hover:text-white rounded-xl text-xs font-bold flex items-center gap-1 border border-white/10 transition"
+            title="Back to Stations Hub"
           >
-            <Lock size={12} className="text-amber-200" />
-            <span>Admin</span>
-          </button>
+            <span>Exit</span>
+          </a>
         </div>
       </header>
 

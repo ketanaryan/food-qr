@@ -78,7 +78,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // IF NOT AUTHENTICATED: RENDER SEPARATE OWNER SECURITY LOGIN SCREEN
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#14120E] text-white flex flex-col justify-center items-center p-4 selection:bg-[#A18D6D] selection:text-white">
+      <>
+        <head>
+          <title>Bliss Owner App</title>
+          <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
+          <meta name="application-name" content="Bliss Owner" />
+          <link rel="manifest" href="/manifest-owner.json" />
+          <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
+        </head>
+        <div className="min-h-screen bg-[#14120E] text-white flex flex-col justify-center items-center p-4 selection:bg-[#A18D6D] selection:text-white">
         <div className="w-full max-w-sm bg-[#1E1B16] border border-[#3A3328] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header & Badge */}
@@ -207,11 +215,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
       </div>
+    </>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <>
+      <head>
+        <title>Bliss Owner App</title>
+        <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
+        <meta name="application-name" content="Bliss Owner" />
+        <link rel="manifest" href="/manifest-owner.json" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
+      </head>
+      <div className="flex min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 w-full bg-[#1E1B16] text-white z-50 flex items-center justify-between p-4 print:hidden border-b border-white/10">
         <div className="flex items-center gap-2">
@@ -329,5 +346,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         />
       )}
     </div>
+    </>
   );
 }

@@ -1,0 +1,26 @@
+{
+  "name": "Bliss Owner App",
+  "short_name": "Bliss Owner",
+  "description": "Hotel White Bliss - Owner & Merchant Analytics Backoffice",
+  "start_url": "/admin/dashboard",
+  "id": "/admin/dashboard",
+  "scope": "/admin",
+  "display": "standalone",
+  "background_color": "#14120E",
+  "theme_color": "#14120E",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icons/icon-owner-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-owner-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
