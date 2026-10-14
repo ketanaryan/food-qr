@@ -12,14 +12,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
-
-// 15 Standard Tables configured across 3 Restaurant Sections
-const SECTIONS = [
-  { id: "ALL", name: "All Tables (15)" },
-  { id: "GROUND", name: "Ground Floor (T1-T5)", tables: ["1", "2", "3", "4", "5"] },
-  { id: "AC_HALL", name: "AC Family Hall (T6-T10)", tables: ["6", "7", "8", "9", "10"] },
-  { id: "GARDEN", name: "Garden / Terrace (T11-T15)", tables: ["11", "12", "13", "14", "15"] }
-];
+import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers, getSectionNameForTable } from "@/lib/tableConfig";
 
 const DEFAULT_CAPTAINS = [
   "Cashier Counter",
@@ -87,6 +80,7 @@ export default function PetpoojaPOSPage() {
   const [activeView, setActiveView] = useState<'tables' | 'quick_bill' | 'live_kots' | 'register'>('tables');
   
   // Floor & Filter state
+  const [sections, setSections] = useState<TableSection[]>(DEFAULT_TABLE_SECTIONS);
   const [selectedSection, setSelectedSection] = useState<string>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "FREE" | "OCCUPIED" | "BILLING">("ALL");
 
@@ -247,6 +241,16 @@ export default function PetpoojaPOSPage() {
       })
       .catch(() => {});
 
+    // Fetch dynamic tables & floor sections
+    fetch("/api/admin/tables")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.sections) && data.sections.length > 0) {
+          setSections(data.sections);
+        }
+      })
+      .catch(() => {});
+
     const channel = supabase
       .channel("petpooja-pos-orders")
       .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, (payload) => {
@@ -338,8 +342,16 @@ export default function PetpoojaPOSPage() {
     }
   });
 
-  // 15 Standard Tables
-  const allTableNumbers = Array.from({ length: 15 }, (_, i) => String(i + 1));
+  // Dynamic Tables across all configured floors
+  const configuredTables = extractAllTableNumbers(sections);
+  const activeOrderTables = Object.keys(tableGroups).filter(t => !t.match(/^(Swiggy|Zomato|Takeaway)/i));
+  const allTableNumbers = Array.from(new Set([...configuredTables, ...activeOrderTables])).sort((a, b) => {
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
+
   const tablesList = allTableNumbers.map(tNum => {
     const group = tableGroups[tNum];
     let status: "FREE" | "OCCUPIED" | "BILLING" = "FREE";
@@ -367,11 +379,8 @@ export default function PetpoojaPOSPage() {
       });
     }
 
-    // Identify Section
-    let sectionName = "Ground Floor";
-    const num = parseInt(tNum, 10);
-    if (num > 5 && num <= 10) sectionName = "AC Hall";
-    if (num > 10) sectionName = "Garden";
+    // Identify Section dynamically
+    const sectionName = getSectionNameForTable(tNum, sections);
 
     return {
       tableNumber: tNum,
@@ -387,7 +396,7 @@ export default function PetpoojaPOSPage() {
   // Filter tables by section and status
   const currentSectionTables = tablesList.filter(t => {
     if (selectedSection === "ALL") return true;
-    const currentSec = SECTIONS.find(s => s.id === selectedSection);
+    const currentSec = sections.find(s => s.id === selectedSection);
     return currentSec?.tables?.includes(t.tableNumber);
   });
 
@@ -1130,12 +1139,10 @@ export default function PetpoojaPOSPage() {
                     onChange={(e) => setSelectedSection(e.target.value)}
                     className="w-full bg-[#F4F1EA] text-gray-900 font-extrabold text-xs py-2 pl-3 pr-8 rounded-xl border border-[#e8e1d6] appearance-none focus:outline-none focus:ring-1 focus:ring-gray-900"
                   >
-                    {SECTIONS.map(sec => (
+                    <option value="ALL">🏢 All Tables ({allTableNumbers.length})</option>
+                    {sections.map(sec => (
                       <option key={sec.id} value={sec.id}>
-                        {sec.id === 'ALL' ? '🏢 All Tables (15)' :
-                         sec.id === 'GROUND' ? '🟢 Ground Floor (T1-T5)' :
-                         sec.id === 'AC_HALL' ? '❄️ AC Family Hall (T6-T10)' :
-                         '🌿 Garden / Terrace (T11-T15)'}
+                        📍 {sec.name} ({sec.tables.length})
                       </option>
                     ))}
                   </select>
@@ -1147,7 +1154,17 @@ export default function PetpoojaPOSPage() {
 
               {/* Desktop / Tablet: Section Pills */}
               <div className="hidden sm:flex items-center gap-1.5 text-xs">
-                {SECTIONS.map(sec => (
+                <button
+                  onClick={() => setSelectedSection("ALL")}
+                  className={`px-3 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
+                    selectedSection === "ALL"
+                      ? "bg-[#1E1B16] text-white shadow-xs"
+                      : "bg-[#F4F1EA] text-gray-700 hover:bg-[#e8e1d6]"
+                  }`}
+                >
+                  All Tables ({allTableNumbers.length})
+                </button>
+                {sections.map(sec => (
                   <button
                     key={sec.id}
                     onClick={() => setSelectedSection(sec.id)}
@@ -1157,7 +1174,7 @@ export default function PetpoojaPOSPage() {
                         : "bg-[#F4F1EA] text-gray-700 hover:bg-[#e8e1d6]"
                     }`}
                   >
-                    {sec.name}
+                    {sec.name} ({sec.tables.length})
                   </button>
                 ))}
               </div>

@@ -13,6 +13,7 @@ import NavBar from "@/components/common/NavBar";
 
 // Captains List
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
+import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers, getSectionNameForTable } from "@/lib/tableConfig";
 
 const DEFAULT_CAPTAINS = [
   "Rahul (Lead Captain)",
@@ -23,6 +24,8 @@ const DEFAULT_CAPTAINS = [
 
 export default function CaptainPortal() {
   const [orders, setOrders] = useState<any[]>([]);
+  const [sections, setSections] = useState<TableSection[]>(DEFAULT_TABLE_SECTIONS);
+  const [selectedFloor, setSelectedFloor] = useState<string>("ALL");
   const [captainsList, setCaptainsList] = useState<string[]>(DEFAULT_CAPTAINS);
   const [selectedCaptain, setSelectedCaptain] = useState<string>(DEFAULT_CAPTAINS[0]);
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
@@ -62,6 +65,16 @@ export default function CaptainPortal() {
           } else {
             setSelectedCaptain(data.captains[0]);
           }
+        }
+      })
+      .catch(() => {});
+
+    // 2. Fetch dynamic floors & tables
+    fetch("/api/admin/tables")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.sections) && data.sections.length > 0) {
+          setSections(data.sections);
         }
       })
       .catch(() => {});
@@ -139,17 +152,29 @@ export default function CaptainPortal() {
     }
   });
 
-  // 15 Standard Dine-in Tables
-  const tablesList = Array.from({ length: 15 }, (_, i) => String(i + 1)).map(tNum => {
+  // Dynamic Dine-in Tables
+  const configuredTables = extractAllTableNumbers(sections);
+  const activeOrderTables = Object.keys(tableGroups).filter(t => !t.match(/^(Swiggy|Zomato|Takeaway)/i));
+  const allTableNumbers = Array.from(new Set([...configuredTables, ...activeOrderTables])).sort((a, b) => {
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
+
+  const tablesList = allTableNumbers.map(tNum => {
     const group = tableGroups[tNum];
     let status: "FREE" | "OCCUPIED" | "BILLING" = "FREE";
     if (group) {
       status = group.requestedBill ? "BILLING" : "OCCUPIED";
     }
+    const sectionName = getSectionNameForTable(tNum, sections);
+
     return {
       tableNumber: tNum,
       status,
       group,
+      sectionName,
       total: group ? group.total : 0,
       itemCount: group ? group.orders.reduce((acc: number, o: any) => {
         try {
@@ -163,8 +188,14 @@ export default function CaptainPortal() {
     };
   });
 
-  // Filtered tables
-  const filteredTables = tablesList.filter(t => {
+  // Filtered by Floor and Status
+  const floorFilteredTables = tablesList.filter(t => {
+    if (selectedFloor === "ALL") return true;
+    const sec = sections.find(s => s.id === selectedFloor);
+    return sec?.tables.includes(t.tableNumber);
+  });
+
+  const filteredTables = floorFilteredTables.filter(t => {
     if (statusFilter === "ALL") return true;
     return t.status === statusFilter;
   });
@@ -424,6 +455,33 @@ export default function CaptainPortal() {
       {/* VIEW 1: TABLE FLOOR OVERVIEW (When no table selected) */}
       {!selectedTable && (
         <div className="flex-1 p-3 sm:p-4 max-w-5xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
+          {/* Floor & Section Filter Bar */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            <button
+              onClick={() => setSelectedFloor("ALL")}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                selectedFloor === "ALL"
+                  ? "bg-[#1E1B16] text-[#F8F5F0] shadow-sm"
+                  : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              All Floors ({tablesList.length})
+            </button>
+            {sections.map(s => (
+              <button
+                key={s.id}
+                onClick={() => setSelectedFloor(s.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition ${
+                  selectedFloor === s.id
+                    ? "bg-[#1E1B16] text-[#F8F5F0] shadow-sm"
+                    : "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50"
+                }`}
+              >
+                {s.name} ({s.tables.length})
+              </button>
+            ))}
+          </div>
+
           {/* Status Filter Bar (Responsive 4-col Grid + Refresh) */}
           <div className="flex items-center gap-1.5">
             <div className="grid grid-cols-4 gap-1 flex-1 text-[11px] sm:text-xs font-bold">
@@ -433,7 +491,7 @@ export default function CaptainPortal() {
                   statusFilter === "ALL" ? "bg-gray-900 text-white shadow font-extrabold" : "bg-white text-gray-700 border"
                 }`}
               >
-                All (15)
+                All ({floorFilteredTables.length})
               </button>
               <button
                 onClick={() => setStatusFilter("FREE")}
@@ -442,7 +500,7 @@ export default function CaptainPortal() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></span>
-                <span className="truncate">Free ({tablesList.filter(t => t.status === "FREE").length})</span>
+                <span className="truncate">Free ({floorFilteredTables.filter(t => t.status === "FREE").length})</span>
               </button>
               <button
                 onClick={() => setStatusFilter("OCCUPIED")}
@@ -451,7 +509,7 @@ export default function CaptainPortal() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
-                <span className="truncate">Dining ({tablesList.filter(t => t.status === "OCCUPIED").length})</span>
+                <span className="truncate">Dining ({floorFilteredTables.filter(t => t.status === "OCCUPIED").length})</span>
               </button>
               <button
                 onClick={() => setStatusFilter("BILLING")}
@@ -460,7 +518,7 @@ export default function CaptainPortal() {
                 }`}
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
-                <span className="truncate">Bill ({tablesList.filter(t => t.status === "BILLING").length})</span>
+                <span className="truncate">Bill ({floorFilteredTables.filter(t => t.status === "BILLING").length})</span>
               </button>
             </div>
 
@@ -473,7 +531,7 @@ export default function CaptainPortal() {
             </button>
           </div>
 
-          {/* 15 Tables Floor Grid */}
+          {/* Tables Floor Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filteredTables.map(t => {
               const isFree = t.status === "FREE";
@@ -498,11 +556,14 @@ export default function CaptainPortal() {
                 >
                   <div className="flex items-start justify-between w-full">
                     <div>
-                      <span className="text-lg font-black text-gray-900">
+                      <span className="text-lg font-black text-gray-900 block leading-tight">
                         Table {t.tableNumber}
                       </span>
+                      <span className="text-[10px] text-gray-400 font-medium block truncate max-w-[100px]">
+                        {t.sectionName}
+                      </span>
                       {isFree && (
-                        <p className="text-[11px] font-medium text-emerald-700 mt-0.5 flex items-center gap-1">
+                        <p className="text-[11px] font-medium text-emerald-700 mt-1 flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Available
                         </p>
                       )}

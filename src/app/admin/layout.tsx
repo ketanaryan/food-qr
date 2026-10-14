@@ -170,7 +170,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Inventory", href: "/admin/inventory", icon: Boxes },
     { name: "Reservations", href: "/admin/reservations", icon: CalendarDays },
     { name: "Menu Builder", href: "/admin/menu", icon: MenuIcon },
-    { name: "Print QRs", href: "/admin/qr", icon: QrCode },
+    { name: "Tables & Floors", href: "/admin/qr", icon: QrCode },
   ];
 
   // If still hydrating/checking session

@@ -6,9 +6,11 @@ import toast from "react-hot-toast"
 import NavBar from "@/components/common/NavBar"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
+import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers } from "@/lib/tableConfig"
 
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
+  const [sections, setSections] = useState<TableSection[]>(DEFAULT_TABLE_SECTIONS)
   const [activeTab, setActiveTab] = useState<'bills' | 'map'>('bills')
   const [audioEnabled, setAudioEnabled] = useState(false); // Must be false for mobile security policy
   const audioEnabledRef = React.useRef(false);
@@ -35,6 +37,15 @@ export default function CashierDashboard() {
       if (data) setOrders(data)
     }
     fetchOrders()
+
+    fetch("/api/admin/tables")
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && Array.isArray(data.sections) && data.sections.length > 0) {
+          setSections(data.sections)
+        }
+      })
+      .catch(() => {})
 
     const channel = supabase
       .channel('cashier-orders')
@@ -83,9 +94,15 @@ export default function CashierDashboard() {
     return acc;
   }, {});
 
-  // Live Floor Map: 15 Dine-in Tables
-  const TOTAL_TABLES = 15;
-  const tableNumbers = Array.from({ length: TOTAL_TABLES }, (_, i) => String(i + 1));
+  // Dynamic Dine-in Tables across all configured floors
+  const configuredTables = extractAllTableNumbers(sections);
+  const activeOrderTables = Object.keys(tableGroups).filter(t => !t.match(/^(Swiggy|Zomato|Takeaway)/i));
+  const tableNumbers = Array.from(new Set([...configuredTables, ...activeOrderTables])).sort((a, b) => {
+    const numA = parseInt(a, 10);
+    const numB = parseInt(b, 10);
+    if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+    return a.localeCompare(b);
+  });
   
   const tableStatusList = tableNumbers.map(tNum => {
     const group = Object.values(tableGroups).find((g: any) => {
@@ -560,7 +577,7 @@ export default function CashierDashboard() {
               }`}
             >
               <LayoutGrid size={17} className={activeTab === 'map' ? 'text-emerald-600' : 'text-gray-500'} />
-              <span>Floor Map (15)</span>
+              <span>Floor Map ({tableNumbers.length})</span>
             </button>
           </div>
 
@@ -596,7 +613,7 @@ export default function CashierDashboard() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-gray-100">
               <div>
                 <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <span>🗺️</span> Live Floor Map (All 15 Tables)
+                  <span>🗺️</span> Live Floor Map ({tableNumbers.length} Tables across {sections.length} Floors)
                 </h2>
                 <p className="text-xs text-gray-500 mt-0.5">Real-time table occupancy & billing overview. Tap any table to jump to its bill.</p>
               </div>
