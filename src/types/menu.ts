@@ -8,6 +8,7 @@ export interface IMenu {
   quantity: number;
   originalPrice?: number;
   section: string;
+  isVeg?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

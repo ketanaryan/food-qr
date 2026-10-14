@@ -51,9 +51,17 @@ function MenuItem({ item }: { item: IMenu }) {
       </div>
 
       <div className="mt-3 flex flex-col flex-grow px-1 pb-1 space-y-1.5">
-        <h3 className="text-base sm:text-lg md:text-xl font-playfair font-bold text-[#1E1B16] leading-tight line-clamp-1">
-          {item.title}
-        </h3>
+        <div className="flex items-start gap-1.5 justify-between">
+          <h3 className="text-base sm:text-lg md:text-xl font-playfair font-bold text-[#1E1B16] leading-tight line-clamp-1 flex-1">
+            {item.title}
+          </h3>
+          <span 
+            className={`inline-flex items-center justify-center w-4 h-4 border ${item.isVeg === false ? 'border-red-600' : 'border-emerald-600'} p-[2px] rounded-xs shrink-0 mt-0.5`}
+            title={item.isVeg === false ? 'Non-Vegetarian' : 'Pure Vegetarian'}
+          >
+            <span className={`w-2 h-2 rounded-full ${item.isVeg === false ? 'bg-red-600' : 'bg-emerald-600'}`} />
+          </span>
+        </div>
 
         {item.description ? (
           <p className="text-xs sm:text-sm text-[#6F624E] line-clamp-2 leading-relaxed font-light">
