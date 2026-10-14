@@ -116,7 +116,13 @@ export default function CashierDashboard() {
   const billingCount = tableStatusList.filter(t => t.status === 'BILLING').length;
   const deliveryGroups = Object.values(tableGroups).filter((g: any) => g.table.match(/^(Swiggy|Zomato|Takeaway)/i));
 
-  const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI', customerPhone?: string) => {
+  const markPaid = async (
+    tableNumber: string, 
+    orderIds: number[], 
+    paymentMethod: 'CASH' | 'UPI', 
+    customerPhone?: string,
+    financials?: { subtotal?: number; gst?: number; serviceCharge?: number; grandTotal?: number }
+  ) => {
     // Optimistic UI
     setOrders(prev => prev.filter(o => o.table_number !== tableNumber))
     
@@ -125,7 +131,13 @@ export default function CashierDashboard() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds, status: 'completed', paymentMethod, customerPhone })
+        body: JSON.stringify({ 
+          orderIds, 
+          status: 'completed', 
+          paymentMethod, 
+          customerPhone,
+          ...(financials || {})
+        })
       });
       const data = await res.json();
       if (!data.success) throw new Error();
@@ -455,7 +467,7 @@ export default function CashierDashboard() {
 
   const handleSendWa = () => {
     if (!waModal.data || !waModal.paymentMethod) return;
-    const { tableNumber, groupOrders, grandTotal } = waModal.data;
+    const { tableNumber, groupOrders, grandTotal, subtotal, gst, serviceCharge } = waModal.data;
     
     const cleanPhone = waPhone.replace(/\D/g, '');
     if (cleanPhone.length < 10) return toast.error("Invalid phone number");
@@ -471,7 +483,13 @@ export default function CashierDashboard() {
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     
     // Mark as Paid
-    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod, cleanPhone);
+    markPaid(
+      tableNumber, 
+      groupOrders.map((o:any)=>o.id), 
+      waModal.paymentMethod, 
+      cleanPhone,
+      { subtotal, gst, serviceCharge, grandTotal }
+    );
     
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
@@ -479,9 +497,15 @@ export default function CashierDashboard() {
 
   const handleSkipWa = () => {
     if (!waModal.data || !waModal.paymentMethod) return;
-    const { tableNumber, groupOrders } = waModal.data;
+    const { tableNumber, groupOrders, grandTotal, subtotal, gst, serviceCharge } = waModal.data;
     // Mark as Paid without WA
-    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod);
+    markPaid(
+      tableNumber, 
+      groupOrders.map((o:any)=>o.id), 
+      waModal.paymentMethod,
+      undefined,
+      { subtotal, gst, serviceCharge, grandTotal }
+    );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
   }
@@ -797,7 +821,13 @@ export default function CashierDashboard() {
                     if (!waModal.data) return;
                     const { tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal } = waModal.data;
                     printReceipt(tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal, waModal.paymentMethod || undefined);
-                    markPaid(tableNumber, groupOrders.map((o:any)=>o.id), waModal.paymentMethod || 'CASH');
+                    markPaid(
+                      tableNumber, 
+                      groupOrders.map((o:any)=>o.id), 
+                      waModal.paymentMethod || 'CASH',
+                      undefined,
+                      { subtotal, gst, serviceCharge, grandTotal }
+                    );
                     setWaModal({ isOpen: false, data: null, paymentMethod: null });
                     setWaPhone('');
                   }}

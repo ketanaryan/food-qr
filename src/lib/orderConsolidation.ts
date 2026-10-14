@@ -100,17 +100,26 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
     let customerPhone: string | undefined = undefined;
     let settledAt: string = lastOrder.created_at;
 
+    let storedSubtotal: number | undefined = undefined;
+    let storedGst: number | undefined = undefined;
+    let storedServiceCharge: number | undefined = undefined;
+    let storedGrandTotal: number | undefined = undefined;
+
     for (const ord of orderGroup) {
-      const sInfo = ord.settlementInfo || ord.parsedItems.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
+      const sInfo = ord.settlementInfo || ord.parsedItems?.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
       if (sInfo) {
         if (sInfo.settled_at) settledAt = sInfo.settled_at;
         if (sInfo.payment_method) paymentMethod = sInfo.payment_method;
+        if (typeof sInfo.subtotal === 'number') storedSubtotal = sInfo.subtotal;
+        if (typeof sInfo.gst === 'number') storedGst = sInfo.gst;
+        if (typeof sInfo.service_charge === 'number') storedServiceCharge = sInfo.service_charge;
+        if (typeof sInfo.grand_total === 'number') storedGrandTotal = sInfo.grand_total;
       }
-      const payObj = ord.parsedItems.find((i: any) => i && i.id === 'PAYMENT_METHOD');
+      const payObj = ord.parsedItems?.find((i: any) => i && i.id === 'PAYMENT_METHOD');
       if (payObj && payObj.method) {
         paymentMethod = payObj.method;
       }
-      const custObj = ord.parsedItems.find((i: any) => i && i.id === 'CUSTOMER_INFO');
+      const custObj = ord.parsedItems?.find((i: any) => i && i.id === 'CUSTOMER_INFO');
       if (custObj && custObj.phone) {
         customerPhone = custObj.phone;
       }
@@ -135,9 +144,10 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       });
     });
 
-    const gst = Math.round(subtotal * 0.05);
-    const serviceCharge = Math.round(subtotal * 0.05);
-    const grandTotal = subtotal + gst + serviceCharge;
+    const finalSubtotal = storedSubtotal !== undefined ? storedSubtotal : subtotal;
+    const gst = storedGst !== undefined ? storedGst : Math.round(finalSubtotal * 0.05);
+    const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(finalSubtotal * 0.05);
+    const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : (finalSubtotal + gst + serviceCharge);
 
     const orderIds = orderGroup.map(o => o.id);
     const billId = orderGroup[0].settlementInfo?.bill_session_id || `BILL-${orderIds.join('-')}`;

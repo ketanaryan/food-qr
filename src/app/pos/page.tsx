@@ -38,6 +38,50 @@ function escapeHtml(str: any): string {
     .replace(/'/g, '&#039;');
 }
 
+function getSettledOrderFinancials(ord: any) {
+  let itArr: any[] = [];
+  try {
+    itArr = typeof ord.items === 'string' ? JSON.parse(ord.items) : ord.items;
+  } catch {}
+  if (!Array.isArray(itArr)) itArr = [];
+
+  const sInfo = itArr.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
+  const pObj = itArr.find((i: any) => i && i.id === 'PAYMENT_METHOD');
+
+  let payMode = "CASH";
+  if (sInfo?.payment_method) payMode = sInfo.payment_method;
+  else if (pObj?.method) payMode = pObj.method;
+  else if (JSON.stringify(ord.items).includes("UPI")) payMode = "UPI";
+
+  let settledTime = ord.created_at;
+  if (sInfo?.settled_at) settledTime = sInfo.settled_at;
+
+  const rawSubtotal = sInfo?.subtotal !== undefined ? Number(sInfo.subtotal) : Number(ord.total_amount || 0);
+  const discount = sInfo?.discount !== undefined ? Number(sInfo.discount) : 0;
+  const netSubtotal = Math.max(0, rawSubtotal - discount);
+
+  let grandTotal = sInfo?.grand_total !== undefined ? Number(sInfo.grand_total) : 0;
+  let gst = sInfo?.gst !== undefined ? Number(sInfo.gst) : 0;
+  let serviceCharge = sInfo?.service_charge !== undefined ? Number(sInfo.service_charge) : 0;
+
+  if (!grandTotal) {
+    gst = Math.round(netSubtotal * 0.05);
+    serviceCharge = Math.round(netSubtotal * 0.05);
+    grandTotal = netSubtotal + gst + serviceCharge;
+  }
+
+  return {
+    payMode,
+    settledTime,
+    subtotal: rawSubtotal,
+    discount,
+    netSubtotal,
+    gst,
+    serviceCharge,
+    grandTotal
+  };
+}
+
 export default function PetpoojaPOSPage() {
   // Navigation View: 'tables' (Floor Plan), 'quick_bill' (Takeaway/Delivery), 'live_kots' (Kitchen Monitor), 'register' (Settled Bills)
   const [activeView, setActiveView] = useState<'tables' | 'quick_bill' | 'live_kots' | 'register'>('tables');
@@ -477,7 +521,19 @@ export default function PetpoojaPOSPage() {
   };
 
   // 2. SETTLE BILL & CLEAR TABLE
-  const markPaid = async (tableNumber: string, orderIds: number[], paymentMethod: 'CASH' | 'UPI', customerPhoneNum?: string) => {
+  const markPaid = async (
+    tableNumber: string, 
+    orderIds: number[], 
+    paymentMethod: 'CASH' | 'UPI' | 'SWIGGY' | 'ZOMATO' | 'SPLIT', 
+    customerPhoneNum?: string,
+    financials?: {
+      subtotal?: number;
+      discount?: number;
+      gst?: number;
+      serviceCharge?: number;
+      grandTotal?: number;
+    }
+  ) => {
     setOrders(prev => prev.filter(o => o.table_number !== tableNumber));
 
     try {
@@ -491,7 +547,8 @@ export default function PetpoojaPOSPage() {
           orderIds, 
           status: 'completed', 
           paymentMethod, 
-          customerPhone: customerPhoneNum || customerPhone 
+          customerPhone: customerPhoneNum || customerPhone,
+          ...(financials || {})
         })
       });
       const data = await res.json();
@@ -838,7 +895,7 @@ export default function PetpoojaPOSPage() {
   // WhatsApp Bill Handlers
   const handleSendWa = () => {
     if (!waModal.data || !waModal.paymentMethod) return;
-    const { tableNumber, groupOrders, grandTotal } = waModal.data;
+    const { tableNumber, groupOrders, grandTotal, subtotal, discount, gst, serviceCharge } = waModal.data;
     const cleanPhone = waPhone.replace(/\D/g, '');
     if (cleanPhone.length < 10) return toast.error("Enter valid 10-digit mobile number");
 
@@ -848,15 +905,27 @@ export default function PetpoojaPOSPage() {
     const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\nTable ${tableNumber} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: PAID VIA ${waModal.paymentMethod}\n------------------------\n📄 *View & Download Tax Invoice PDF:*\n${cleanUrl}\n------------------------\n⭐ *Review us on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
 
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
-    markPaid(tableNumber, groupOrders.map((o: any) => o.id), waModal.paymentMethod, cleanPhone);
+    markPaid(
+      tableNumber, 
+      groupOrders.map((o: any) => o.id), 
+      waModal.paymentMethod, 
+      cleanPhone,
+      { subtotal, discount, gst, serviceCharge, grandTotal }
+    );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
   };
 
   const handleSkipWa = () => {
     if (!waModal.data || !waModal.paymentMethod) return;
-    const { tableNumber, groupOrders } = waModal.data;
-    markPaid(tableNumber, groupOrders.map((o: any) => o.id), waModal.paymentMethod);
+    const { tableNumber, groupOrders, grandTotal, subtotal, discount, gst, serviceCharge } = waModal.data;
+    markPaid(
+      tableNumber, 
+      groupOrders.map((o: any) => o.id), 
+      waModal.paymentMethod,
+      undefined,
+      { subtotal, discount, gst, serviceCharge, grandTotal }
+    );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
   };
@@ -1928,6 +1997,10 @@ export default function PetpoojaPOSPage() {
                               data: {
                                 tableNumber: activeGroup.table,
                                 groupOrders: activeGroup.orders,
+                                subtotal: combinedSubtotal,
+                                discount: calculatedDiscount,
+                                gst,
+                                serviceCharge,
                                 grandTotal
                               },
                               paymentMethod: 'CASH'
@@ -1945,6 +2018,10 @@ export default function PetpoojaPOSPage() {
                               data: {
                                 tableNumber: activeGroup.table,
                                 groupOrders: activeGroup.orders,
+                                subtotal: combinedSubtotal,
+                                discount: calculatedDiscount,
+                                gst,
+                                serviceCharge,
                                 grandTotal
                               },
                               paymentMethod: 'UPI'
@@ -1963,6 +2040,10 @@ export default function PetpoojaPOSPage() {
                               data: {
                                 tableNumber: activeGroup.table,
                                 groupOrders: activeGroup.orders,
+                                subtotal: combinedSubtotal,
+                                discount: calculatedDiscount,
+                                gst,
+                                serviceCharge,
                                 grandTotal
                               },
                               paymentMethod: 'SPLIT'
@@ -1977,7 +2058,13 @@ export default function PetpoojaPOSPage() {
                       {/* Dedicated Online Settle Buttons */}
                       {activeGroup.table.toLowerCase().includes('swiggy') && (
                         <button
-                          onClick={() => markPaid(activeGroup.table, activeGroup.orders.map((o: any) => o.id), 'SWIGGY')}
+                          onClick={() => markPaid(
+                            activeGroup.table, 
+                            activeGroup.orders.map((o: any) => o.id), 
+                            'SWIGGY',
+                            undefined,
+                            { subtotal: combinedSubtotal, discount: calculatedDiscount, gst, serviceCharge, grandTotal }
+                          )}
                           className="w-full py-2.5 bg-[#FC8019] hover:bg-[#e06f14] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
                         >
                           <Bike size={14} /> Settle Swiggy Paid (₹{grandTotal})
@@ -1986,7 +2073,13 @@ export default function PetpoojaPOSPage() {
 
                       {activeGroup.table.toLowerCase().includes('zomato') && (
                         <button
-                          onClick={() => markPaid(activeGroup.table, activeGroup.orders.map((o: any) => o.id), 'ZOMATO')}
+                          onClick={() => markPaid(
+                            activeGroup.table, 
+                            activeGroup.orders.map((o: any) => o.id), 
+                            'ZOMATO',
+                            undefined,
+                            { subtotal: combinedSubtotal, discount: calculatedDiscount, gst, serviceCharge, grandTotal }
+                          )}
                           className="w-full py-2.5 bg-[#E23744] hover:bg-[#c92b37] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
                         >
                           <Utensils size={14} /> Settle Zomato Paid (₹{grandTotal})
@@ -2160,115 +2253,161 @@ export default function PetpoojaPOSPage() {
         {/* ============================================================= */}
         {/* VIEW 4: DAY REGISTER / SETTLED BILLS REPRINT                  */}
         {/* ============================================================= */}
-        {activeView === 'register' && (
-          <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
-            
-            {/* Day Sales Summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Today's Settled Bills</span>
-                <div className="text-xl sm:text-2xl font-black font-mono text-gray-900 mt-0.5">{settledOrders.length}</div>
-              </div>
-              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Total Sales</span>
-                <div className="text-xl sm:text-2xl font-black font-mono text-emerald-700 mt-0.5">
-                  ₹{settledOrders.reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
+        {activeView === 'register' && (() => {
+          const registerMetrics = settledOrders.reduce((acc, ord) => {
+            const fin = getSettledOrderFinancials(ord);
+            acc.totalBills += 1;
+            acc.totalGrandSales += fin.grandTotal;
+            acc.totalNetSales += fin.netSubtotal;
+            acc.totalGst += fin.gst;
+            if (fin.payMode === 'UPI') {
+              acc.upiSales += fin.grandTotal;
+            } else {
+              acc.cashSales += fin.grandTotal;
+            }
+            return acc;
+          }, {
+            totalBills: 0,
+            totalGrandSales: 0,
+            totalNetSales: 0,
+            totalGst: 0,
+            cashSales: 0,
+            upiSales: 0
+          });
+
+          return (
+            <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
+              
+              {/* Day Sales & Tax Summary */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
+                <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                  <span className="text-[11px] sm:text-xs font-bold text-gray-500">Today's Settled Bills</span>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-gray-900 mt-0.5">{settledOrders.length}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Completed Sessions</div>
+                </div>
+                <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                  <span className="text-[11px] sm:text-xs font-bold text-gray-500">Total Sales (Gross)</span>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-emerald-700 mt-0.5">
+                    ₹{registerMetrics.totalGrandSales}
+                  </div>
+                  <div className="text-[10px] text-emerald-800 font-semibold mt-0.5">
+                    Net Food: ₹{registerMetrics.totalNetSales}
+                  </div>
+                </div>
+                <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] sm:text-xs font-bold text-gray-500">GST Collected (5%)</span>
+                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">Tax</span>
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-amber-700 mt-0.5">
+                    ₹{registerMetrics.totalGst}
+                  </div>
+                  <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                    CGST: ₹{(registerMetrics.totalGst / 2).toFixed(1)} • SGST: ₹{(registerMetrics.totalGst / 2).toFixed(1)}
+                  </div>
+                </div>
+                <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
+                  <span className="text-[11px] sm:text-xs font-bold text-gray-500">Cash Collections</span>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-blue-700 mt-0.5">
+                    ₹{registerMetrics.cashSales}
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">Cash Drawer</div>
+                </div>
+                <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs col-span-2 sm:col-span-1">
+                  <span className="text-[11px] sm:text-xs font-bold text-gray-500">UPI Collections</span>
+                  <div className="text-xl sm:text-2xl font-black font-mono text-purple-700 mt-0.5">
+                    ₹{registerMetrics.upiSales}
+                  </div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">QR & Online Bank</div>
                 </div>
               </div>
-              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-[11px] sm:text-xs font-bold text-gray-500">Cash Collections</span>
-                <div className="text-xl sm:text-2xl font-black font-mono text-blue-700 mt-0.5">
-                  ₹{settledOrders.filter(o => o.items?.includes("CASH")).reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
+
+              {/* Settled Orders Table */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+                <div className="p-3.5 border-b border-gray-200 flex justify-between items-center">
+                  <div>
+                    <h3 className="font-bold text-xs sm:text-sm text-gray-900">Today's Completed Invoices</h3>
+                    <p className="text-[11px] text-gray-500 mt-0.5">Official GST billing register with exact collected amounts</p>
+                  </div>
+                  <span className="text-[11px] text-gray-500 font-mono">{new Date().toLocaleDateString()}</span>
                 </div>
-              </div>
-              <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
-                <span className="text-[11px] sm:text-xs font-bold text-gray-500">UPI Collections</span>
-                <div className="text-xl sm:text-2xl font-black font-mono text-purple-700 mt-0.5">
-                  ₹{settledOrders.filter(o => o.items?.includes("UPI")).reduce((acc, o) => acc + Number(o.total_amount || 0), 0)}
-                </div>
-              </div>
-            </div>
 
-            {/* Settled Orders Table */}
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-              <div className="p-3.5 border-b border-gray-200 flex justify-between items-center">
-                <h3 className="font-bold text-xs sm:text-sm text-gray-900">Today's Completed Invoices</h3>
-                <span className="text-[11px] text-gray-500">{new Date().toLocaleDateString()}</span>
-              </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs min-w-[550px]">
+                    <thead className="bg-gray-50 border-b text-gray-500 font-bold uppercase text-[10px]">
+                      <tr>
+                        <th className="p-2.5">Invoice #</th>
+                        <th className="p-2.5">Table / Source</th>
+                        <th className="p-2.5">Time</th>
+                        <th className="p-2.5">Amount (Gross)</th>
+                        <th className="p-2.5">GST (5%)</th>
+                        <th className="p-2.5">Mode</th>
+                        <th className="p-2.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {settledOrders.map((ord: any) => {
+                        const fin = getSettledOrderFinancials(ord);
+                        const timeStr = new Date(fin.settledTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs min-w-[500px]">
-                  <thead className="bg-gray-50 border-b text-gray-500 font-bold uppercase text-[10px]">
-                    <tr>
-                      <th className="p-2.5">Invoice #</th>
-                      <th className="p-2.5">Table / Source</th>
-                      <th className="p-2.5">Time</th>
-                      <th className="p-2.5">Amount</th>
-                      <th className="p-2.5">Mode</th>
-                      <th className="p-2.5 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {settledOrders.map((ord: any) => {
-                      let payMode = "CASH";
-                      let settledTime = ord.created_at;
-                      if (ord.items) {
-                        try {
-                          const itArr = typeof ord.items === 'string' ? JSON.parse(ord.items) : ord.items;
-                          const sInfo = Array.isArray(itArr) ? itArr.find((i: any) => i && i.id === 'SETTLEMENT_INFO') : null;
-                          const pObj = Array.isArray(itArr) ? itArr.find((i: any) => i && i.id === 'PAYMENT_METHOD') : null;
-                          if (sInfo?.settled_at) settledTime = sInfo.settled_at;
-                          if (sInfo?.payment_method) payMode = sInfo.payment_method;
-                          else if (pObj?.method) payMode = pObj.method;
-                          else if (JSON.stringify(ord.items).includes("UPI")) payMode = "UPI";
-                        } catch {}
-                      }
-                      const timeStr = new Date(settledTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-
-                      return (
-                        <tr key={ord.id} className="hover:bg-gray-50">
-                          <td className="p-2.5 font-mono font-bold text-gray-900">#{ord.order_number || ord.id}</td>
-                          <td className="p-2.5 font-medium text-gray-800">
-                            {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
-                          </td>
-                          <td className="p-2.5 text-gray-500 font-mono">{timeStr}</td>
-                          <td className="p-2.5 font-mono font-black text-gray-900">₹{ord.total_amount}</td>
-                          <td className="p-2.5">
-                            <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                              payMode === "UPI" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
-                            }`}>
-                              {payMode}
-                            </span>
-                          </td>
-                          <td className="p-2.5 text-right">
-                            <button
-                              onClick={() => {
-                                const subtotal = ord.total_amount;
-                                const gstAmt = Math.round(subtotal * 0.05);
-                                const gTot = subtotal + gstAmt;
-                                printOfficialInvoice(ord.table_number, [ord], subtotal, 0, gstAmt, 0, gTot, payMode);
-                              }}
-                              className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[10px] inline-flex items-center gap-1"
-                            >
-                              <Printer size={12} /> Reprint
-                            </button>
+                        return (
+                          <tr key={ord.id} className="hover:bg-gray-50 transition">
+                            <td className="p-2.5 font-mono font-bold text-gray-900">#{ord.order_number || ord.id}</td>
+                            <td className="p-2.5 font-medium text-gray-800">
+                              {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
+                            </td>
+                            <td className="p-2.5 text-gray-500 font-mono">{timeStr}</td>
+                            <td className="p-2.5">
+                              <span className="font-mono font-black text-gray-900 text-sm">₹{fin.grandTotal}</span>
+                              <div className="text-[10px] text-gray-500">Net Food: ₹{fin.netSubtotal}</div>
+                            </td>
+                            <td className="p-2.5">
+                              <span className="font-mono font-bold text-amber-700">₹{fin.gst}</span>
+                              <div className="text-[9px] text-gray-400">CGST+SGST</div>
+                            </td>
+                            <td className="p-2.5">
+                              <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${
+                                fin.payMode === "UPI" ? "bg-purple-100 text-purple-700" : "bg-emerald-100 text-emerald-700"
+                              }`}>
+                                {fin.payMode}
+                              </span>
+                            </td>
+                            <td className="p-2.5 text-right">
+                              <button
+                                onClick={() => {
+                                  printOfficialInvoice(
+                                    ord.table_number, 
+                                    [ord], 
+                                    fin.subtotal, 
+                                    fin.discount, 
+                                    fin.gst, 
+                                    fin.serviceCharge, 
+                                    fin.grandTotal, 
+                                    fin.payMode
+                                  );
+                                }}
+                                className="px-2 py-1 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-lg text-[10px] inline-flex items-center gap-1 shadow-2xs"
+                              >
+                                <Printer size={12} /> Reprint
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {settledOrders.length === 0 && (
+                        <tr>
+                          <td colSpan={7} className="p-8 text-center text-gray-400">
+                            No settled bills recorded for today yet.
                           </td>
                         </tr>
-                      );
-                    })}
-                    {settledOrders.length === 0 && (
-                      <tr>
-                        <td colSpan={6} className="p-8 text-center text-gray-400">
-                          No settled bills recorded for today yet.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
 
       {/* ============================================================= */}
@@ -2448,7 +2587,19 @@ export default function PetpoojaPOSPage() {
                     if (waPhone.replace(/\D/g, '').length >= 10) {
                       handleSendWa();
                     } else {
-                      markPaid(waModal.data.tableNumber, waModal.data.groupOrders.map((o: any) => o.id), payMode);
+                      markPaid(
+                        waModal.data.tableNumber, 
+                        waModal.data.groupOrders.map((o: any) => o.id), 
+                        payMode,
+                        undefined,
+                        {
+                          subtotal: waModal.data.subtotal,
+                          discount: waModal.data.discount,
+                          gst: waModal.data.gst,
+                          serviceCharge: waModal.data.serviceCharge,
+                          grandTotal: waModal.data.grandTotal
+                        }
+                      );
                       setWaModal({ isOpen: false, data: null, paymentMethod: null });
                       setWaPhone('');
                     }
@@ -2460,12 +2611,20 @@ export default function PetpoojaPOSPage() {
 
                 <button
                   onClick={() => {
-                    const { tableNumber, groupOrders, grandTotal } = waModal.data;
-                    const subtotal = groupOrders.reduce((a: any, o: any) => a + Number(o.total_amount || 0), 0);
-                    const gstAmt = Math.round(subtotal * 0.05);
+                    const { tableNumber, groupOrders, grandTotal, subtotal, discount, gst, serviceCharge } = waModal.data;
+                    const finalSub = subtotal || groupOrders.reduce((a: any, o: any) => a + Number(o.total_amount || 0), 0);
+                    const finalDisc = discount || 0;
+                    const finalGst = gst || Math.round(finalSub * 0.05);
+                    const finalSc = serviceCharge || 0;
                     const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
-                    printOfficialInvoice(tableNumber, groupOrders, subtotal, 0, gstAmt, 0, grandTotal, payMode);
-                    markPaid(tableNumber, groupOrders.map((o: any) => o.id), payMode);
+                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode);
+                    markPaid(
+                      tableNumber, 
+                      groupOrders.map((o: any) => o.id), 
+                      payMode,
+                      undefined,
+                      { subtotal: finalSub, discount: finalDisc, gst: finalGst, serviceCharge: finalSc, grandTotal }
+                    );
                     setWaModal({ isOpen: false, data: null, paymentMethod: null });
                     setWaPhone('');
                   }}

@@ -21,7 +21,18 @@ const ALLOWED_STATUSES = [
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { orderIds, status, paymentMethod, customerPhone, newTableNumber } = body;
+    const { 
+      orderIds, 
+      status, 
+      paymentMethod, 
+      customerPhone, 
+      newTableNumber,
+      subtotal,
+      discount,
+      gst,
+      serviceCharge,
+      grandTotal
+    } = body;
 
     // 1. Validate orderIds
     if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
@@ -112,7 +123,12 @@ export async function POST(req: Request) {
               id: 'SETTLEMENT_INFO',
               settled_at: settledAt,
               bill_session_id: billSessionId,
-              payment_method: cleanPaymentMethod || 'CASH'
+              payment_method: cleanPaymentMethod || 'CASH',
+              subtotal: typeof subtotal === 'number' ? Math.round(subtotal) : undefined,
+              discount: typeof discount === 'number' ? Math.round(discount) : undefined,
+              gst: typeof gst === 'number' ? Math.round(gst) : undefined,
+              service_charge: typeof serviceCharge === 'number' ? Math.round(serviceCharge) : undefined,
+              grand_total: typeof grandTotal === 'number' ? Math.round(grandTotal) : undefined
             });
           }
 

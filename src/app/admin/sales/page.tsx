@@ -16,6 +16,10 @@ export default function SalesReport() {
   
   // Stats
   const [totalRevenue, setTotalRevenue] = useState(0);
+  const [totalNetSales, setTotalNetSales] = useState(0);
+  const [totalGst, setTotalGst] = useState(0);
+  const [totalCash, setTotalCash] = useState(0);
+  const [totalUpi, setTotalUpi] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
@@ -60,7 +64,16 @@ export default function SalesReport() {
       setOrders(consolidated);
       
       const rev = consolidated.reduce((acc, b) => acc + b.grand_total, 0);
+      const net = consolidated.reduce((acc, b) => acc + b.subtotal, 0);
+      const gst = consolidated.reduce((acc, b) => acc + b.gst, 0);
+      const cash = consolidated.filter(b => b.payment_method === 'CASH').reduce((acc, b) => acc + b.grand_total, 0);
+      const upi = consolidated.filter(b => b.payment_method === 'UPI').reduce((acc, b) => acc + b.grand_total, 0);
+
       setTotalRevenue(rev);
+      setTotalNetSales(net);
+      setTotalGst(gst);
+      setTotalCash(cash);
+      setTotalUpi(upi);
       setTotalOrders(consolidated.length);
     }
     
@@ -70,7 +83,7 @@ export default function SalesReport() {
   const exportCSV = () => {
     if (orders.length === 0) return toast.error("No data to export");
     
-    let csvContent = "Bill ID,Table,KOTs,Payment Mode,Paid Time,Order Time,Amount,Status,Items\n";
+    let csvContent = "Bill ID,Table,KOTs,Payment Mode,Paid Time,Order Time,Net Food Amount (Rs),GST 5% (Rs),CGST 2.5% (Rs),SGST 2.5% (Rs),Service Charge (Rs),Grand Total (Rs),Status,Items\n";
     
     orders.forEach(o => {
       const paidDate = new Date(o.settled_at || o.created_at);
@@ -79,20 +92,22 @@ export default function SalesReport() {
       const orderStr = `${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}`;
       
       const itemsStr = o.items.map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/"/g, '""');
-      
-      csvContent += `"${o.id}","${o.table_number}","${o.kot_count}","${o.payment_method}","${paidStr}","${orderStr}","${o.grand_total}","${o.status}","${itemsStr}"\n`;
+      const cgst = (o.gst / 2).toFixed(2);
+      const sgst = (o.gst / 2).toFixed(2);
+
+      csvContent += `"${o.id}","${o.table_number}","${o.kot_count}","${o.payment_method}","${paidStr}","${orderStr}","${o.subtotal}","${o.gst}","${cgst}","${sgst}","${o.service_charge}","${o.grand_total}","${o.status}","${itemsStr}"\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Sales_Report_${startDate}_to_${endDate}.csv`);
+    link.setAttribute("download", `Hotel_White_Bliss_GST_Sales_${startDate}_to_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    toast.success("CSV Exported successfully!");
+    toast.success("GST Sales CSV Exported successfully!");
   };
 
   return (
@@ -141,19 +156,43 @@ export default function SalesReport() {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <p className="text-gray-500 font-bold mb-1">Total Revenue (Selected Period)</p>
-            <p className="text-3xl font-black text-green-600">₹{totalRevenue}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Gross Collections</p>
+            <p className="text-2xl lg:text-3xl font-black text-emerald-600">₹{totalRevenue}</p>
+            <p className="text-[11px] text-gray-400 mt-1">Total revenue collected</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <p className="text-gray-500 font-bold mb-1">Total Orders</p>
-            <p className="text-3xl font-black text-blue-600">{totalOrders}</p>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Net Food Sales</p>
+            <p className="text-2xl lg:text-3xl font-black text-gray-900">₹{totalNetSales}</p>
+            <p className="text-[11px] text-gray-400 mt-1">Taxable kitchen revenue</p>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <p className="text-gray-500 font-bold mb-1">Average Order Value</p>
-            <p className="text-3xl font-black text-purple-600">
-              ₹{totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0}
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">GST Collected</p>
+              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">5% Tax</span>
+            </div>
+            <p className="text-2xl lg:text-3xl font-black text-amber-700">₹{totalGst}</p>
+            <p className="text-[11px] text-gray-500 font-mono mt-1">
+              CGST: ₹{(totalGst / 2).toFixed(1)} | SGST: ₹{(totalGst / 2).toFixed(1)}
+            </p>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Mode Breakdown</p>
+            <div className="space-y-1 mt-1 font-mono text-xs">
+              <div className="flex justify-between font-bold text-blue-700">
+                <span>💵 Cash:</span> <span>₹{totalCash}</span>
+              </div>
+              <div className="flex justify-between font-bold text-purple-700">
+                <span>📱 UPI:</span> <span>₹{totalUpi}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1">Settled Bills</p>
+            <p className="text-2xl lg:text-3xl font-black text-blue-600">{totalOrders}</p>
+            <p className="text-[11px] text-gray-400 mt-1">
+              Avg Bill: ₹{totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0}
             </p>
           </div>
         </div>
@@ -168,16 +207,18 @@ export default function SalesReport() {
                   <th className="p-4 font-bold">Bill ID</th>
                   <th className="p-4 font-bold">Table / Channel</th>
                   <th className="p-4 font-bold">KOTs</th>
-                  <th className="p-4 font-bold">Amount</th>
+                  <th className="p-4 font-bold">Net Food (₹)</th>
+                  <th className="p-4 font-bold">GST 5% (₹)</th>
+                  <th className="p-4 font-bold">Grand Total (₹)</th>
                   <th className="p-4 font-bold">Payment</th>
                   <th className="p-4 font-bold">Status</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {loading ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
+                  <tr><td colSpan={9} className="p-8 text-center text-gray-400">Loading sales data...</td></tr>
                 ) : orders.length === 0 ? (
-                  <tr><td colSpan={7} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
+                  <tr><td colSpan={9} className="p-8 text-center text-gray-400 font-medium">No sales found in this date range.</td></tr>
                 ) : (
                   orders.map((o) => {
                     const paidDate = new Date(o.settled_at || o.created_at);
@@ -203,6 +244,8 @@ export default function SalesReport() {
                             {o.kot_count} {o.kot_count === 1 ? 'KOT' : 'KOTs'}
                           </span>
                         </td>
+                        <td className="p-4 font-mono font-medium text-gray-700">₹{o.subtotal}</td>
+                        <td className="p-4 font-mono font-bold text-amber-700">₹{o.gst}</td>
                         <td className="p-4 font-bold text-gray-900 font-mono text-base">₹{o.grand_total}</td>
                         <td className="p-4">
                           {o.payment_method === 'UPI' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">📱 UPI</span>}

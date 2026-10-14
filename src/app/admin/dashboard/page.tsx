@@ -2,13 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { TrendingUp, Users, DollarSign, Activity, Clock } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Activity, Clock, Receipt } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { consolidateOrders, ConsolidatedBill } from "@/lib/orderConsolidation";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
     totalSales: 0,
+    netSales: 0,
+    todayGst: 0,
     totalOrders: 0,
     topItem: "-",
     avgOrderValue: 0
@@ -49,10 +51,14 @@ export default function Dashboard() {
       });
       
       let sales = 0;
+      let netSales = 0;
+      let gstAmt = 0;
       let itemsCount: Record<string, number> = {};
 
       todaysBills.forEach(b => {
         sales += b.grand_total;
+        netSales += b.subtotal;
+        gstAmt += b.gst;
         b.items.forEach(item => {
           itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
         });
@@ -69,6 +75,8 @@ export default function Dashboard() {
 
       setStats({
         totalSales: sales,
+        netSales: netSales,
+        todayGst: gstAmt,
         totalOrders: todaysBills.length,
         topItem: top,
         avgOrderValue: todaysBills.length > 0 ? Math.round(sales / todaysBills.length) : 0
@@ -113,11 +121,42 @@ export default function Dashboard() {
             <p className="text-gray-500">Live sales and performance metrics.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <StatCard icon={<DollarSign/>} title="Today's Sales" value={`₹${stats.totalSales}`} color="bg-green-500" />
-            <StatCard icon={<Activity/>} title="Today's Orders" value={stats.totalOrders.toString()} color="bg-blue-500" />
-            <StatCard icon={<TrendingUp/>} title="Avg. Order Value" value={`₹${stats.avgOrderValue}`} color="bg-purple-500" />
-            <StatCard icon={<Users/>} title="Top Dish (Today)" value={stats.topItem} color="bg-orange-500" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <StatCard 
+              icon={<DollarSign/>} 
+              title="Today's Sales (Gross)" 
+              value={`₹${stats.totalSales}`} 
+              subtext={`Net Food: ₹${stats.netSales}`}
+              color="bg-emerald-600" 
+            />
+            <StatCard 
+              icon={<Receipt/>} 
+              title="Today's GST (5%)" 
+              value={`₹${stats.todayGst}`} 
+              subtext={`CGST: ₹${(stats.todayGst / 2).toFixed(1)} | SGST: ₹${(stats.todayGst / 2).toFixed(1)}`}
+              color="bg-amber-600" 
+            />
+            <StatCard 
+              icon={<Activity/>} 
+              title="Today's Orders" 
+              value={stats.totalOrders.toString()} 
+              subtext="Settled Bills"
+              color="bg-blue-500" 
+            />
+            <StatCard 
+              icon={<TrendingUp/>} 
+              title="Avg. Order Value" 
+              value={`₹${stats.avgOrderValue}`} 
+              subtext="Per Table"
+              color="bg-purple-500" 
+            />
+            <StatCard 
+              icon={<Users/>} 
+              title="Top Dish (Today)" 
+              value={stats.topItem} 
+              subtext="Most Ordered"
+              color="bg-orange-500" 
+            />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -210,16 +249,29 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, title, value, color }: { icon: React.ReactNode, title: string, value: string, color: string }) {
+function StatCard({ 
+  icon, 
+  title, 
+  value, 
+  subtext,
+  color 
+}: { 
+  icon: React.ReactNode; 
+  title: string; 
+  value: string; 
+  subtext?: string;
+  color: string; 
+}) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-      <div className={`p-4 rounded-xl text-white ${color}`}>
+    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3.5">
+      <div className={`p-3.5 rounded-xl text-white shrink-0 ${color}`}>
         {icon}
       </div>
-      <div>
-        <p className="text-gray-500 text-sm font-semibold">{title}</p>
-        <p className="text-2xl font-black text-gray-900 line-clamp-1">{value}</p>
+      <div className="min-w-0">
+        <p className="text-gray-500 text-xs font-bold uppercase tracking-wider truncate">{title}</p>
+        <p className="text-xl sm:text-2xl font-black text-gray-900 truncate">{value}</p>
+        {subtext && <p className="text-[11px] text-gray-400 font-medium truncate mt-0.5">{subtext}</p>}
       </div>
     </div>
-  )
+  );
 }
