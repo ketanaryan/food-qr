@@ -40,24 +40,40 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
         const formattedMenu: IMenu[] = data.map(item => {
           const lowerName = (item.name || '').toLowerCase();
           const lowerSection = (item.section || '').toLowerCase();
+          const isExplicitVeg = 
+            lowerName.includes("steam rice") ||
+            lowerName.includes("jeera rice") ||
+            lowerName.includes("curd rice") ||
+            lowerSection.includes("veg special") ||
+            lowerSection.includes("paneer") ||
+            lowerSection.includes("vegetarian guests") ||
+            lowerSection.includes("roti") ||
+            lowerSection.includes("ice cream") ||
+            lowerSection.includes("sath") ||
+            lowerSection.includes("basmati") ||
+            lowerSection.includes("chinese rice & noodles");
+
           const isNonVeg = 
-            lowerName.includes("chicken") ||
-            lowerName.includes("mutton") ||
-            lowerName.includes("egg") ||
-            lowerName.includes("fish") ||
-            lowerName.includes("prawn") ||
-            lowerName.includes("murg") ||
-            lowerName.includes("pomfret") ||
-            lowerName.includes("surmai") ||
-            lowerName.includes("bangda") ||
-            lowerName.includes("bombil") ||
-            lowerName.includes("tangdi") ||
-            lowerName.includes("non veg") ||
-            lowerSection.includes("non veg") ||
-            lowerSection.includes("meat lovers") ||
-            lowerSection.includes("gavathi") ||
-            lowerSection.includes("sea") ||
-            lowerSection.includes("chicken");
+            !isExplicitVeg && (
+              lowerName.includes("chicken") ||
+              lowerName.includes("mutton") ||
+              lowerName.includes("egg") ||
+              lowerName.includes("fish") ||
+              lowerName.includes("prawn") ||
+              lowerName.includes("murg") ||
+              lowerName.includes("pomfret") ||
+              lowerName.includes("surmai") ||
+              lowerName.includes("bangda") ||
+              lowerName.includes("bombil") ||
+              lowerName.includes("tangdi") ||
+              lowerName.includes("non veg") ||
+              lowerSection.includes("non veg") ||
+              lowerSection.includes("meat lovers") ||
+              lowerSection.includes("gavathi") ||
+              lowerSection.includes("sea") ||
+              lowerSection.includes("chicken") ||
+              lowerSection.includes("soup")
+            );
           const isVeg = !isNonVeg;
 
           return {
@@ -99,29 +115,50 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
     }, 2000);
   };
 
-  // Distinct sections in order of appearance
+  // Total veg and non-veg counts across all menu items
+  const vegCount = useMemo(() => menu.filter(i => i.isVeg === true).length, [menu]);
+  const nonVegCount = useMemo(() => menu.filter(i => i.isVeg === false).length, [menu]);
+
+  // Items matching current veg / non-veg diet filter
+  const dietFilteredMenu = useMemo(() => {
+    return menu.filter(item => {
+      if (vegFilter === "VEG") return item.isVeg === true;
+      if (vegFilter === "NON_VEG") return item.isVeg === false;
+      return true;
+    });
+  }, [menu, vegFilter]);
+
+  // Distinct sections that actually exist under current diet filter (strictly no non-veg when Veg is active!)
   const sectionsList = useMemo(() => {
     const list: string[] = [];
-    menu.forEach(item => {
+    dietFilteredMenu.forEach(item => {
       if (item.section && !list.includes(item.section)) {
         list.push(item.section);
       }
     });
     return list;
-  }, [menu]);
+  }, [dietFilteredMenu]);
 
-  // Section item counts
+  // Section item counts for current diet
   const categoryCounts = useMemo(() => {
     const counts: { [sec: string]: number } = {};
-    menu.forEach(item => {
+    dietFilteredMenu.forEach(item => {
       counts[item.section] = (counts[item.section] || 0) + 1;
     });
     return counts;
-  }, [menu]);
+  }, [dietFilteredMenu]);
 
-  // Total veg and non-veg counts
-  const vegCount = useMemo(() => menu.filter(i => i.isVeg !== false).length, [menu]);
-  const nonVegCount = useMemo(() => menu.filter(i => i.isVeg === false).length, [menu]);
+  // Auto-reset category if currently selected category has no items in the active diet filter
+  useEffect(() => {
+    if (selectedCategory !== "ALL" && !sectionsList.includes(selectedCategory)) {
+      setSelectedCategory("ALL");
+    }
+  }, [sectionsList, selectedCategory]);
+
+  const handleSetVegFilter = (filter: "ALL" | "VEG" | "NON_VEG") => {
+    setVegFilter(filter);
+    setSelectedCategory("ALL");
+  };
 
   // Filtered menu
   const filteredMenu = useMemo(() => {
@@ -275,24 +312,24 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                   )}
                 </div>
 
-                {/* Veg / Non-Veg Quick Pills */}
+                {/* Row 1: Veg / Non-Veg Quick Pills */}
                 <div className="flex items-center gap-1.5 shrink-0 justify-between sm:justify-start">
                   <button
-                    onClick={() => setVegFilter("ALL")}
-                    className={`px-3 py-2 rounded-full text-xs font-semibold tracking-wider transition-all border ${
+                    onClick={() => handleSetVegFilter("ALL")}
+                    className={`px-3.5 py-2 rounded-full text-xs font-semibold tracking-wider transition-all border ${
                       vegFilter === "ALL" 
                         ? 'bg-[#1E1B16] text-white border-[#1E1B16] shadow-xs' 
                         : 'bg-white text-[#6F624E] border-[#e8e1d6] hover:bg-gray-50'
                     }`}
                   >
-                    All ({menu.length})
+                    All Food ({menu.length})
                   </button>
 
                   <button
-                    onClick={() => setVegFilter(vegFilter === "VEG" ? "ALL" : "VEG")}
-                    className={`px-3 py-2 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 border ${
+                    onClick={() => handleSetVegFilter(vegFilter === "VEG" ? "ALL" : "VEG")}
+                    className={`px-3.5 py-2 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 border ${
                       vegFilter === "VEG" 
-                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs' 
+                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-xs ring-2 ring-emerald-300' 
                         : 'bg-white text-emerald-800 border-emerald-200 hover:bg-emerald-50'
                     }`}
                   >
@@ -301,10 +338,10 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                   </button>
 
                   <button
-                    onClick={() => setVegFilter(vegFilter === "NON_VEG" ? "ALL" : "NON_VEG")}
-                    className={`px-3 py-2 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 border ${
+                    onClick={() => handleSetVegFilter(vegFilter === "NON_VEG" ? "ALL" : "NON_VEG")}
+                    className={`px-3.5 py-2 rounded-full text-xs font-semibold tracking-wider transition-all flex items-center gap-1.5 border ${
                       vegFilter === "NON_VEG" 
-                        ? 'bg-red-700 text-white border-red-700 shadow-xs' 
+                        ? 'bg-red-700 text-white border-red-700 shadow-xs ring-2 ring-red-300' 
                         : 'bg-white text-red-800 border-red-200 hover:bg-red-50'
                     }`}
                   >
@@ -314,13 +351,13 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                 </div>
               </div>
 
-              {/* Row 2: Horizontally Scrollable Category Pills */}
+              {/* Row 2: Horizontally Scrollable Category Pills (Diet-filtered!) */}
               <div 
                 ref={tabsScrollRef}
                 className="flex items-center gap-2 overflow-x-auto pb-1 pt-0.5 no-scrollbar scroll-smooth"
                 style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
               >
-                {/* All Dishes Pill */}
+                {/* View All Sections Pill */}
                 <button
                   onClick={() => handleSelectCategory("ALL")}
                   className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
@@ -329,7 +366,11 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                       : 'bg-white text-[#1E1B16] border-[#e8e1d6] hover:border-[#A18D6D]'
                   }`}
                 >
-                  All Categories ({sectionsList.length})
+                  {vegFilter === "VEG" 
+                    ? `View All Veg (${vegCount})` 
+                    : vegFilter === "NON_VEG" 
+                    ? `View All Non-Veg (${nonVegCount})` 
+                    : `View All Sections (${sectionsList.length})`}
                 </button>
 
                 {sectionsList.map((sec) => {
@@ -362,11 +403,9 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                   <div className="flex items-center gap-1.5 truncate">
                     <Filter size={13} className="text-[#A18D6D] shrink-0" />
                     <span className="truncate">
-                      Showing <strong>{filteredMenu.length}</strong> of {menu.length} items
+                      Showing <strong>{filteredMenu.length}</strong> {vegFilter === "VEG" ? "Veg" : vegFilter === "NON_VEG" ? "Non-Veg" : ""} items
                       {selectedCategory !== "ALL" && <span> in <strong>{selectedCategory}</strong></span>}
                       {searchQuery && <span> matching &ldquo;{searchQuery}&rdquo;</span>}
-                      {vegFilter === "VEG" && <span> (Veg only)</span>}
-                      {vegFilter === "NON_VEG" && <span> (Non-Veg only)</span>}
                     </span>
                   </div>
                   <button
@@ -391,7 +430,12 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                     No Dishes Found
                   </h3>
                   <p className="text-sm text-[#6F624E] max-w-xs mx-auto">
-                    We couldn&apos;t find any items matching your current filters. Try searching for &ldquo;Paneer&rdquo;, &ldquo;Chicken&rdquo;, &ldquo;Roti&rdquo;, or reset filters.
+                    {vegFilter === "VEG" 
+                      ? "We couldn't find any vegetarian dishes matching your search. Try searching for \"Paneer\", \"Dal\", or \"Roti\"."
+                      : vegFilter === "NON_VEG"
+                      ? "We couldn't find any non-veg dishes matching your search. Try searching for \"Chicken\", \"Mutton\", or \"Biryani\"."
+                      : "We couldn't find any items matching your current filters. Try searching for \"Paneer\", \"Roti\", or \"Biryani\"."
+                    }
                   </p>
                   <button
                     onClick={handleClearFilters}
@@ -455,10 +499,10 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                   </div>
                   <div>
                     <h3 className="text-base font-playfair font-bold text-[#1E1B16]">
-                      Menu Categories
+                      {vegFilter === "VEG" ? "Vegetarian Categories" : vegFilter === "NON_VEG" ? "Non-Veg Categories" : "Menu Categories"}
                     </h3>
                     <p className="text-[11px] text-gray-500">
-                      {sectionsList.length} sections &bull; {menu.length} total dishes
+                      {sectionsList.length} sections &bull; {dietFilteredMenu.length} dishes
                     </p>
                   </div>
                 </div>
@@ -482,11 +526,13 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
                       : 'hover:bg-[#FAF7F2] text-[#1E1B16]'
                   }`}
                 >
-                  <span className="text-sm font-semibold">✨ All Dishes</span>
+                  <span className="text-sm font-semibold">
+                    ✨ View All {vegFilter === "VEG" ? "Veg Dishes" : vegFilter === "NON_VEG" ? "Non-Veg Dishes" : "Dishes"}
+                  </span>
                   <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono ${
                     selectedCategory === "ALL" ? 'bg-white/20 text-white' : 'bg-gray-100 text-gray-600'
                   }`}>
-                    {menu.length}
+                    {dietFilteredMenu.length}
                   </span>
                 </button>
 
