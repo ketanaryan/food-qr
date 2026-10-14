@@ -46,8 +46,18 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
             lowerName.includes("egg") ||
             lowerName.includes("fish") ||
             lowerName.includes("prawn") ||
+            lowerName.includes("murg") ||
+            lowerName.includes("pomfret") ||
+            lowerName.includes("surmai") ||
+            lowerName.includes("bangda") ||
+            lowerName.includes("bombil") ||
+            lowerName.includes("tangdi") ||
             lowerName.includes("non veg") ||
-            lowerSection.includes("non veg");
+            lowerSection.includes("non veg") ||
+            lowerSection.includes("meat lovers") ||
+            lowerSection.includes("gavathi") ||
+            lowerSection.includes("sea") ||
+            lowerSection.includes("chicken");
           const isVeg = !isNonVeg;
 
           return {
