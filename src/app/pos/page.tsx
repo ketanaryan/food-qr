@@ -8,7 +8,7 @@ import {
   Layers, Users, Bell, BellOff, RefreshCw, ChevronRight, 
   Sparkles, ArrowLeft, CheckCircle2, ShieldCheck, Utensils, 
   ShoppingBag, Bike, Coffee, Flame, AlertCircle, FileText,
-  Lock, KeyRound, Shield
+  Lock, KeyRound, Shield, ExternalLink
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
@@ -59,9 +59,9 @@ export default function PetpoojaPOSPage() {
   // Digital Clock
   const [currentTime, setCurrentTime] = useState<string>("");
 
-  // Audio Alerts
-  const [audioEnabled, setAudioEnabled] = useState(false);
-  const audioEnabledRef = useRef(false);
+  // Audio Alerts (Default ON for live restaurant floor)
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const audioEnabledRef = useRef(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Selected Active Punching Context
@@ -154,10 +154,37 @@ export default function PetpoojaPOSPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync Audio ref
+  // Sync Audio ref & persistent preference
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('wb_pos_audio_enabled') : null;
+    if (saved !== null) {
+      setAudioEnabled(saved === 'true');
+    }
+  }, []);
+
   useEffect(() => {
     audioEnabledRef.current = audioEnabled;
   }, [audioEnabled]);
+
+  // Auto-unlock browser audio context on first screen interaction
+  useEffect(() => {
+    const unlock = () => {
+      if (audioRef.current && audioEnabledRef.current) {
+        audioRef.current.play().then(() => {
+          audioRef.current?.pause();
+          if (audioRef.current) audioRef.current.currentTime = 0;
+        }).catch(() => {});
+      }
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock);
+    window.addEventListener('touchstart', unlock);
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+  }, []);
 
   // Load orders, menu & dynamic captains
   useEffect(() => {
@@ -926,29 +953,37 @@ export default function PetpoojaPOSPage() {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             onClick={() => {
-              setAudioEnabled(!audioEnabled);
-              if (!audioEnabled && audioRef.current) {
+              const next = !audioEnabled;
+              setAudioEnabled(next);
+              if (typeof window !== 'undefined') localStorage.setItem('wb_pos_audio_enabled', String(next));
+              if (next && audioRef.current) {
                 audioRef.current.play().then(() => audioRef.current?.pause()).catch(() => {});
               }
             }}
-            className={`p-1.5 sm:p-2 rounded-xl text-xs font-bold transition flex items-center gap-1 ${
-              audioEnabled ? "bg-green-600/90 text-white" : "bg-red-500/20 text-red-300 border border-red-500/30"
+            className={`p-1.5 sm:p-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+              audioEnabled ? "bg-green-600/90 text-white shadow-sm" : "bg-red-500/20 text-red-300 border border-red-500/30"
             }`}
-            title="Toggle Audio Bell"
+            title={audioEnabled ? "Alert Bell: ON (Click to Mute)" : "Alert Bell: MUTED (Click to Turn ON)"}
           >
             {audioEnabled ? <Bell size={14} /> : <BellOff size={14} />}
-            <span className="hidden md:inline">{audioEnabled ? "On" : "Muted"}</span>
+            <span className="hidden md:inline">{audioEnabled ? "Alerts: ON" : "Muted"}</span>
           </button>
 
-          <a
-            href="/kitchen"
-            target="_blank"
-            className="hidden sm:flex p-1.5 sm:p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold items-center gap-1 border border-white/10"
-            title="Kitchen Display"
+          <button
+            onClick={() => {
+              setActiveView('live_kots');
+              setSelectedTable(null);
+            }}
+            className={`hidden sm:flex p-1.5 sm:p-2 rounded-xl text-xs font-bold items-center gap-1.5 border transition ${
+              activeView === 'live_kots'
+                ? "bg-amber-600 text-white border-amber-500 shadow-sm"
+                : "bg-white/10 hover:bg-white/20 text-white border-white/10"
+            }`}
+            title="View Live Kitchen Orders (KOTs) inside POS"
           >
             <ChefHat size={14} />
-            <span className="hidden xl:inline">KDS</span>
-          </a>
+            <span className="hidden xl:inline">Live KOTs</span>
+          </button>
 
           <a
             href="/captain"
@@ -2030,19 +2065,30 @@ export default function PetpoojaPOSPage() {
         {/* ============================================================= */}
         {activeView === 'live_kots' && (
           <div className="flex-1 p-3 sm:p-5 md:p-6 overflow-y-auto max-w-7xl mx-auto w-full space-y-4 pb-28 sm:pb-12">
-            <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200">
+            <div className="flex items-center justify-between bg-white p-3.5 rounded-2xl border border-gray-200 flex-wrap gap-2">
               <div>
                 <h2 className="text-base sm:text-lg font-black text-gray-900 flex items-center gap-2">
                   <ChefHat className="text-[#A18D6D]" size={18} /> Active Kitchen Tickets ({orders.length} KOTs)
                 </h2>
                 <p className="text-[11px] text-gray-500">Synced live with Kitchen Display System</p>
               </div>
-              <button
-                onClick={fetchOrders}
-                className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700 flex items-center gap-1.5"
-              >
-                <RefreshCw size={13} /> Refresh
-              </button>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/kitchen"
+                  target="_blank"
+                  className="hidden md:flex p-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 rounded-xl text-xs font-bold items-center gap-1.5 transition"
+                  title="Open Dedicated Screen for Kitchen Wall TV or Chef Tablet"
+                >
+                  <ExternalLink size={13} />
+                  <span>Kitchen TV / Tablet View</span>
+                </a>
+                <button
+                  onClick={fetchOrders}
+                  className="p-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-xs font-bold text-gray-700 flex items-center gap-1.5"
+                >
+                  <RefreshCw size={13} /> Refresh
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
