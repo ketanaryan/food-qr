@@ -7,14 +7,15 @@ export async function GET(
 ) {
   const { filename } = await params;
 
-  if (!filename) {
-    return new NextResponse('File not found', { status: 404 });
+  const cleanFilename = String(filename || '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 100);
+  if (!cleanFilename || cleanFilename.includes('..')) {
+    return new NextResponse('Invalid filename', { status: 400 });
   }
 
   // Generate the public URL from Supabase
   const { data: { publicUrl } } = supabase.storage
     .from('menu-images')
-    .getPublicUrl(`bills/${filename}`);
+    .getPublicUrl(`bills/${cleanFilename}`);
 
   // Redirect the user directly to the PDF URL
   return NextResponse.redirect(publicUrl);

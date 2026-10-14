@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isStaffAuthorized } from '@/lib/staffAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -7,18 +8,13 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
+    // Defense-in-depth authorization check
+    if (!isStaffAuthorized(req)) {
+      return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { action, id, data } = body;
-
-    // Secure authentication check using env variables
-    const expectedUser = process.env.ADMIN_USERNAME || 'admin';
-    const expectedPwd = process.env.ADMIN_PASSWORD || 'aryan123';
-    const expectedAuth = `Basic ${btoa(`${expectedUser}:${expectedPwd}`)}`;
-
-    const basicAuth = req.headers.get('authorization');
-    if (!basicAuth || basicAuth !== expectedAuth) { 
-      return NextResponse.json({ success: false }, { status: 401 });
-    }
 
     if (action === 'insert') {
       const { error } = await supabaseAdmin.from('menu').insert([data]);

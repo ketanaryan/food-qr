@@ -48,8 +48,7 @@ export async function POST(req: Request) {
 
     // 3. Authorization Enforcement
     const isCustomerBillRequest = status === 'billing' && !newTableNumber;
-    const isStaffOverride = req.headers.get('x-staff-access') === 'pos_secure_override';
-    const isAuthorizedStaff = isStaffAuthorized(req) || isStaffOverride;
+    const isAuthorizedStaff = isStaffAuthorized(req);
 
     if (!isCustomerBillRequest && !isAuthorizedStaff) {
       return NextResponse.json(

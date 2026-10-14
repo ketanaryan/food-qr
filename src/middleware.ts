@@ -11,6 +11,10 @@ export function middleware(req: NextRequest) {
     res.headers.set('X-Content-Type-Options', 'nosniff');
     res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     res.headers.set('X-XSS-Protection', '1; mode=block');
+    res.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    if (process.env.NODE_ENV === 'production') {
+      res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    }
     return res;
   };
 
@@ -21,6 +25,8 @@ export function middleware(req: NextRequest) {
     url.startsWith('/admin') || 
     url.startsWith('/pos') || 
     url.startsWith('/captain') || 
+    url.startsWith('/owner') || 
+    url.startsWith('/staff') || 
     url.startsWith('/api/admin');
 
   if (isProtectedPath) {
@@ -61,6 +67,8 @@ export const config = {
     '/admin/:path*',
     '/pos/:path*',
     '/captain/:path*',
+    '/owner/:path*',
+    '/staff/:path*',
     '/api/admin/:path*'
   ],
 };

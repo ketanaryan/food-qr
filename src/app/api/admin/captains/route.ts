@@ -41,6 +41,8 @@ function saveCaptains(captains: string[]) {
   }
 }
 
+import { isStaffAuthorized } from '@/lib/staffAuth';
+
 export async function GET() {
   const captains = readCaptains();
   return NextResponse.json({ success: true, captains });
@@ -48,6 +50,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    if (!isStaffAuthorized(req)) {
+      return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
+    }
+
     const body = await req.json();
     const { captains } = body;
     if (!Array.isArray(captains) || captains.length === 0) {

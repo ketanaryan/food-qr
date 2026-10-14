@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { isStaffAuthorized } from '@/lib/staffAuth';
 
-const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'default-secret-do-not-use-in-prod';
+const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
 
 export function generateTableToken(tableNumber: string) {
   return crypto.createHmac('sha256', SECRET_KEY).update(tableNumber).digest('hex').substring(0, 10);
 }
 
 export async function GET(req: Request) {
+  if (!isStaffAuthorized(req)) {
+    return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const table = searchParams.get('table');
   const countStr = searchParams.get('count');

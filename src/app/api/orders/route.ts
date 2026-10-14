@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { isStaffAuthorized } from '@/lib/staffAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -18,7 +19,7 @@ function sanitizeText(str: string): string {
 
 export async function POST(req: Request) {
   try {
-    const isStaff = req.headers.get('x-staff-access') === 'pos_secure_override';
+    const isStaff = isStaffAuthorized(req);
 
     // 1. IP Rate Limiting (Skipped for authenticated POS/Captain staff)
     if (!isStaff) {
