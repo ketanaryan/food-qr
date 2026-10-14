@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, 
   Menu, BarChart, CalendarDays, Users, Boxes, UserCheck, ShieldCheck, Lock, 
-  Mail, Eye, EyeOff, Crown, ArrowLeft, AlertCircle 
+  Mail, Eye, EyeOff, Crown, ArrowLeft, AlertCircle, KeyRound, CheckCircle2, X 
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,6 +23,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // Change Credentials Modal State
+  const [isChangeModalOpen, setIsChangeModalOpen] = useState<boolean>(false);
+  const [currentPwd, setCurrentPwd] = useState<string>("");
+  const [newEmailVal, setNewEmailVal] = useState<string>("");
+  const [newPwdVal, setNewPwdVal] = useState<string>("");
+  const [confirmPwdVal, setConfirmPwdVal] = useState<string>("");
+  const [changeLoading, setChangeLoading] = useState<boolean>(false);
+  const [changeError, setChangeError] = useState<string>("");
+  const [changeSuccess, setChangeSuccess] = useState<string>("");
 
   useEffect(() => {
     const verifySession = async () => {
@@ -98,6 +108,58 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setIsAuthenticated(false);
     setPasswordInput("");
     setErrorMessage("");
+  };
+
+  const handleChangeCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setChangeError("");
+    setChangeSuccess("");
+
+    if (!currentPwd.trim() || !newEmailVal.trim() || !newPwdVal.trim()) {
+      setChangeError("All fields are required.");
+      return;
+    }
+
+    if (newPwdVal !== confirmPwdVal) {
+      setChangeError("New password and confirm password do not match.");
+      return;
+    }
+
+    if (newPwdVal.length < 6) {
+      setChangeError("New password must be at least 6 characters.");
+      return;
+    }
+
+    setChangeLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-credentials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: currentPwd,
+          newEmail: newEmailVal,
+          newPassword: newPwdVal
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setChangeSuccess("Owner credentials updated! Use your new details next time you log in.");
+        setCurrentPwd("");
+        setNewPwdVal("");
+        setConfirmPwdVal("");
+        setTimeout(() => {
+          setIsChangeModalOpen(false);
+          setChangeSuccess("");
+        }, 2200);
+      } else {
+        setChangeError(data.error || "Failed to update credentials.");
+      }
+    } catch {
+      setChangeError("Network error. Please try again.");
+    } finally {
+      setChangeLoading(false);
+    }
   };
 
   const links = [
@@ -291,7 +353,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             OWNER PORTAL
           </Link>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => {
+              setIsChangeModalOpen(true);
+              setChangeError("");
+              setChangeSuccess("");
+            }}
+            className="p-1.5 bg-amber-950/60 border border-amber-500/30 text-amber-300 text-xs font-bold rounded-lg flex items-center gap-1"
+            title="Change Credentials"
+          >
+            <KeyRound size={14} />
+            <span>Security</span>
+          </button>
           <button 
             onClick={handleLockPortal}
             className="p-1.5 bg-red-950/60 border border-red-500/30 text-red-300 text-xs font-bold rounded-lg flex items-center gap-1"
@@ -354,9 +428,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div className="p-4 border-t border-white/10 space-y-1">
           <button
+            onClick={() => {
+              setIsChangeModalOpen(true);
+              setChangeError("");
+              setChangeSuccess("");
+            }}
+            className={`
+              w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-amber-300 hover:text-white hover:bg-white/10 transition-colors text-xs font-medium
+              ${collapsed ? "justify-center" : ""}
+            `}
+            title={collapsed ? "Security Settings" : undefined}
+          >
+            <KeyRound size={18} className="text-amber-400" />
+            {!collapsed && <span>Security / Password</span>}
+          </button>
+
+          <button
             onClick={handleLockPortal}
             className={`
-              w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-amber-300 hover:text-white hover:bg-amber-500/20 transition-colors text-xs font-bold
+              w-full flex items-center gap-4 px-3 py-2.5 rounded-lg text-red-300 hover:text-white hover:bg-red-500/20 transition-colors text-xs font-bold
               ${collapsed ? "justify-center" : ""}
             `}
             title={collapsed ? "Lock Portal" : undefined}
@@ -398,6 +488,127 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           className="fixed inset-0 bg-black/50 z-30 lg:hidden print:hidden"
           onClick={() => setMobileMenuOpen(false)}
         />
+      )}
+
+      {/* MODAL: CHANGE OWNER CREDENTIALS */}
+      {isChangeModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-[#1E1B16] text-white border border-[#3A3328] rounded-3xl w-full max-w-md p-6 sm:p-7 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-600 to-amber-700 flex items-center justify-center text-white shadow-md">
+                  <KeyRound size={20} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Owner Security Settings</h3>
+                  <p className="text-xs text-gray-400">Update login email and master password</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsChangeModalOpen(false)}
+                className="text-gray-400 hover:text-white p-1 rounded-lg transition"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleChangeCredentials} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  Current Master Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Enter current password"
+                  value={currentPwd}
+                  onChange={(e) => setCurrentPwd(e.target.value)}
+                  className="w-full text-sm py-2.5 px-3.5 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  New Owner Email / Username
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. owner@hotelwhitebliss.com"
+                  value={newEmailVal}
+                  onChange={(e) => setNewEmailVal(e.target.value)}
+                  className="w-full text-sm py-2.5 px-3.5 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  New Master Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Minimum 6 characters"
+                  value={newPwdVal}
+                  onChange={(e) => setNewPwdVal(e.target.value)}
+                  className="w-full text-sm py-2.5 px-3.5 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition font-mono"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-300 mb-1">
+                  Confirm New Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Re-enter new password"
+                  value={confirmPwdVal}
+                  onChange={(e) => setConfirmPwdVal(e.target.value)}
+                  className="w-full text-sm py-2.5 px-3.5 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition font-mono"
+                />
+              </div>
+
+              {changeError && (
+                <div className="p-3 bg-red-950/60 border border-red-500/40 rounded-xl text-red-300 text-xs flex items-start gap-2">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-400" />
+                  <span>{changeError}</span>
+                </div>
+              )}
+
+              {changeSuccess && (
+                <div className="p-3 bg-emerald-950/60 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-start gap-2">
+                  <CheckCircle2 size={16} className="shrink-0 mt-0.5 text-emerald-400" />
+                  <span>{changeSuccess}</span>
+                </div>
+              )}
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsChangeModalOpen(false)}
+                  className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-xl transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={changeLoading}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white text-xs font-extrabold uppercase rounded-xl shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
+                >
+                  {changeLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Updating...</span>
+                    </>
+                  ) : (
+                    <span>Save Credentials</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
     </>

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { 
-  verifyOwnerCredentials, 
+  verifyOwnerCredentialsAsync, 
   createOwnerToken, 
   checkRateLimit, 
   recordFailedAttempt, 
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isValid = verifyOwnerCredentials(email, password);
+    const isValid = await verifyOwnerCredentialsAsync(email, password);
 
     if (!isValid) {
       const failure = recordFailedAttempt(ip);
