@@ -11,6 +11,8 @@ export default function Dashboard() {
     totalSales: 0,
     netSales: 0,
     todayGst: 0,
+    todayServiceCharge: 0,
+    todayTaxAndCharges: 0,
     totalOrders: 0,
     topItem: "-",
     avgOrderValue: 0
@@ -53,12 +55,14 @@ export default function Dashboard() {
       let sales = 0;
       let netSales = 0;
       let gstAmt = 0;
+      let scAmt = 0;
       let itemsCount: Record<string, number> = {};
 
       todaysBills.forEach(b => {
         sales += b.grand_total;
         netSales += b.subtotal;
         gstAmt += b.gst;
+        scAmt += (b.service_charge || 0);
         b.items.forEach(item => {
           itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
         });
@@ -77,6 +81,8 @@ export default function Dashboard() {
         totalSales: sales,
         netSales: netSales,
         todayGst: gstAmt,
+        todayServiceCharge: scAmt,
+        todayTaxAndCharges: gstAmt + scAmt,
         totalOrders: todaysBills.length,
         topItem: top,
         avgOrderValue: todaysBills.length > 0 ? Math.round(sales / todaysBills.length) : 0
@@ -131,9 +137,9 @@ export default function Dashboard() {
             />
             <StatCard 
               icon={<Receipt/>} 
-              title="Today's GST (5%)" 
-              value={`₹${stats.todayGst}`} 
-              subtext={`CGST: ₹${(stats.todayGst / 2).toFixed(1)} | SGST: ₹${(stats.todayGst / 2).toFixed(1)}`}
+              title="Today's Taxes & Charges" 
+              value={`₹${stats.todayTaxAndCharges}`} 
+              subtext={`GST: ₹${stats.todayGst} • SC: ₹${stats.todayServiceCharge}`}
               color="bg-amber-600" 
             />
             <StatCard 

@@ -2277,6 +2277,8 @@ export default function PetpoojaPOSPage() {
             acc.totalGrandSales += fin.grandTotal;
             acc.totalNetSales += fin.netSubtotal;
             acc.totalGst += fin.gst;
+            acc.totalServiceCharge += fin.serviceCharge;
+            acc.totalTaxAndCharges += (fin.gst + fin.serviceCharge);
             if (fin.payMode === 'UPI') {
               acc.upiSales += fin.grandTotal;
             } else {
@@ -2288,6 +2290,8 @@ export default function PetpoojaPOSPage() {
             totalGrandSales: 0,
             totalNetSales: 0,
             totalGst: 0,
+            totalServiceCharge: 0,
+            totalTaxAndCharges: 0,
             cashSales: 0,
             upiSales: 0
           });
@@ -2313,14 +2317,14 @@ export default function PetpoojaPOSPage() {
                 </div>
                 <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] sm:text-xs font-bold text-gray-500">GST Collected (5%)</span>
-                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">Tax</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-gray-500">Taxes & Charges</span>
+                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">Tax + SC</span>
                   </div>
                   <div className="text-xl sm:text-2xl font-black font-mono text-amber-700 mt-0.5">
-                    ₹{registerMetrics.totalGst}
+                    ₹{registerMetrics.totalTaxAndCharges}
                   </div>
                   <div className="text-[10px] text-gray-500 font-medium mt-0.5">
-                    CGST: ₹{(registerMetrics.totalGst / 2).toFixed(1)} • SGST: ₹{(registerMetrics.totalGst / 2).toFixed(1)}
+                    GST (5%): ₹{registerMetrics.totalGst} • SC (5%): ₹{registerMetrics.totalServiceCharge}
                   </div>
                 </div>
                 <div className="bg-white p-3 sm:p-4 rounded-2xl border border-gray-200 shadow-xs">
@@ -2357,7 +2361,7 @@ export default function PetpoojaPOSPage() {
                         <th className="p-2.5">Table / Source</th>
                         <th className="p-2.5">Time</th>
                         <th className="p-2.5">Amount (Gross)</th>
-                        <th className="p-2.5">GST (5%)</th>
+                        <th className="p-2.5">Tax & Charges</th>
                         <th className="p-2.5">Mode</th>
                         <th className="p-2.5 text-right">Actions</th>
                       </tr>
@@ -2379,8 +2383,10 @@ export default function PetpoojaPOSPage() {
                               <div className="text-[10px] text-gray-500">Net Food: ₹{fin.netSubtotal}</div>
                             </td>
                             <td className="p-2.5">
-                              <span className="font-mono font-bold text-amber-700">₹{fin.gst}</span>
-                              <div className="text-[9px] text-gray-400">CGST+SGST</div>
+                              <span className="font-mono font-bold text-amber-700">₹{fin.gst + fin.serviceCharge}</span>
+                              <div className="text-[9px] text-gray-400">
+                                GST: ₹{fin.gst} {fin.serviceCharge > 0 ? `• SC: ₹${fin.serviceCharge}` : ''}
+                              </div>
                             </td>
                             <td className="p-2.5">
                               <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${

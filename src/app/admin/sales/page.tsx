@@ -18,6 +18,8 @@ export default function SalesReport() {
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [totalNetSales, setTotalNetSales] = useState(0);
   const [totalGst, setTotalGst] = useState(0);
+  const [totalServiceCharge, setTotalServiceCharge] = useState(0);
+  const [totalTaxAndCharges, setTotalTaxAndCharges] = useState(0);
   const [totalCash, setTotalCash] = useState(0);
   const [totalUpi, setTotalUpi] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
@@ -66,12 +68,15 @@ export default function SalesReport() {
       const rev = consolidated.reduce((acc, b) => acc + b.grand_total, 0);
       const net = consolidated.reduce((acc, b) => acc + b.subtotal, 0);
       const gst = consolidated.reduce((acc, b) => acc + b.gst, 0);
+      const sc = consolidated.reduce((acc, b) => acc + (b.service_charge || 0), 0);
       const cash = consolidated.filter(b => b.payment_method === 'CASH').reduce((acc, b) => acc + b.grand_total, 0);
       const upi = consolidated.filter(b => b.payment_method === 'UPI').reduce((acc, b) => acc + b.grand_total, 0);
 
       setTotalRevenue(rev);
       setTotalNetSales(net);
       setTotalGst(gst);
+      setTotalServiceCharge(sc);
+      setTotalTaxAndCharges(gst + sc);
       setTotalCash(cash);
       setTotalUpi(upi);
       setTotalOrders(consolidated.length);
@@ -169,12 +174,12 @@ export default function SalesReport() {
           </div>
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-1">
-              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">GST Collected</p>
-              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">5% Tax</span>
+              <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">Taxes & Charges</p>
+              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">Tax + SC</span>
             </div>
-            <p className="text-2xl lg:text-3xl font-black text-amber-700">₹{totalGst}</p>
+            <p className="text-2xl lg:text-3xl font-black text-amber-700">₹{totalTaxAndCharges}</p>
             <p className="text-[11px] text-gray-500 font-mono mt-1">
-              CGST: ₹{(totalGst / 2).toFixed(1)} | SGST: ₹{(totalGst / 2).toFixed(1)}
+              GST: ₹{totalGst} {totalServiceCharge > 0 ? `| SC: ₹${totalServiceCharge}` : ''}
             </p>
           </div>
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
@@ -208,7 +213,7 @@ export default function SalesReport() {
                   <th className="p-4 font-bold">Table / Channel</th>
                   <th className="p-4 font-bold">KOTs</th>
                   <th className="p-4 font-bold">Net Food (₹)</th>
-                  <th className="p-4 font-bold">GST 5% (₹)</th>
+                  <th className="p-4 font-bold">Tax & Charges (₹)</th>
                   <th className="p-4 font-bold">Grand Total (₹)</th>
                   <th className="p-4 font-bold">Payment</th>
                   <th className="p-4 font-bold">Status</th>
@@ -245,7 +250,12 @@ export default function SalesReport() {
                           </span>
                         </td>
                         <td className="p-4 font-mono font-medium text-gray-700">₹{o.subtotal}</td>
-                        <td className="p-4 font-mono font-bold text-amber-700">₹{o.gst}</td>
+                        <td className="p-4 font-mono">
+                          <div className="font-bold text-amber-700">₹{o.gst + (o.service_charge || 0)}</div>
+                          <div className="text-[10px] text-gray-400">
+                            GST: ₹{o.gst} {o.service_charge > 0 ? `• SC: ₹${o.service_charge}` : ''}
+                          </div>
+                        </td>
                         <td className="p-4 font-bold text-gray-900 font-mono text-base">₹{o.grand_total}</td>
                         <td className="p-4">
                           {o.payment_method === 'UPI' && <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">📱 UPI</span>}
