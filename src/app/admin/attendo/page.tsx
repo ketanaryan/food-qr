@@ -9,7 +9,7 @@ import {
   Lock, Unlock, Shield, Activity, FileSpreadsheet, TrendingUp,
   Percent, Briefcase, Building2, Sparkles,
   ArrowRight, ArrowLeft, MoreHorizontal, User, Filter, Zap, RotateCcw, Minus,
-  ChefHat, ArrowUp, ArrowDown
+  ChefHat, ArrowUp, ArrowDown, ChevronDown
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -293,6 +293,8 @@ const INITIAL_LOGS: AuditLog[] = [
 export default function AttendoPage() {
   const [staff, setStaff] = useState<StaffMember[]>([]);
   const [attendance, setAttendance] = useState<{ [staffId: string]: AttendanceRecord }>({});
+  const [monthlyAttendance, setMonthlyAttendance] = useState<{ [staffId: string]: { [dayNum: number]: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF" } }>({});
+  const [selectedStaffForHistory, setSelectedStaffForHistory] = useState<StaffMember | null>(null);
   const [advances, setAdvances] = useState<SalaryAdvance[]>([]);
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -399,6 +401,13 @@ export default function AttendoPage() {
       try { setAttendance(JSON.parse(savedAttendance)); } catch (e) { initDefaultAttendance(INITIAL_STAFF); }
     } else {
       initDefaultAttendance(INITIAL_STAFF);
+    }
+
+    const savedMonthly = localStorage.getItem("hwb_attendo_monthly_attendance");
+    if (savedMonthly) {
+      try { setMonthlyAttendance(JSON.parse(savedMonthly)); } catch (e) { initDefaultMonthly(INITIAL_STAFF); }
+    } else {
+      initDefaultMonthly(INITIAL_STAFF);
     }
 
     // Fetch dynamic captains roster from API
@@ -525,6 +534,33 @@ export default function AttendoPage() {
     localStorage.setItem("hwb_attendo_attendance", JSON.stringify(initMap));
   };
 
+  const initDefaultMonthly = (staffList: StaffMember[]) => {
+    const res: { [staffId: string]: { [dayNum: number]: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF" } } = {};
+    staffList.forEach((s, idx) => {
+      res[s.id] = {};
+      for (let day = 1; day <= 31; day++) {
+        // Sundays in October 2026: 4, 11, 18, 25
+        if (day === 4 || day === 11 || day === 18 || day === 25) {
+          res[s.id][day] = "WEEKLY_OFF";
+        } else if (day > 15) {
+          continue; // future days
+        } else if (day === 15) {
+          res[s.id][day] = idx === 5 ? "HALF_DAY" : idx === 6 ? "ABSENT" : "PRESENT";
+        } else {
+          // Days 1 to 14 realistic sample history for transparent view
+          if (idx === 0 && day === 9) res[s.id][day] = "HALF_DAY";
+          else if (idx === 1 && day === 5) res[s.id][day] = "PAID_LEAVE";
+          else if (idx === 2 && day === 12) res[s.id][day] = "ABSENT";
+          else if (idx === 4 && day === 7) res[s.id][day] = "HALF_DAY";
+          else if (idx === 6 && day === 3) res[s.id][day] = "ABSENT";
+          else res[s.id][day] = "PRESENT";
+        }
+      }
+    });
+    setMonthlyAttendance(res);
+    localStorage.setItem("hwb_attendo_monthly_attendance", JSON.stringify(res));
+  };
+
   const saveStaff = (updated: StaffMember[]) => {
     setStaff(updated);
     localStorage.setItem("hwb_attendo_staff", JSON.stringify(updated));
@@ -533,6 +569,55 @@ export default function AttendoPage() {
   const saveAttendance = (updatedMap: { [id: string]: AttendanceRecord }) => {
     setAttendance(updatedMap);
     localStorage.setItem("hwb_attendo_attendance", JSON.stringify(updatedMap));
+  };
+
+  const saveMonthlyAttendance = (updated: { [staffId: string]: { [dayNum: number]: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF" } }) => {
+    setMonthlyAttendance(updated);
+    localStorage.setItem("hwb_attendo_monthly_attendance", JSON.stringify(updated));
+  };
+
+  const handleToggleMusterDay = (staffId: string, day: number) => {
+    if (isPayrollLocked) {
+      return toast.error("Payroll period is finalised and locked.");
+    }
+    if (day > 15) {
+      return toast.error(`Day ${day} is in the future.`);
+    }
+    const current = monthlyAttendance[staffId]?.[day] || "PRESENT";
+    const nextMap: { [k: string]: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF" } = {
+      PRESENT: "HALF_DAY",
+      HALF_DAY: "ABSENT",
+      ABSENT: "PAID_LEAVE",
+      PAID_LEAVE: "WEEKLY_OFF",
+      WEEKLY_OFF: "PRESENT"
+    };
+    const nextStatus = nextMap[current] || "PRESENT";
+    const updatedMonthly = {
+      ...monthlyAttendance,
+      [staffId]: {
+        ...(monthlyAttendance[staffId] || {}),
+        [day]: nextStatus
+      }
+    };
+    saveMonthlyAttendance(updatedMonthly);
+
+    // If day 15, also sync to today's active register
+    if (day === 15 && nextStatus !== "WEEKLY_OFF") {
+      const updatedToday = {
+        ...attendance,
+        [staffId]: {
+          staffId,
+          date: todayStr,
+          status: nextStatus as any,
+          inTime: nextStatus === "ABSENT" ? "--" : "10:00 AM",
+          overtimeHours: attendance[staffId]?.overtimeHours || 0,
+          latePenalty: attendance[staffId]?.latePenalty || 0
+        }
+      };
+      saveAttendance(updatedToday);
+    }
+    const member = staff.find(s => s.id === staffId);
+    toast.success(`${member?.name} Day ${day} set to ${nextStatus.replace("_", " ")}`);
   };
 
   const saveAdvances = (updated: SalaryAdvance[]) => {
@@ -575,6 +660,17 @@ export default function AttendoPage() {
       }
     };
     saveAttendance(updated);
+
+    // Sync to monthly attendance day 15 (today)
+    const updatedMonthly = {
+      ...monthlyAttendance,
+      [staffId]: {
+        ...(monthlyAttendance[staffId] || {}),
+        15: status
+      }
+    };
+    saveMonthlyAttendance(updatedMonthly);
+
     const member = staff.find(s => s.id === staffId);
     toast.success(`${member?.name} marked ${status.replace("_", " ")}.`);
     logAction("Attendance Updated", `${member?.name} marked as ${status}`, "ATTENDANCE");
@@ -585,6 +681,7 @@ export default function AttendoPage() {
       return toast.error("Payroll period is finalised and locked.");
     }
     const updated = { ...attendance };
+    const updatedMonthly = { ...monthlyAttendance };
     staff.forEach(s => {
       updated[s.id] = {
         staffId: s.id,
@@ -594,8 +691,13 @@ export default function AttendoPage() {
         overtimeHours: attendance[s.id]?.overtimeHours || 0,
         latePenalty: attendance[s.id]?.latePenalty || 0
       };
+      updatedMonthly[s.id] = {
+        ...(updatedMonthly[s.id] || {}),
+        15: "PRESENT"
+      };
     });
     saveAttendance(updated);
+    saveMonthlyAttendance(updatedMonthly);
     toast.success(`Marked all ${staff.length} staff members as PRESENT.`);
     logAction("Bulk Attendance", `Owner marked all ${staff.length} staff as Present for ${todayStr}`, "ATTENDANCE");
   };
@@ -605,6 +707,7 @@ export default function AttendoPage() {
       return toast.error("Payroll period is finalised and locked.");
     }
     const updated = { ...attendance };
+    const updatedMonthly = { ...monthlyAttendance };
     staff.forEach(s => {
       updated[s.id] = {
         staffId: s.id,
@@ -614,8 +717,13 @@ export default function AttendoPage() {
         overtimeHours: 0,
         latePenalty: 0
       };
+      updatedMonthly[s.id] = {
+        ...(updatedMonthly[s.id] || {}),
+        15: "ABSENT"
+      };
     });
     saveAttendance(updated);
+    saveMonthlyAttendance(updatedMonthly);
     toast.success("Attendance register reset for today.");
     logAction("Attendance Reset", "Owner cleared daily register", "ATTENDANCE");
   };
@@ -923,19 +1031,29 @@ export default function AttendoPage() {
 
   const handleExportMusterReport = () => {
     const daysHeader = Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`).join(",");
-    const headers = [`Emp ID,Employee Name,Designation,Dept,${daysHeader},Total Present,Total Leaves,Payable Days`];
+    const headers = [`Emp ID,Employee Name,Designation,Dept,${daysHeader},Total Present,Half Days,Total Absent,Paid Leaves,Weekly Off,Payable Days`];
     
     const rows = staff.map(s => {
       const p = calculatePayrollForMember(s);
+      let pCount = 0;
+      let hdCount = 0;
+      let aCount = 0;
+      let lCount = 0;
+      let woCount = 0;
+
       const daysMarks = Array.from({ length: 31 }, (_, i) => {
-        if (i % 7 === 0) return "WO";
-        if (s.id === "st-2" && i === 4) return "PL";
-        if (s.id === "st-6" && i === 10) return "HD";
-        if (s.id === "st-7" && i === 11) return "A";
-        return "P";
+        const day = i + 1;
+        const st = monthlyAttendance[s.id]?.[day];
+        if (!st) return "-";
+        if (st === "PRESENT") { pCount++; return "P"; }
+        if (st === "HALF_DAY") { hdCount++; return "HD"; }
+        if (st === "ABSENT") { aCount++; return "A"; }
+        if (st === "PAID_LEAVE") { lCount++; return "L"; }
+        if (st === "WEEKLY_OFF") { woCount++; return "WO"; }
+        return "-";
       }).join(",");
 
-      return `"${s.id}","${s.name}","${s.role}","${s.department}",${daysMarks},26,1,${p.payableDays}`;
+      return `"${s.id}","${s.name}","${s.role}","${s.department}",${daysMarks},${pCount},${hdCount},${aCount},${lCount},${woCount},${p.payableDays}`;
     });
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
@@ -1244,49 +1362,30 @@ export default function AttendoPage() {
                           </div>
                         </td>
 
-                        {/* 3. Attendance Status (Present / Half / Absent / Leave) */}
+                        {/* 3. Attendance Status (Attendo-style Dropdown Selector - Misclick Proof) */}
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <div className="inline-flex p-0.5 bg-zinc-100 rounded-lg border border-zinc-200/60 shadow-xs">
-                            <button
-                              onClick={() => handleSetStatus(member.id, "PRESENT")}
-                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                          <div className="relative inline-block w-40">
+                            <select
+                              value={rec.status}
+                              onChange={(e) => handleSetStatus(member.id, e.target.value as any)}
+                              className={`w-full py-2 pl-3 pr-8 text-xs font-bold rounded-xl border appearance-none cursor-pointer transition shadow-2xs focus:outline-none focus:ring-2 ${
                                 rec.status === "PRESENT"
-                                  ? "bg-emerald-600 text-white shadow-xs font-semibold"
-                                  : "text-zinc-600 hover:text-zinc-900"
+                                  ? "bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-500"
+                                  : rec.status === "HALF_DAY"
+                                  ? "bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-500"
+                                  : rec.status === "ABSENT"
+                                  ? "bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-500"
+                                  : "bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-500"
                               }`}
                             >
-                              Present
-                            </button>
-                            <button
-                              onClick={() => handleSetStatus(member.id, "HALF_DAY")}
-                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                                rec.status === "HALF_DAY"
-                                  ? "bg-amber-500 text-white shadow-xs font-semibold"
-                                  : "text-zinc-600 hover:text-zinc-900"
-                              }`}
-                            >
-                              Half
-                            </button>
-                            <button
-                              onClick={() => handleSetStatus(member.id, "ABSENT")}
-                              className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
-                                rec.status === "ABSENT"
-                                  ? "bg-rose-600 text-white shadow-xs font-semibold"
-                                  : "text-zinc-600 hover:text-zinc-900"
-                              }`}
-                            >
-                              Absent
-                            </button>
-                            <button
-                              onClick={() => handleSetStatus(member.id, "PAID_LEAVE")}
-                              className={`px-2 py-1.5 rounded-md text-xs font-medium transition ${
-                                rec.status === "PAID_LEAVE"
-                                  ? "bg-blue-600 text-white shadow-xs font-semibold"
-                                  : "text-zinc-500 hover:text-zinc-900"
-                              }`}
-                            >
-                              Leave
-                            </button>
+                              <option value="PRESENT">✓ Present (Full)</option>
+                              <option value="HALF_DAY">◐ Half Day (0.5)</option>
+                              <option value="ABSENT">✕ Absent (Unpaid)</option>
+                              <option value="PAID_LEAVE">🌴 Paid Leave</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-zinc-500">
+                              <ChevronDown size={14} />
+                            </div>
                           </div>
                         </td>
 
@@ -2061,48 +2160,170 @@ export default function AttendoPage() {
         <div className="space-y-4">
           <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-zinc-900 text-sm">Inspection Muster Roll (Form T)</h3>
-              <p className="text-xs text-zinc-500 mt-0.5">Complies with Indian labor inspection standard format.</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-zinc-900 text-sm">Monthly Attendance Muster Roll (Form T)</h3>
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[11px] border border-blue-200">
+                  October 2026
+                </span>
+              </div>
+              <p className="text-xs text-zinc-500 mt-1">
+                Day-by-day attendance register for complete staff transparency. Click any past day cell (1-15) to quickly toggle status, or click an employee's name to view their full month breakdown.
+              </p>
             </div>
 
             <button
               onClick={handleExportMusterReport}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded-lg text-xs font-medium transition shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-semibold transition shadow-xs shrink-0"
             >
-              <Download size={13} />
+              <Download size={14} />
               <span>Download Form T (CSV)</span>
             </button>
           </div>
 
+          {/* Legend Bar */}
+          <div className="bg-zinc-50/80 border border-zinc-200 p-3 rounded-xl flex flex-wrap items-center gap-3 text-xs">
+            <span className="font-bold text-zinc-700 text-[11px] uppercase tracking-wider">Status Legend:</span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span> P = Present (Full Day)
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span> HD = Half Day (0.5)
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-800 bg-rose-100/80 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span> A = Absent (Unpaid)
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-800 bg-blue-100/80 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span> L = Paid Leave
+            </span>
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 bg-zinc-200/80 px-2 py-0.5 rounded-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> WO = Weekly Off (Sun)
+            </span>
+          </div>
+
+          {/* 31-Day Muster Table */}
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-[11px] text-left">
-                <thead className="bg-zinc-50/75 text-zinc-500 font-semibold border-b border-zinc-200">
+              <table className="w-full text-[11px] text-left border-collapse">
+                <thead className="bg-zinc-50/90 text-zinc-600 font-semibold border-b border-zinc-200">
                   <tr>
-                    <th className="py-2.5 px-3 min-w-[140px]">Employee</th>
-                    {Array.from({ length: 15 }, (_, i) => (
-                      <th key={i} className="py-2.5 px-1.5 text-center font-mono">{i + 1}</th>
-                    ))}
-                    <th className="py-2.5 px-3 text-center bg-zinc-100 font-semibold text-zinc-900">Present</th>
-                    <th className="py-2.5 px-3 text-center bg-zinc-100 font-semibold text-zinc-900">Payable</th>
+                    <th className="py-2.5 px-3 min-w-[150px] sticky left-0 bg-zinc-50 z-10 border-r border-zinc-200">
+                      Employee
+                    </th>
+                    {Array.from({ length: 31 }, (_, i) => {
+                      const day = i + 1;
+                      const d = new Date(2026, 9, day);
+                      const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+                      const wk = weekdays[d.getDay()];
+                      const isSun = d.getDay() === 0;
+                      const isToday = day === 15;
+                      return (
+                        <th 
+                          key={day} 
+                          className={`py-2 px-1 text-center font-mono min-w-[32px] ${
+                            isToday ? "bg-amber-100/70 text-amber-950 font-black border-x border-amber-300" :
+                            isSun ? "bg-zinc-100 text-zinc-400" : ""
+                          }`}
+                        >
+                          <div className="text-[9px] uppercase">{wk}</div>
+                          <div className="text-[11px]">{day}</div>
+                        </th>
+                      );
+                    })}
+                    <th className="py-2 px-2 text-center bg-emerald-50 text-emerald-900 font-bold border-l border-zinc-200">P</th>
+                    <th className="py-2 px-2 text-center bg-amber-50 text-amber-900 font-bold">HD</th>
+                    <th className="py-2 px-2 text-center bg-rose-50 text-rose-900 font-bold">A</th>
+                    <th className="py-2 px-2 text-center bg-blue-50 text-blue-900 font-bold">L</th>
+                    <th className="py-2 px-2 text-center bg-zinc-100 text-zinc-700 font-bold">WO</th>
+                    <th className="py-2 px-3 text-center bg-zinc-900 text-white font-bold">Payable</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 font-mono">
                   {staff.map(s => {
                     const p = calculatePayrollForMember(s);
+                    let pCount = 0;
+                    let hdCount = 0;
+                    let aCount = 0;
+                    let lCount = 0;
+                    let woCount = 0;
+
+                    for (let day = 1; day <= 31; day++) {
+                      const st = monthlyAttendance[s.id]?.[day];
+                      if (st === "PRESENT") pCount++;
+                      else if (st === "HALF_DAY") hdCount++;
+                      else if (st === "ABSENT") aCount++;
+                      else if (st === "PAID_LEAVE") lCount++;
+                      else if (st === "WEEKLY_OFF") woCount++;
+                    }
+
                     return (
-                      <tr key={s.id} className="hover:bg-zinc-50/50">
-                        <td className="py-2.5 px-3 font-sans font-semibold text-zinc-900">{s.name}</td>
-                        {Array.from({ length: 15 }, (_, i) => {
-                          const isWO = i % 7 === 0;
+                      <tr key={s.id} className="hover:bg-zinc-50/70 transition">
+                        <td className="py-2.5 px-3 font-sans font-semibold text-zinc-900 sticky left-0 bg-white hover:bg-zinc-50 z-10 border-r border-zinc-200">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedStaffForHistory(s)}
+                            className="text-left hover:text-blue-600 transition flex flex-col cursor-pointer"
+                            title="Click to view full attendance history card"
+                          >
+                            <span className="font-bold underline decoration-zinc-300 hover:decoration-blue-500">{s.name}</span>
+                            <span className="text-[10px] text-zinc-400 font-normal">{s.role}</span>
+                          </button>
+                        </td>
+                        {Array.from({ length: 31 }, (_, i) => {
+                          const day = i + 1;
+                          const d = new Date(2026, 9, day);
+                          const isSun = d.getDay() === 0;
+                          const isToday = day === 15;
+                          const st = monthlyAttendance[s.id]?.[day];
+
                           return (
-                            <td key={i} className="py-2.5 px-1.5 text-center text-zinc-600">
-                              {isWO ? "WO" : "P"}
+                            <td 
+                              key={day} 
+                              onClick={() => day <= 15 && handleToggleMusterDay(s.id, day)}
+                              className={`py-1.5 px-0.5 text-center transition ${
+                                day <= 15 ? "cursor-pointer hover:scale-110" : "cursor-default"
+                              } ${
+                                isToday ? "bg-amber-50/60 border-x border-amber-200" :
+                                isSun ? "bg-zinc-50/80" : ""
+                              }`}
+                              title={day <= 15 ? `Day ${day}: ${st || 'Unrecorded'} (Click to change)` : `Day ${day} (Future)`}
+                            >
+                              {st === "PRESENT" && (
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                  P
+                                </span>
+                              )}
+                              {st === "HALF_DAY" && (
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                  HD
+                                </span>
+                              )}
+                              {st === "ABSENT" && (
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">
+                                  A
+                                </span>
+                              )}
+                              {st === "PAID_LEAVE" && (
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">
+                                  L
+                                </span>
+                              )}
+                              {st === "WEEKLY_OFF" && (
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500">
+                                  WO
+                                </span>
+                              )}
+                              {!st && (
+                                <span className="text-zinc-300">-</span>
+                              )}
                             </td>
                           );
                         })}
-                        <td className="py-2.5 px-3 text-center font-semibold text-zinc-900 bg-zinc-50/40">13</td>
-                        <td className="py-2.5 px-3 text-center font-semibold text-zinc-900 bg-zinc-50/40">{p.payableDays}</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-emerald-700 bg-emerald-50/40 border-l border-zinc-200">{pCount}</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-amber-700 bg-amber-50/40">{hdCount}</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-rose-700 bg-rose-50/40">{aCount}</td>
+                        <td className="py-2.5 px-2 text-center font-bold text-blue-700 bg-blue-50/40">{lCount}</td>
+                        <td className="py-2.5 px-2 text-center font-medium text-zinc-600 bg-zinc-50/50">{woCount}</td>
+                        <td className="py-2.5 px-3 text-center font-black text-zinc-900 bg-zinc-100/70">{p.payableDays}</td>
                       </tr>
                     );
                   })}
@@ -2571,6 +2792,148 @@ export default function AttendoPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 6: EMPLOYEE ATTENDANCE TRANSPARENCY CARD */}
+      {selectedStaffForHistory && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-5 sm:p-6 shadow-2xl space-y-4 my-8">
+            <div className="flex items-start justify-between border-b border-zinc-100 pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-zinc-900">{selectedStaffForHistory.name}</h3>
+                  <span className="px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 font-semibold text-[11px]">
+                    {selectedStaffForHistory.role}
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-500 mt-0.5">
+                  {selectedStaffForHistory.department} Dept · Shift: {selectedStaffForHistory.shiftTiming} · Salary: ₹{selectedStaffForHistory.monthlySalary.toLocaleString("en-IN")}/mo (₹{selectedStaffForHistory.dailyRate}/d)
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedStaffForHistory(null)}
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Attendance Stats Cards */}
+            {(() => {
+              const staffId = selectedStaffForHistory.id;
+              let pCount = 0;
+              let hdCount = 0;
+              let aCount = 0;
+              let lCount = 0;
+              let woCount = 0;
+
+              for (let day = 1; day <= 31; day++) {
+                const st = monthlyAttendance[staffId]?.[day];
+                if (st === "PRESENT") pCount++;
+                else if (st === "HALF_DAY") hdCount++;
+                else if (st === "ABSENT") aCount++;
+                else if (st === "PAID_LEAVE") lCount++;
+                else if (st === "WEEKLY_OFF") woCount++;
+              }
+
+              const payable = pCount + (hdCount * 0.5) + lCount + woCount;
+              const earnedSoFar = Math.round(payable * selectedStaffForHistory.dailyRate);
+
+              return (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase">Present</span>
+                      <div className="text-xl font-bold text-emerald-950 font-mono mt-0.5">{pCount} Days</div>
+                    </div>
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
+                      <span className="text-[10px] font-bold text-rose-800 uppercase">Absent</span>
+                      <div className="text-xl font-bold text-rose-950 font-mono mt-0.5">{aCount} Days</div>
+                    </div>
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
+                      <span className="text-[10px] font-bold text-amber-800 uppercase">Half Days</span>
+                      <div className="text-xl font-bold text-amber-950 font-mono mt-0.5">{hdCount} Days</div>
+                    </div>
+                    <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                      <span className="text-[10px] font-bold text-blue-800 uppercase">Earned MTD</span>
+                      <div className="text-xl font-bold text-blue-950 font-mono mt-0.5">₹{earnedSoFar.toLocaleString("en-IN")}</div>
+                    </div>
+                  </div>
+
+                  {/* 31-Day Month View Calendar */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-zinc-800 uppercase tracking-wider">
+                        October 2026 Day-by-Day Calendar
+                      </span>
+                      <span className="text-[11px] text-zinc-400">
+                        Tap past day to change status
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1.5 p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
+                      {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(w => (
+                        <div key={w} className="text-center font-bold text-[10px] text-zinc-400 py-1 uppercase">
+                          {w}
+                        </div>
+                      ))}
+
+                      {/* October 1, 2026 is Thursday (Index 4) -> 4 Empty Pad cells */}
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={`empty-${i}`} className="p-2 bg-transparent rounded-lg"></div>
+                      ))}
+
+                      {Array.from({ length: 31 }, (_, i) => {
+                        const day = i + 1;
+                        const st = monthlyAttendance[staffId]?.[day];
+                        const isToday = day === 15;
+
+                        return (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => day <= 15 && handleToggleMusterDay(staffId, day)}
+                            className={`p-2 rounded-xl border text-center transition flex flex-col items-center justify-center min-h-[52px] ${
+                              day <= 15 ? "cursor-pointer hover:shadow-xs active:scale-95" : "cursor-default opacity-40 bg-white"
+                            } ${
+                              isToday ? "ring-2 ring-amber-500 shadow-xs" : ""
+                            } ${
+                              st === "PRESENT" ? "bg-emerald-50 border-emerald-300 text-emerald-950" :
+                              st === "HALF_DAY" ? "bg-amber-50 border-amber-300 text-amber-950" :
+                              st === "ABSENT" ? "bg-rose-50 border-rose-300 text-rose-950" :
+                              st === "PAID_LEAVE" ? "bg-blue-50 border-blue-300 text-blue-950" :
+                              st === "WEEKLY_OFF" ? "bg-zinc-100 border-zinc-200 text-zinc-600" :
+                              "bg-white border-zinc-200 text-zinc-400"
+                            }`}
+                          >
+                            <span className="text-[11px] font-mono font-bold leading-tight">{day}</span>
+                            <span className="text-[9px] font-bold mt-0.5">
+                              {st === "PRESENT" ? "P" :
+                               st === "HALF_DAY" ? "HD" :
+                               st === "ABSENT" ? "A" :
+                               st === "PAID_LEAVE" ? "L" :
+                               st === "WEEKLY_OFF" ? "WO" : "-"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedStaffForHistory(null)}
+                className="px-5 py-2 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-semibold transition"
+              >
+                Close History
+              </button>
+            </div>
           </div>
         </div>
       )}
