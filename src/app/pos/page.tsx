@@ -91,7 +91,40 @@ const DEFAULT_MENU_ITEMS = [
   { id: "m-47", name: "Alphonso Mango Lassi", category: "Beverages", price: 100, isVeg: true },
   { id: "m-48", name: "Fresh Lime Soda (Sweet & Salt)", category: "Beverages", price: 70, isVeg: true },
   { id: "m-49", name: "Cold Coffee with Vanilla Ice Cream", category: "Beverages", price: 120, isVeg: true },
-  { id: "m-50", name: "Packaged Mineral Water (1L)", category: "Beverages", price: 30, isVeg: true }
+  { id: "m-50", name: "Packaged Mineral Water (1L)", category: "Beverages", price: 30, isVeg: true },
+
+  // --- Chinese Starter Non Veg ---
+  { id: "m-51", name: "Chicken Paper", category: "Chinese Starter Non Veg", price: 240, isVeg: false },
+  { id: "m-52", name: "Chicken Tukada", category: "Chinese Starter Non Veg", price: 250, isVeg: false },
+  { id: "m-53", name: "Chicken Spring Roll", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-54", name: "Chicken Manchurian (Dry)", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-55", name: "Chicken 65", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-56", name: "Chicken Crispy", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-57", name: "Chicken Satay", category: "Chinese Starter Non Veg", price: 250, isVeg: false },
+  { id: "m-58", name: "Chicken Kantki", category: "Chinese Starter Non Veg", price: 230, isVeg: false },
+  { id: "m-59", name: "Chicken Dry Mint", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-60", name: "Chicken Hot Garlic", category: "Chinese Starter Non Veg", price: 260, isVeg: false },
+  { id: "m-61", name: "Chicken Chilly (Dry)", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-62", name: "Chicken Chilly (With Bone)", category: "Chinese Starter Non Veg", price: 270, isVeg: false },
+  { id: "m-63", name: "Chicken Garlic", category: "Chinese Starter Non Veg", price: 220, isVeg: false },
+  { id: "m-64", name: "Chicken Sizzler", category: "Chinese Starter Non Veg", price: 480, isVeg: false },
+  { id: "m-65", name: "Chicken Bhuna", category: "Chinese Starter Non Veg", price: 250, isVeg: false },
+  { id: "m-66", name: "Chicken Koliwada", category: "Chinese Starter Non Veg", price: 300, isVeg: false },
+
+  // --- Non Veg Snacks Counter ---
+  { id: "m-67", name: "Egg Boiled (2 Pcs)", category: "Non Veg Snacks Counter", price: 40, isVeg: false },
+  { id: "m-68", name: "Egg Bhurji (2 Eggs)", category: "Non Veg Snacks Counter", price: 70, isVeg: false },
+  { id: "m-69", name: "Egg Sandwich", category: "Non Veg Snacks Counter", price: 40, isVeg: false },
+  { id: "m-70", name: "Egg Pakoda", category: "Non Veg Snacks Counter", price: 50, isVeg: false },
+  { id: "m-71", name: "Egg Omlet (Double Egg)", category: "Non Veg Snacks Counter", price: 60, isVeg: false },
+  { id: "m-72", name: "Egg Boiled Fry", category: "Non Veg Snacks Counter", price: 50, isVeg: false },
+  { id: "m-73", name: "Egg Boiled Fry Bhurji", category: "Non Veg Snacks Counter", price: 80, isVeg: false },
+  { id: "m-74", name: "Egg Curry (2 Eggs)", category: "Non Veg Snacks Counter", price: 110, isVeg: false },
+  { id: "m-75", name: "Egg Masala", category: "Non Veg Snacks Counter", price: 120, isVeg: false },
+  { id: "m-76", name: "Egg Chilly", category: "Non Veg Snacks Counter", price: 150, isVeg: false },
+  { id: "m-77", name: "Mutton Khima-Pav", category: "Non Veg Snacks Counter", price: 120, isVeg: false },
+  { id: "m-78", name: "Chicken Sandwich", category: "Non Veg Snacks Counter", price: 100, isVeg: false },
+  { id: "m-79", name: "Mutton Sandwich", category: "Non Veg Snacks Counter", price: 90, isVeg: false }
 ];
 
 function escapeHtml(str: any): string {
