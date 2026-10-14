@@ -116,7 +116,72 @@ const DEFAULT_MENU_ITEMS = [
   { id: "m-76", name: "Egg Chilly", category: "Non Veg Snacks Counter", price: 150, isVeg: false },
   { id: "m-77", name: "Mutton Khima-Pav", category: "Non Veg Snacks Counter", price: 120, isVeg: false },
   { id: "m-78", name: "Chicken Sandwich", category: "Non Veg Snacks Counter", price: 100, isVeg: false },
-  { id: "m-79", name: "Mutton Sandwich", category: "Non Veg Snacks Counter", price: 90, isVeg: false }
+  { id: "m-79", name: "Mutton Sandwich", category: "Non Veg Snacks Counter", price: 90, isVeg: false },
+
+  // --- Vegetarian Guests ---
+  { id: "m-80", name: "Palak Mutter", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-81", name: "Gobi Mutter", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-82", name: "Bhendi Masala", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-83", name: "Bhendi Fry", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-84", name: "Bhendi Tawa", category: "Vegetarian Guests", price: 200, isVeg: true },
+  { id: "m-85", name: "Alu Mutter", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-86", name: "Chana Masala", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-87", name: "Alu Palak", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-88", name: "Pitla", category: "Vegetarian Guests", price: 120, isVeg: true },
+  { id: "m-89", name: "Thecha", category: "Vegetarian Guests", price: 70, isVeg: true },
+  { id: "m-90", name: "Baigan Masala", category: "Vegetarian Guests", price: 130, isVeg: true },
+  { id: "m-91", name: "Dal Fry", category: "Vegetarian Guests", price: 90, isVeg: true },
+
+  // --- Paneer Ki Pasand ---
+  { id: "m-92", name: "Paneer Tikka Masala", category: "Paneer Ki Pasand", price: 220, isVeg: true },
+  { id: "m-93", name: "Paneer Butter Masala (Special)", category: "Paneer Ki Pasand", price: 190, isVeg: true },
+  { id: "m-94", name: "Paneer Bhurji", category: "Paneer Ki Pasand", price: 200, isVeg: true },
+  { id: "m-95", name: "Paneer Kofta", category: "Paneer Ki Pasand", price: 190, isVeg: true },
+  { id: "m-96", name: "Paneer Palak", category: "Paneer Ki Pasand", price: 170, isVeg: true },
+  { id: "m-97", name: "Paneer Pasanda", category: "Paneer Ki Pasand", price: 210, isVeg: true },
+  { id: "m-98", name: "Paneer Handi", category: "Paneer Ki Pasand", price: 220, isVeg: true },
+  { id: "m-99", name: "Paneer Kadai", category: "Paneer Ki Pasand", price: 220, isVeg: true },
+  { id: "m-100", name: "Paneer Rajwadi", category: "Paneer Ki Pasand", price: 240, isVeg: true },
+  { id: "m-101", name: "Paneer Patiyala", category: "Paneer Ki Pasand", price: 280, isVeg: true },
+  { id: "m-102", name: "Paneer Chilly Milly", category: "Paneer Ki Pasand", price: 210, isVeg: true },
+  { id: "m-103", name: "Paneer Maharaja", category: "Paneer Ki Pasand", price: 270, isVeg: true },
+  { id: "m-104", name: "Paneer Rara", category: "Paneer Ki Pasand", price: 250, isVeg: true },
+  { id: "m-105", name: "Paneer Tawa", category: "Paneer Ki Pasand", price: 240, isVeg: true },
+  { id: "m-106", name: "Paneer Masala", category: "Paneer Ki Pasand", price: 180, isVeg: true },
+  { id: "m-107", name: "Paneer Toofani", category: "Paneer Ki Pasand", price: 240, isVeg: true },
+  { id: "m-108", name: "Paneer Angara", category: "Paneer Ki Pasand", price: 260, isVeg: true },
+  { id: "m-109", name: "Paneer Mutter", category: "Paneer Ki Pasand", price: 170, isVeg: true },
+  { id: "m-110", name: "Paneer Makhanwala", category: "Paneer Ki Pasand", price: 190, isVeg: true },
+  { id: "m-111", name: "Paneer Lajawab", category: "Paneer Ki Pasand", price: 280, isVeg: true },
+  { id: "m-112", name: "Paneer Lachhadar", category: "Paneer Ki Pasand", price: 260, isVeg: true },
+
+  // --- Amrut Garden Veg Special ---
+  { id: "m-113", name: "Veg Sultana", category: "Amrut Garden Veg Special", price: 220, isVeg: true },
+  { id: "m-114", name: "Veg Tiranga", category: "Amrut Garden Veg Special", price: 260, isVeg: true },
+
+  // --- Chinese Rice ---
+  { id: "m-115", name: "American Chopcuey Non Veg", category: "Chinese Rice", price: 250, isVeg: false },
+  { id: "m-116", name: "Chicken Hakka Noodles", category: "Chinese Rice", price: 200, isVeg: false },
+  { id: "m-117", name: "Chicken Sezwan Fried Rice", category: "Chinese Rice", price: 210, isVeg: false },
+  { id: "m-118", name: "Chicken Triple Sezwan Rice", category: "Chinese Rice", price: 310, isVeg: false },
+  { id: "m-119", name: "Prawns Fried Rice", category: "Chinese Rice", price: 310, isVeg: false },
+  { id: "m-120", name: "Chicken Chowmein", category: "Chinese Rice", price: 200, isVeg: false },
+  { id: "m-121", name: "Chicken Fried Rice", category: "Chinese Rice", price: 200, isVeg: false },
+  { id: "m-122", name: "Egg Fried Rice", category: "Chinese Rice", price: 160, isVeg: false },
+  { id: "m-123", name: "Non Veg Mix Fried Rice", category: "Chinese Rice", price: 310, isVeg: false },
+  { id: "m-124", name: "Chicken Tikka Biryani", category: "Chinese Rice", price: 280, isVeg: false },
+
+  // --- Roti Ki Khasiat ---
+  { id: "m-125", name: "Roti", category: "Roti Ki Khasiat", price: 20, isVeg: true },
+  { id: "m-126", name: "Butter Roti", category: "Roti Ki Khasiat", price: 25, isVeg: true },
+  { id: "m-127", name: "Naan / Paratha / Kulcha", category: "Roti Ki Khasiat", price: 40, isVeg: true },
+  { id: "m-128", name: "Butter Naan / Paratha / Kulcha", category: "Roti Ki Khasiat", price: 50, isVeg: true },
+  { id: "m-129", name: "Chapati", category: "Roti Ki Khasiat", price: 15, isVeg: true },
+  { id: "m-130", name: "Roti Ki Basket", category: "Roti Ki Khasiat", price: 300, isVeg: true },
+  { id: "m-131", name: "Bhakri", category: "Roti Ki Khasiat", price: 20, isVeg: true },
+  { id: "m-132", name: "Masala Kulcha", category: "Roti Ki Khasiat", price: 60, isVeg: true },
+  { id: "m-133", name: "Stuff Paratha", category: "Roti Ki Khasiat", price: 100, isVeg: true },
+  { id: "m-134", name: "Kashmiri Naan", category: "Roti Ki Khasiat", price: 80, isVeg: true }
 ];
 
 export default function CaptainPortal() {
@@ -206,7 +271,12 @@ export default function CaptainPortal() {
         name: d.name,
         category: d.section || "Main Course",
         price: d.price,
-        isVeg: !d.name.toLowerCase().includes("chicken") && !d.name.toLowerCase().includes("mutton") && !d.name.toLowerCase().includes("egg") && !d.name.toLowerCase().includes("fish")
+        isVeg: !d.name.toLowerCase().includes("chicken") && 
+               !d.name.toLowerCase().includes("mutton") && 
+               !d.name.toLowerCase().includes("egg") && 
+               !d.name.toLowerCase().includes("fish") &&
+               !d.name.toLowerCase().includes("prawn") &&
+               !d.name.toLowerCase().includes("non veg")
       }));
       setMenuItems(formatted);
     }
