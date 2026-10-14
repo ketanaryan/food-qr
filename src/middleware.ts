@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { isStaffAuthorized, getStaffSessionToken } from '@/lib/staffAuth';
+import { isOwnerAuthorized } from '@/lib/ownerAuth';
 
 export function middleware(req: NextRequest) {
   const url = req.nextUrl.pathname;
@@ -18,34 +19,66 @@ export function middleware(req: NextRequest) {
     return res;
   };
 
-  // Protect sensitive staff and admin routes
-  const isProtectedPath = 
-    url.startsWith('/kitchen') || 
-    url.startsWith('/cashier') || 
-    url.startsWith('/admin') || 
-    url.startsWith('/pos') || 
-    url.startsWith('/captain') || 
-    url.startsWith('/owner') || 
-    url.startsWith('/staff') || 
-    url.startsWith('/api/admin');
+  // Allow public auth endpoints unconditionally
+  if (url.startsWith('/api/auth')) {
+    return applySecurityHeaders(NextResponse.next());
+  }
 
-  if (isProtectedPath) {
-    if (isStaffAuthorized(req)) {
-      const response = NextResponse.next();
-      
-      // Ensure staff session cookie is active for seamless API fetch calls
+  const isStaff = isStaffAuthorized(req);
+  const isOwner = isOwnerAuthorized(req);
+  const isAuthorized = isStaff || isOwner;
+
+  // 1. Strict protection for Admin API endpoints
+  if (url.startsWith('/api/admin')) {
+    if (!isAuthorized) {
+      return applySecurityHeaders(
+        NextResponse.json(
+          { error: 'Unauthorized: Hotel White Bliss administrative credentials required.' },
+          { status: 401 }
+        )
+      );
+    }
+    return applySecurityHeaders(NextResponse.next());
+  }
+
+  // 2. Owner & Admin UI Pages (/admin, /owner)
+  // Allowed to proceed so src/app/admin/layout.tsx renders the Executive Owner Login Screen when unauthorized
+  if (url.startsWith('/admin') || url.startsWith('/owner')) {
+    const response = NextResponse.next();
+    if (isStaff && !isOwner) {
       response.cookies.set('staff_session', getStaffSessionToken(), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7, // 7 days
+        maxAge: 60 * 60 * 24 * 7,
         path: '/'
       });
+    }
+    return applySecurityHeaders(response);
+  }
 
+  // 3. Operational Staff Workstations (/kitchen, /cashier, /pos, /captain, /staff)
+  const isStaffPath = 
+    url.startsWith('/kitchen') || 
+    url.startsWith('/cashier') || 
+    url.startsWith('/pos') || 
+    url.startsWith('/captain') || 
+    url.startsWith('/staff');
+
+  if (isStaffPath) {
+    if (isAuthorized) {
+      const response = NextResponse.next();
+      response.cookies.set('staff_session', getStaffSessionToken(), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/'
+      });
       return applySecurityHeaders(response);
     }
 
-    // If not authenticated, prompt browser for basic auth
+    // Prompt for Staff Basic Auth
     const unauthorizedResponse = new NextResponse('Authentication required for Hotel White Bliss Staff Area.', {
       status: 401,
       headers: {

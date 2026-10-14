@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { isStaffAuthorized } from '@/lib/staffAuth';
+import { isOwnerAuthorized } from '@/lib/ownerAuth';
 
 const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
 
@@ -9,7 +10,7 @@ export function generateTableToken(tableNumber: string) {
 }
 
 export async function GET(req: Request) {
-  if (!isStaffAuthorized(req)) {
+  if (!isStaffAuthorized(req) && !isOwnerAuthorized(req)) {
     return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
   }
 

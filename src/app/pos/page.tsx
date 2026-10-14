@@ -110,19 +110,12 @@ export default function PetpoojaPOSPage() {
   const [deliveryRiderName, setDeliveryRiderName] = useState("");
 
   const handleVerifyAdminPin = (inputPin?: string) => {
-    const pinToTest = inputPin ?? adminPinInput;
-    const savedPin = typeof window !== 'undefined' ? localStorage.getItem('wb_manager_pin') || '1234' : '1234';
-    if (pinToTest === savedPin) {
-      toast.success("Manager Access Granted! Redirecting to Admin...", { icon: "🔐" });
-      setIsAdminPinModalOpen(false);
-      setAdminPinInput("");
-      setAdminPinError("");
-      window.location.href = "/admin/dashboard";
-    } else {
-      setAdminPinError("Invalid PIN! Access Denied.");
-      toast.error("Incorrect Manager PIN! (Default: 1234)", { icon: "❌" });
-      setAdminPinInput("");
-    }
+    // Direct redirect to secure Owner Backoffice Portal
+    toast.success("Redirecting to Owner Portal...", { icon: "🔐" });
+    setIsAdminPinModalOpen(false);
+    setAdminPinInput("");
+    setAdminPinError("");
+    window.location.href = "/admin/dashboard";
   };
 
   const handleStartDeliveryOrder = (channelOverride?: 'TAKEAWAY' | 'SWIGGY' | 'ZOMATO', customId?: string) => {
@@ -2554,9 +2547,6 @@ export default function PetpoojaPOSPage() {
             </div>
 
             <div className="pt-1 space-y-2">
-              <div className="text-[10px] text-gray-400 text-center">
-                Default Master PIN: <span className="font-mono text-amber-300 font-bold">1234</span>
-              </div>
               <button
                 type="button"
                 onClick={() => {

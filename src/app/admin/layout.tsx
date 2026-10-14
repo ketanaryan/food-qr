@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, Menu as MenuIcon, QrCode, LogOut, ChevronLeft, ChevronRight, 
   Menu, BarChart, CalendarDays, Users, Boxes, UserCheck, ShieldCheck, Lock, 
-  KeyRound, Crown, ArrowLeft, AlertCircle 
+  Mail, Eye, EyeOff, Crown, ArrowLeft, AlertCircle 
 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -17,42 +17,87 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // Owner Authentication Gate State
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
-  const [pinInput, setPinInput] = useState<string>("");
-  const [pinError, setPinError] = useState<string>("");
+  const [emailInput, setEmailInput] = useState<string>("");
+  const [passwordInput, setPasswordInput] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [rememberMe, setRememberMe] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
   useEffect(() => {
-    // Check if session is already unlocked
-    const sessionAuth = typeof window !== "undefined" ? sessionStorage.getItem("wb_owner_authenticated") : null;
-    if (sessionAuth === "true") {
-      setIsAuthenticated(true);
-    }
-    setIsCheckingAuth(false);
+    const verifySession = async () => {
+      try {
+        const res = await fetch("/api/auth/owner-status");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.authenticated) {
+            setIsAuthenticated(true);
+            setIsCheckingAuth(false);
+            return;
+          }
+        }
+      } catch (err) {
+        // network issue or offline
+      }
+      setIsAuthenticated(false);
+      setIsCheckingAuth(false);
+    };
+
+    verifySession();
   }, []);
 
-  const handleVerifyPin = (overridePin?: string) => {
-    const pinToTest = overridePin ?? pinInput;
-    const savedPin = typeof window !== "undefined" ? localStorage.getItem("wb_manager_pin") || "1234" : "1234";
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.trim() || !passwordInput.trim()) {
+      setErrorMessage("Please enter both email and password.");
+      return;
+    }
 
-    if (pinToTest === savedPin) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("wb_owner_authenticated", "true");
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      const res = await fetch("/api/auth/owner-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: emailInput,
+          password: passwordInput,
+          rememberMe
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("wb_owner_authenticated", "true");
+        }
+        setIsAuthenticated(true);
+        setPasswordInput("");
+        setErrorMessage("");
+      } else {
+        setErrorMessage(data.error || "Authentication failed. Invalid credentials.");
       }
-      setIsAuthenticated(true);
-      setPinError("");
-      setPinInput("");
-    } else {
-      setPinError("Incorrect Owner PIN! Access Denied.");
-      setPinInput("");
+    } catch (err) {
+      setErrorMessage("Network error connecting to verification server.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLockPortal = () => {
+  const handleLockPortal = async () => {
+    try {
+      await fetch("/api/auth/owner-logout", { method: "POST" });
+    } catch (e) {
+      // ignore
+    }
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("wb_owner_authenticated");
     }
     setIsAuthenticated(false);
-    setPinInput("");
-    setPinError("");
+    setPasswordInput("");
+    setErrorMessage("");
   };
 
   const links = [
@@ -75,7 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  // IF NOT AUTHENTICATED: RENDER SEPARATE OWNER SECURITY LOGIN SCREEN
+  // IF NOT AUTHENTICATED: RENDER LUXURY OWNER SECURITY LOGIN SCREEN
   if (!isAuthenticated) {
     return (
       <>
@@ -111,99 +156,105 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
           </div>
 
-          {/* PIN Form */}
-          <form 
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleVerifyPin();
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-xs font-bold text-gray-300 mb-1.5 text-center">
-                Enter 4-Digit Owner Security PIN
+          {/* Secure Login Form */}
+          <form onSubmit={handleLogin} className="space-y-4 pt-1">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-300">
+                Owner Email / Username
               </label>
               <div className="relative">
                 <input
-                  type="password"
-                  maxLength={6}
+                  type="text"
                   autoFocus
-                  placeholder="••••"
-                  value={pinInput}
+                  required
+                  placeholder="owner@hotelwhitebliss.com"
+                  value={emailInput}
                   onChange={(e) => {
-                    setPinInput(e.target.value);
-                    setPinError("");
+                    setEmailInput(e.target.value);
+                    setErrorMessage("");
                   }}
-                  className="w-full text-center tracking-[0.5em] text-2xl font-mono py-3.5 px-4 bg-[#14120E] border border-[#4D4335] rounded-2xl text-white placeholder-gray-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
+                  className="w-full text-sm py-3 pl-11 pr-4 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition"
                 />
-                <KeyRound size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
               </div>
-              {pinError && (
-                <div className="flex items-center justify-center gap-1.5 text-red-400 text-xs font-semibold mt-2 animate-shake">
-                  <AlertCircle size={14} />
-                  <span>{pinError}</span>
-                </div>
-              )}
             </div>
 
-            {/* Quick Numpad Preview / Submit */}
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-gray-300">
+                  Master Security Password
+                </label>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  placeholder="••••••••••••"
+                  value={passwordInput}
+                  onChange={(e) => {
+                    setPasswordInput(e.target.value);
+                    setErrorMessage("");
+                  }}
+                  className="w-full text-sm py-3 pl-11 pr-11 bg-[#14120E] border border-[#4D4335] rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 transition font-mono"
+                />
+                <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Device Option */}
+            <div className="flex items-center justify-between pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-600 text-amber-500 focus:ring-amber-400 bg-[#14120E] accent-amber-500"
+                />
+                <span className="text-xs text-gray-300 font-medium">
+                  Remember this device (30 Days)
+                </span>
+              </label>
+            </div>
+
+            {/* Error Message */}
+            {errorMessage && (
+              <div className="p-3 bg-red-950/50 border border-red-500/40 rounded-xl text-red-300 text-xs flex items-start gap-2 animate-shake">
+                <AlertCircle size={16} className="shrink-0 mt-0.5 text-red-400" />
+                <span className="leading-snug font-medium">{errorMessage}</span>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button
               type="submit"
-              className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-white font-extrabold text-sm tracking-wide uppercase rounded-2xl shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full py-3.5 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 disabled:opacity-50 text-white font-extrabold text-xs tracking-wider uppercase rounded-xl shadow-lg transition active:scale-[0.99] flex items-center justify-center gap-2"
             >
-              <ShieldCheck size={18} />
-              <span>Unlock Admin Portal</span>
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Verifying Credentials...</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={18} />
+                  <span>Unlock Admin Portal</span>
+                </>
+              )}
             </button>
           </form>
 
-          {/* Keypad Quick Numbers (for touch devices) */}
-          <div className="grid grid-cols-3 gap-2 pt-2">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-              <button
-                key={n}
-                type="button"
-                onClick={() => {
-                  if (pinInput.length < 6) {
-                    const next = pinInput + String(n);
-                    setPinInput(next);
-                    if (next.length === 4) handleVerifyPin(next);
-                  }
-                }}
-                className="py-3 bg-white/5 hover:bg-white/10 active:scale-95 text-white font-mono font-bold text-lg rounded-xl transition border border-white/5"
-              >
-                {n}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => setPinInput("")}
-              className="py-3 bg-red-950/40 hover:bg-red-900/60 active:scale-95 text-red-300 text-xs font-bold rounded-xl transition border border-red-500/20"
-            >
-              CLEAR
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (pinInput.length < 6) {
-                  const next = pinInput + "0";
-                  setPinInput(next);
-                  if (next.length === 4) handleVerifyPin(next);
-                }
-              }}
-              className="py-3 bg-white/5 hover:bg-white/10 active:scale-95 text-white font-mono font-bold text-lg rounded-xl transition border border-white/5"
-            >
-              0
-            </button>
-            <button
-              type="button"
-              onClick={() => setPinInput(pinInput.slice(0, -1))}
-              className="py-3 bg-white/5 hover:bg-white/10 active:scale-95 text-gray-300 text-xs font-bold rounded-xl transition border border-white/5"
-            >
-              ⌫
-            </button>
-          </div>
-
-          {/* Footer Back Link */}
+          {/* Footer Back Link (No Default PIN) */}
           <div className="text-center pt-2 border-t border-white/10">
             <Link 
               href="/staff" 
@@ -212,9 +263,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <ArrowLeft size={14} />
               <span>Back to Staff Workstations</span>
             </Link>
-            <p className="text-[10px] text-gray-500 mt-2 font-mono">
-              Default Manager PIN: 1234
-            </p>
           </div>
         </div>
       </div>
