@@ -213,7 +213,7 @@ export default function CashierDashboard() {
     const roundOff = (grandTotal - exactSum).toFixed(2);
 
     // Payment display
-    const paidLabel = paymentMethod ? `PAID • ${paymentMethod}` : 'DUE / PENDING';
+    const paidLabel = paymentMethod ? `PAID • ${paymentMethod}` : '';
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -328,6 +328,8 @@ export default function CashierDashboard() {
           </div>
 
           <div class="divider"></div>
+          <div class="text-center bold" style="font-size: 12px; letter-spacing: 1.5px; margin: 2px 0;">TAX INVOICE</div>
+          <div class="divider"></div>
 
           <!-- Metadata -->
           <table class="meta-grid">
@@ -400,10 +402,12 @@ export default function CashierDashboard() {
 
           <div class="divider"></div>
 
-          <!-- Payment Status (from OrderSeva layout) -->
-          <div class="text-center bold" style="font-size: 13px; margin: 4px 0 1px 0; letter-spacing: 0.5px;">
+          <!-- Payment Status (shown only when settled) -->
+          ${paymentMethod ? `
+          <div class="text-center bold" style="font-size: 12px; margin: 4px 0 2px 0; letter-spacing: 0.5px; border: 1px solid #222; padding: 2px 4px; border-radius: 4px;">
             ${paidLabel}
           </div>
+          ` : ''}
           <div class="text-center" style="font-size: 9.5px; color: #666; margin-bottom: 6px;">
             Taxes as applicable
           </div>
@@ -787,7 +791,7 @@ export default function CashierDashboard() {
                         onClick={() => printReceipt(group.table, group.orders, subtotal, gst, serviceCharge, grandTotal)}
                         className="w-full flex items-center justify-center gap-2 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition active:scale-95 text-sm"
                       >
-                        🖨️ Print KOT / Bill
+                        🖨️ Print Bill (80mm)
                       </button>
                     </div>
                     <div className="flex gap-2">

@@ -657,7 +657,7 @@ export default function PetpoojaPOSPage() {
     const sgst = (gstAmt / 2).toFixed(2);
     const exactSum = (subTot - discAmt) + gstAmt + scAmt;
     const roundOff = (gTotal - exactSum).toFixed(2);
-    const paidLabel = payMethod ? `PAID • ${payMethod}` : 'DUE / PENDING';
+    const paidLabel = payMethod ? `PAID • ${payMethod}` : '';
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -713,6 +713,8 @@ export default function PetpoojaPOSPage() {
             <div class="header-sub">Contact: 7499934257</div>
           </div>
           <div class="divider"></div>
+          <div class="text-center bold" style="font-size: 12px; letter-spacing: 1.5px; margin: 2px 0;">TAX INVOICE</div>
+          <div class="divider"></div>
           <table class="meta-grid">
             <tr><td class="text-left" style="color:#555; width:35%;">Invoice No</td><td class="text-right bold">${invoiceNo}</td></tr>
             <tr><td class="text-left" style="color:#555;">Date</td><td class="text-right">${formattedDate}</td></tr>
@@ -741,7 +743,10 @@ export default function PetpoojaPOSPage() {
           <div class="divider"></div>
           <div class="total-row"><span>GRAND TOTAL</span><span>₹${gTotal}</span></div>
           <div class="divider"></div>
-          <div class="text-center bold" style="font-size: 13px; margin: 4px 0 1px 0;">${paidLabel}</div>
+          ${payMethod ? `<div class="text-center bold" style="font-size: 12px; margin: 4px 0 2px 0; letter-spacing: 0.5px; border: 1px solid #222; padding: 2px 4px; border-radius: 4px;">${paidLabel}</div>` : ''}
+          <div class="text-center" style="font-size: 9.5px; color: #666; margin-bottom: 4px;">
+            Taxes as applicable
+          </div>
           ${payMethod !== 'CASH' ? `
           <div class="qr-box">
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">SCAN TO PAY VIA UPI</div>
@@ -2002,7 +2007,7 @@ export default function PetpoojaPOSPage() {
                         }}
                         className="w-full py-2 bg-gray-800 hover:bg-gray-900 text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
                       >
-                        <Printer size={14} /> Print Estimate / Bill
+                        <Printer size={14} /> Print Bill / Tax Invoice
                       </button>
 
                       <div className="grid grid-cols-3 gap-1.5">
