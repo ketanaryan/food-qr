@@ -21,21 +21,69 @@ const DEFAULT_CAPTAINS = [
 
 // Fallback Default Menu items if Supabase menu is loading
 const DEFAULT_MENU_ITEMS = [
-  { id: "m-1", name: "Paneer Butter Masala", category: "Main Course", price: 280, isVeg: true },
-  { id: "m-2", name: "Butter Chicken", category: "Main Course", price: 340, isVeg: false },
-  { id: "m-3", name: "Dal Makhani", category: "Main Course", price: 220, isVeg: true },
-  { id: "m-4", name: "Butter Naan", category: "Breads", price: 50, isVeg: true },
-  { id: "m-5", name: "Garlic Naan", category: "Breads", price: 65, isVeg: true },
-  { id: "m-6", name: "Tandoori Roti", category: "Breads", price: 25, isVeg: true },
-  { id: "m-7", name: "Paneer Tikka (6 Pcs)", category: "Starters", price: 260, isVeg: true },
-  { id: "m-8", name: "Chicken Tikka (6 Pcs)", category: "Starters", price: 320, isVeg: false },
-  { id: "m-9", name: "Crispy Veg Spring Rolls", category: "Starters", price: 190, isVeg: true },
-  { id: "m-10", name: "Chicken Dum Biryani", category: "Rice & Biryani", price: 320, isVeg: false },
-  { id: "m-11", name: "Jeera Rice", category: "Rice & Biryani", price: 160, isVeg: true },
-  { id: "m-12", name: "Fresh Lime Soda", category: "Beverages", price: 70, isVeg: true },
-  { id: "m-13", name: "Cold Coffee with Ice Cream", category: "Beverages", price: 120, isVeg: true },
-  { id: "m-14", name: "Mineral Water (1L)", category: "Beverages", price: 30, isVeg: true },
-  { id: "m-15", name: "Gulab Jamun (2 Pcs)", category: "Dessert", price: 90, isVeg: true }
+  // --- Starters ---
+  { id: "m-1", name: "Classic Paneer Tikka (6 Pcs)", category: "Starters", price: 260, isVeg: true },
+  { id: "m-2", name: "Crispy Corn Pepper Salt", category: "Starters", price: 190, isVeg: true },
+  { id: "m-3", name: "Hara Bhara Kabab (6 Pcs)", category: "Starters", price: 220, isVeg: true },
+  { id: "m-4", name: "Dahi Ke Kebab (6 Pcs)", category: "Starters", price: 240, isVeg: true },
+  { id: "m-5", name: "Crispy Veg Spring Rolls (8 Pcs)", category: "Starters", price: 190, isVeg: true },
+  { id: "m-6", name: "Tandoori Mushroom Tikka", category: "Starters", price: 240, isVeg: true },
+  { id: "m-7", name: "Tandoori Chicken (Half / 4 Pcs)", category: "Starters", price: 320, isVeg: false },
+  { id: "m-8", name: "Chicken Tikka (6 Pcs)", category: "Starters", price: 310, isVeg: false },
+  { id: "m-9", name: "Chicken Malai Tikka (6 Pcs)", category: "Starters", price: 340, isVeg: false },
+  { id: "m-10", name: "Chicken Lollipop (6 Pcs)", category: "Starters", price: 280, isVeg: false },
+  { id: "m-11", name: "Chicken Seekh Kebab", category: "Starters", price: 330, isVeg: false },
+  { id: "m-12", name: "Amritsari Fish Tikka (5 Pcs)", category: "Starters", price: 380, isVeg: false },
+
+  // --- Main Course ---
+  { id: "m-13", name: "Butter Chicken (Murgh Makhani)", category: "Main Course", price: 350, isVeg: false },
+  { id: "m-14", name: "Chicken Tikka Masala", category: "Main Course", price: 360, isVeg: false },
+  { id: "m-15", name: "Kadhai Chicken", category: "Main Course", price: 340, isVeg: false },
+  { id: "m-16", name: "Kashmiri Mutton Rogan Josh", category: "Main Course", price: 460, isVeg: false },
+  { id: "m-17", name: "Dal Makhani (Grandma's Style)", category: "Main Course", price: 230, isVeg: true },
+  { id: "m-18", name: "Yellow Dal Double Tadka", category: "Main Course", price: 180, isVeg: true },
+  { id: "m-19", name: "Paneer Butter Masala", category: "Main Course", price: 280, isVeg: true },
+  { id: "m-20", name: "Kadhai Paneer Special", category: "Main Course", price: 290, isVeg: true },
+  { id: "m-21", name: "Lahori Palak Paneer", category: "Main Course", price: 270, isVeg: true },
+  { id: "m-22", name: "Shahi Malai Kofta", category: "Main Course", price: 290, isVeg: true },
+  { id: "m-23", name: "Subz Mix Veg Handi", category: "Main Course", price: 240, isVeg: true },
+  { id: "m-24", name: "Dum Aloo Kashmiri", category: "Main Course", price: 220, isVeg: true },
+
+  // --- Breads ---
+  { id: "m-25", name: "Garlic Butter Naan", category: "Breads", price: 60, isVeg: true },
+  { id: "m-26", name: "Butter Naan", category: "Breads", price: 50, isVeg: true },
+  { id: "m-27", name: "Cheese Garlic Naan", category: "Breads", price: 90, isVeg: true },
+  { id: "m-28", name: "Tandoori Roti (Plain)", category: "Breads", price: 25, isVeg: true },
+  { id: "m-29", name: "Butter Tandoori Roti", category: "Breads", price: 30, isVeg: true },
+  { id: "m-30", name: "Laccha Paratha", category: "Breads", price: 55, isVeg: true },
+
+  // --- Rice & Biryani ---
+  { id: "m-31", name: "Hyderabadi Chicken Dum Biryani", category: "Rice & Biryani", price: 340, isVeg: false },
+  { id: "m-32", name: "Royal Mutton Dum Biryani", category: "Rice & Biryani", price: 450, isVeg: false },
+  { id: "m-33", name: "Nawabi Veg Dum Biryani", category: "Rice & Biryani", price: 240, isVeg: true },
+  { id: "m-34", name: "Jeera Rice", category: "Rice & Biryani", price: 160, isVeg: true },
+  { id: "m-35", name: "Steamed Basmati Rice", category: "Rice & Biryani", price: 130, isVeg: true },
+
+  // --- Chinese ---
+  { id: "m-36", name: "Chilli Paneer (Dry / Gravy)", category: "Chinese", price: 240, isVeg: true },
+  { id: "m-37", name: "Veg Manchurian (Dry / Gravy)", category: "Chinese", price: 210, isVeg: true },
+  { id: "m-38", name: "Veg Hakka Noodles", category: "Chinese", price: 180, isVeg: true },
+  { id: "m-39", name: "Chicken Schezwan Fried Rice", category: "Chinese", price: 230, isVeg: false },
+
+  // --- Desserts ---
+  { id: "m-40", name: "Gulab Jamun (2 Pcs with Rabri)", category: "Desserts", price: 90, isVeg: true },
+  { id: "m-41", name: "Kesar Pista Rasmalai (2 Pcs)", category: "Desserts", price: 120, isVeg: true },
+  { id: "m-42", name: "Gajar Ka Halwa (Desi Ghee)", category: "Desserts", price: 130, isVeg: true },
+  { id: "m-43", name: "Shahi Matka Kulfi", category: "Desserts", price: 90, isVeg: true },
+
+  // --- Beverages ---
+  { id: "m-44", name: "Masala Chaas (Spiced Buttermilk)", category: "Beverages", price: 50, isVeg: true },
+  { id: "m-45", name: "Oreo Mudslide Thick Shake", category: "Beverages", price: 150, isVeg: true },
+  { id: "m-46", name: "Sweet Amritsari Punjabi Lassi", category: "Beverages", price: 80, isVeg: true },
+  { id: "m-47", name: "Alphonso Mango Lassi", category: "Beverages", price: 100, isVeg: true },
+  { id: "m-48", name: "Fresh Lime Soda (Sweet & Salt)", category: "Beverages", price: 70, isVeg: true },
+  { id: "m-49", name: "Cold Coffee with Vanilla Ice Cream", category: "Beverages", price: 120, isVeg: true },
+  { id: "m-50", name: "Packaged Mineral Water (1L)", category: "Beverages", price: 30, isVeg: true }
 ];
 
 export default function CaptainPortal() {
@@ -125,7 +173,7 @@ export default function CaptainPortal() {
         name: d.name,
         category: d.section || "Main Course",
         price: d.price,
-        isVeg: !d.name.toLowerCase().includes("chicken") && !d.name.toLowerCase().includes("mutton") && !d.name.toLowerCase().includes("egg")
+        isVeg: !d.name.toLowerCase().includes("chicken") && !d.name.toLowerCase().includes("mutton") && !d.name.toLowerCase().includes("egg") && !d.name.toLowerCase().includes("fish")
       }));
       setMenuItems(formatted);
     }
