@@ -49,7 +49,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       
       doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text("Amrut Garden, Pathardi Phata, Nashik, Maharashtra 422009", 105, 24, { align: "center" });
+      doc.text("Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009", 105, 24, { align: "center" });
       doc.text("GSTIN: 27AABCH1234F1Z5  |  FSSAI: 11521045000123  |  Contact: +91 7499934257", 105, 29, { align: "center" });
       doc.text(`Date: ${new Date(orders[0].created_at).toLocaleDateString()} ${new Date(orders[0].created_at).toLocaleTimeString()}`, 105, 34, { align: "center" });
       

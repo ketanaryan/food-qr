@@ -236,7 +236,7 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
             <div className="absolute inset-0 z-0">
               <Image
                 src="/hotel-white-bliss.jpg"
-                alt="Hotel New Amrut Garden"
+                alt="Hotel White Bliss"
                 fill
                 priority
                 className="object-cover scale-105"
@@ -270,7 +270,7 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
             {/* Hero Title & Quick Search Pill */}
             <div className="relative z-10 w-full px-4 sm:px-8 max-w-3xl flex flex-col items-center text-center">
               <span className="text-xs uppercase tracking-widest text-[#A18D6D] bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-[#A18D6D]/30 mb-2 font-medium">
-                Hotel New Amrut Garden
+                Hotel White Bliss
               </span>
               <h1 className="text-3xl sm:text-5xl font-playfair font-bold text-white tracking-wide drop-shadow-md">
                 Culinary Experience

@@ -292,7 +292,7 @@ export default function CashierDashboard() {
           <!-- Brand Header -->
           <div class="text-center">
             <div class="header-title">Hotel White Bliss</div>
-            <div class="header-sub">Amrut Garden, Pathardi Phata, Nashik, Maharashtra 422009</div>
+            <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
             <div class="header-sub">Contact: 7499934257</div>
           </div>

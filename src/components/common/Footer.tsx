@@ -53,7 +53,7 @@ function Footer() {
                         Visit Us
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li>Amrut Garden</li>
+                        <li>Hotel White Bliss</li>
                         <li>Dnyaneshwar Nagar, Pathardi Phata</li>
                         <li>Nashik, Maharashtra 422009</li>
                         <li className="pt-2 font-medium">Open: 8:00 AM - 11:00 PM</li>
