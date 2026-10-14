@@ -32,7 +32,7 @@ export interface StaffMember {
 export interface AttendanceRecord {
   staffId: string;
   date: string;
-  status: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE";
+  status: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF";
   inTime: string;
   overtimeHours: number;
   latePenalty: number;
@@ -403,7 +403,7 @@ export default function AttendoPage() {
       initDefaultAttendance(INITIAL_STAFF);
     }
 
-    const savedMonthly = localStorage.getItem("hwb_attendo_monthly_attendance");
+    const savedMonthly = localStorage.getItem("hwb_attendo_monthly_attendance_v3");
     if (savedMonthly) {
       try { setMonthlyAttendance(JSON.parse(savedMonthly)); } catch (e) { initDefaultMonthly(INITIAL_STAFF); }
     } else {
@@ -539,26 +539,26 @@ export default function AttendoPage() {
     staffList.forEach((s, idx) => {
       res[s.id] = {};
       for (let day = 1; day <= 31; day++) {
-        // Sundays in October 2026: 4, 11, 18, 25
-        if (day === 4 || day === 11 || day === 18 || day === 25) {
-          res[s.id][day] = "WEEKLY_OFF";
-        } else if (day > 15) {
+        if (day > 15) {
           continue; // future days
         } else if (day === 15) {
+          // Today (15th Oct)
           res[s.id][day] = idx === 5 ? "HALF_DAY" : idx === 6 ? "ABSENT" : "PRESENT";
         } else {
-          // Days 1 to 14 realistic sample history for transparent view
+          // Normal restaurant working days (NO auto-Sunday off - restaurant runs 7 days!)
+          // Transparent historical samples:
           if (idx === 0 && day === 9) res[s.id][day] = "HALF_DAY";
           else if (idx === 1 && day === 5) res[s.id][day] = "PAID_LEAVE";
           else if (idx === 2 && day === 12) res[s.id][day] = "ABSENT";
           else if (idx === 4 && day === 7) res[s.id][day] = "HALF_DAY";
           else if (idx === 6 && day === 3) res[s.id][day] = "ABSENT";
+          else if (idx === 6 && day === 11) res[s.id][day] = "ABSENT";
           else res[s.id][day] = "PRESENT";
         }
       }
     });
     setMonthlyAttendance(res);
-    localStorage.setItem("hwb_attendo_monthly_attendance", JSON.stringify(res));
+    localStorage.setItem("hwb_attendo_monthly_attendance_v3", JSON.stringify(res));
   };
 
   const saveStaff = (updated: StaffMember[]) => {
@@ -573,7 +573,7 @@ export default function AttendoPage() {
 
   const saveMonthlyAttendance = (updated: { [staffId: string]: { [dayNum: number]: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF" } }) => {
     setMonthlyAttendance(updated);
-    localStorage.setItem("hwb_attendo_monthly_attendance", JSON.stringify(updated));
+    localStorage.setItem("hwb_attendo_monthly_attendance_v3", JSON.stringify(updated));
   };
 
   const handleToggleMusterDay = (staffId: string, day: number) => {
@@ -602,14 +602,14 @@ export default function AttendoPage() {
     saveMonthlyAttendance(updatedMonthly);
 
     // If day 15, also sync to today's active register
-    if (day === 15 && nextStatus !== "WEEKLY_OFF") {
+    if (day === 15) {
       const updatedToday = {
         ...attendance,
         [staffId]: {
           staffId,
           date: todayStr,
-          status: nextStatus as any,
-          inTime: nextStatus === "ABSENT" ? "--" : "10:00 AM",
+          status: nextStatus,
+          inTime: nextStatus === "ABSENT" || nextStatus === "WEEKLY_OFF" ? "--" : "10:00 AM",
           overtimeHours: attendance[staffId]?.overtimeHours || 0,
           latePenalty: attendance[staffId]?.latePenalty || 0
         }
@@ -644,7 +644,7 @@ export default function AttendoPage() {
     localStorage.setItem("hwb_attendo_logs", JSON.stringify(updated));
   };
 
-  const handleSetStatus = (staffId: string, status: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE") => {
+  const handleSetStatus = (staffId: string, status: "PRESENT" | "HALF_DAY" | "ABSENT" | "PAID_LEAVE" | "WEEKLY_OFF") => {
     if (isPayrollLocked) {
       return toast.error("Payroll period is finalised and locked.");
     }
@@ -654,7 +654,7 @@ export default function AttendoPage() {
         staffId,
         date: todayStr,
         status,
-        inTime: status === "ABSENT" ? "--" : "10:00 AM",
+        inTime: status === "ABSENT" || status === "WEEKLY_OFF" ? "--" : "10:00 AM",
         overtimeHours: attendance[staffId]?.overtimeHours || 0,
         latePenalty: attendance[staffId]?.latePenalty || 0
       }
@@ -938,10 +938,32 @@ export default function AttendoPage() {
 
   const calculatePayrollForMember = (member: StaffMember) => {
     const rec = attendance[member.id];
-    let payableDays = 30;
     
-    if (rec?.status === "ABSENT") payableDays = 29;
-    else if (rec?.status === "HALF_DAY") payableDays = 29.5;
+    // Count exact monthly records for this staff member
+    let pCount = 0;
+    let hdCount = 0;
+    let aCount = 0;
+    let lCount = 0;
+    let woCount = 0;
+
+    const staffMonthly = monthlyAttendance[member.id] || {};
+    for (let day = 1; day <= 31; day++) {
+      const st = staffMonthly[day];
+      if (st === "PRESENT") pCount++;
+      else if (st === "HALF_DAY") hdCount++;
+      else if (st === "ABSENT") aCount++;
+      else if (st === "PAID_LEAVE") lCount++;
+      else if (st === "WEEKLY_OFF") woCount++;
+    }
+
+    // Exact days worked Month-to-Date (up to today Day 15)
+    // Present = 1, Half Day = 0.5, Paid Leave = 1, Weekly Off = 1
+    const mtdWorkedDays = Number((pCount + (hdCount * 0.5) + lCount + woCount).toFixed(1));
+
+    // Full Month (30 days standard) payable after deducting unworked days:
+    // Absent = 1 day deduct, Half Day = 0.5 day deduct
+    const totalDeductions = aCount + (hdCount * 0.5);
+    const payableDays = Math.max(0, Number((30 - totalDeductions).toFixed(1)));
 
     const approvedPaidLeaves = leaves.filter(l => l.staffId === member.id && l.status === "APPROVED").reduce((acc, l) => acc + l.days, 0);
     const dayRate = member.monthlySalary / 30;
@@ -970,6 +992,12 @@ export default function AttendoPage() {
 
     return {
       payableDays,
+      mtdWorkedDays,
+      pCount,
+      hdCount,
+      aCount,
+      lCount,
+      woCount,
       approvedPaidLeaves,
       dayRate,
       baseEarned,
@@ -1031,7 +1059,7 @@ export default function AttendoPage() {
 
   const handleExportMusterReport = () => {
     const daysHeader = Array.from({ length: 31 }, (_, i) => `Day ${i + 1}`).join(",");
-    const headers = [`Emp ID,Employee Name,Designation,Dept,${daysHeader},Total Present,Half Days,Total Absent,Paid Leaves,Weekly Off,Payable Days`];
+    const headers = [`Emp ID,Employee Name,Designation,Dept,${daysHeader},Total Present,Half Days,Total Absent,Paid Leaves,Weekly Off,MTD Earned Days (15d),Full Month Payable (30d)`];
     
     const rows = staff.map(s => {
       const p = calculatePayrollForMember(s);
@@ -1053,7 +1081,7 @@ export default function AttendoPage() {
         return "-";
       }).join(",");
 
-      return `"${s.id}","${s.name}","${s.role}","${s.department}",${daysMarks},${pCount},${hdCount},${aCount},${lCount},${woCount},${p.payableDays}`;
+      return `"${s.id}","${s.name}","${s.role}","${s.department}",${daysMarks},${pCount},${hdCount},${aCount},${lCount},${woCount},${p.mtdWorkedDays},${p.payableDays}`;
     });
 
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
@@ -1375,13 +1403,16 @@ export default function AttendoPage() {
                                   ? "bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-500"
                                   : rec.status === "ABSENT"
                                   ? "bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-500"
-                                  : "bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-500"
+                                  : rec.status === "PAID_LEAVE"
+                                  ? "bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-500"
+                                  : "bg-zinc-100 text-zinc-800 border-zinc-300 focus:ring-zinc-500"
                               }`}
                             >
                               <option value="PRESENT">✓ Present (Full)</option>
                               <option value="HALF_DAY">◐ Half Day (0.5)</option>
                               <option value="ABSENT">✕ Absent (Unpaid)</option>
                               <option value="PAID_LEAVE">🌴 Paid Leave</option>
+                              <option value="WEEKLY_OFF">☕ Off Day / Chutti</option>
                             </select>
                             <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-zinc-500">
                               <ChevronDown size={14} />
@@ -2196,7 +2227,7 @@ export default function AttendoPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span> L = Paid Leave
             </span>
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-600 bg-zinc-200/80 px-2 py-0.5 rounded-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> WO = Weekly Off (Sun)
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> Off = Weekly Off / Chutti (Owner decided)
             </span>
           </div>
 
@@ -2214,14 +2245,12 @@ export default function AttendoPage() {
                       const d = new Date(2026, 9, day);
                       const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
                       const wk = weekdays[d.getDay()];
-                      const isSun = d.getDay() === 0;
                       const isToday = day === 15;
                       return (
                         <th 
                           key={day} 
                           className={`py-2 px-1 text-center font-mono min-w-[32px] ${
-                            isToday ? "bg-amber-100/70 text-amber-950 font-black border-x border-amber-300" :
-                            isSun ? "bg-zinc-100 text-zinc-400" : ""
+                            isToday ? "bg-amber-100/70 text-amber-950 font-black border-x border-amber-300" : ""
                           }`}
                         >
                           <div className="text-[9px] uppercase">{wk}</div>
@@ -2233,8 +2262,10 @@ export default function AttendoPage() {
                     <th className="py-2 px-2 text-center bg-amber-50 text-amber-900 font-bold">HD</th>
                     <th className="py-2 px-2 text-center bg-rose-50 text-rose-900 font-bold">A</th>
                     <th className="py-2 px-2 text-center bg-blue-50 text-blue-900 font-bold">L</th>
-                    <th className="py-2 px-2 text-center bg-zinc-100 text-zinc-700 font-bold">WO</th>
-                    <th className="py-2 px-3 text-center bg-zinc-900 text-white font-bold">Payable</th>
+                    <th className="py-2 px-2 text-center bg-zinc-100 text-zinc-700 font-bold">Off</th>
+                    <th className="py-2 px-3 text-center bg-zinc-900 text-white font-bold min-w-[110px]" title="MTD days worked till today (15d) / Projected full month payable days (30d)">
+                      Payable (15d / 30d)
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 font-mono">
@@ -2270,8 +2301,6 @@ export default function AttendoPage() {
                         </td>
                         {Array.from({ length: 31 }, (_, i) => {
                           const day = i + 1;
-                          const d = new Date(2026, 9, day);
-                          const isSun = d.getDay() === 0;
                           const isToday = day === 15;
                           const st = monthlyAttendance[s.id]?.[day];
 
@@ -2282,8 +2311,7 @@ export default function AttendoPage() {
                               className={`py-1.5 px-0.5 text-center transition ${
                                 day <= 15 ? "cursor-pointer hover:scale-110" : "cursor-default"
                               } ${
-                                isToday ? "bg-amber-50/60 border-x border-amber-200" :
-                                isSun ? "bg-zinc-50/80" : ""
+                                isToday ? "bg-amber-50/60 border-x border-amber-200" : ""
                               }`}
                               title={day <= 15 ? `Day ${day}: ${st || 'Unrecorded'} (Click to change)` : `Day ${day} (Future)`}
                             >
@@ -2308,8 +2336,8 @@ export default function AttendoPage() {
                                 </span>
                               )}
                               {st === "WEEKLY_OFF" && (
-                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-500">
-                                  WO
+                                <span className="inline-block px-1 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-600">
+                                  Off
                                 </span>
                               )}
                               {!st && (
@@ -2323,7 +2351,10 @@ export default function AttendoPage() {
                         <td className="py-2.5 px-2 text-center font-bold text-rose-700 bg-rose-50/40">{aCount}</td>
                         <td className="py-2.5 px-2 text-center font-bold text-blue-700 bg-blue-50/40">{lCount}</td>
                         <td className="py-2.5 px-2 text-center font-medium text-zinc-600 bg-zinc-50/50">{woCount}</td>
-                        <td className="py-2.5 px-3 text-center font-black text-zinc-900 bg-zinc-100/70">{p.payableDays}</td>
+                        <td className="py-2.5 px-3 text-center font-black bg-zinc-100/80">
+                          <div className="text-zinc-900 font-bold text-xs">{p.mtdWorkedDays} / 15 d</div>
+                          <div className="text-[10px] text-zinc-500 font-normal">Full: {p.payableDays} d</div>
+                        </td>
                       </tr>
                     );
                   })}
@@ -2838,27 +2869,35 @@ export default function AttendoPage() {
                 else if (st === "WEEKLY_OFF") woCount++;
               }
 
-              const payable = pCount + (hdCount * 0.5) + lCount + woCount;
-              const earnedSoFar = Math.round(payable * selectedStaffForHistory.dailyRate);
+              const mtdPayable = Number((pCount + (hdCount * 0.5) + lCount + woCount).toFixed(1));
+              const deductions = aCount + (hdCount * 0.5);
+              const fullMonthPayable = Math.max(0, Number((30 - deductions).toFixed(1)));
+              const earnedSoFar = Math.round(mtdPayable * selectedStaffForHistory.dailyRate);
 
               return (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                     <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
                       <span className="text-[10px] font-bold text-emerald-800 uppercase">Present</span>
                       <div className="text-xl font-bold text-emerald-950 font-mono mt-0.5">{pCount} Days</div>
-                    </div>
-                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
-                      <span className="text-[10px] font-bold text-rose-800 uppercase">Absent</span>
-                      <div className="text-xl font-bold text-rose-950 font-mono mt-0.5">{aCount} Days</div>
                     </div>
                     <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl">
                       <span className="text-[10px] font-bold text-amber-800 uppercase">Half Days</span>
                       <div className="text-xl font-bold text-amber-950 font-mono mt-0.5">{hdCount} Days</div>
                     </div>
+                    <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl">
+                      <span className="text-[10px] font-bold text-rose-800 uppercase">Absent</span>
+                      <div className="text-xl font-bold text-rose-950 font-mono mt-0.5">{aCount} Days</div>
+                    </div>
                     <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl">
-                      <span className="text-[10px] font-bold text-blue-800 uppercase">Earned MTD</span>
-                      <div className="text-xl font-bold text-blue-950 font-mono mt-0.5">₹{earnedSoFar.toLocaleString("en-IN")}</div>
+                      <span className="text-[10px] font-bold text-blue-800 uppercase">Earned MTD (15d)</span>
+                      <div className="text-lg font-bold text-blue-950 font-mono mt-0.5">₹{earnedSoFar.toLocaleString("en-IN")}</div>
+                      <div className="text-[10px] text-blue-700 font-semibold">{mtdPayable} / 15 Days</div>
+                    </div>
+                    <div className="p-2.5 bg-zinc-900 text-white rounded-xl">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase">Full Month (30d)</span>
+                      <div className="text-lg font-bold text-white font-mono mt-0.5">{fullMonthPayable} Days</div>
+                      <div className="text-[10px] text-zinc-400 font-normal">deducted: -{deductions}d</div>
                     </div>
                   </div>
 
@@ -2914,7 +2953,7 @@ export default function AttendoPage() {
                                st === "HALF_DAY" ? "HD" :
                                st === "ABSENT" ? "A" :
                                st === "PAID_LEAVE" ? "L" :
-                               st === "WEEKLY_OFF" ? "WO" : "-"}
+                               st === "WEEKLY_OFF" ? "Off" : "-"}
                             </span>
                           </button>
                         );
