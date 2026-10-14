@@ -57,6 +57,11 @@ export function middleware(req: NextRequest) {
     return applySecurityHeaders(response);
   }
 
+  // Allow /staff/login unconditionally so staff can authenticate
+  if (url.startsWith('/staff/login')) {
+    return applySecurityHeaders(NextResponse.next());
+  }
+
   // 3. Operational Staff Workstations (/kitchen, /cashier, /pos, /captain, /staff)
   const isStaffPath = 
     url.startsWith('/kitchen') || 
@@ -72,21 +77,16 @@ export function middleware(req: NextRequest) {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: 60 * 60 * 24 * 365, // 1 year persistence for staff APKs
         path: '/'
       });
       return applySecurityHeaders(response);
     }
 
-    // Prompt for Staff Basic Auth
-    const unauthorizedResponse = new NextResponse('Authentication required for Hotel White Bliss Staff Area.', {
-      status: 401,
-      headers: {
-        'WWW-Authenticate': 'Basic realm="Hotel White Bliss Staff Area"'
-      }
-    });
-
-    return applySecurityHeaders(unauthorizedResponse);
+    // Redirect to mobile-friendly staff login page (works 100% on Android APKs, WebViews & phones)
+    const loginUrl = new URL('/staff/login', req.url);
+    loginUrl.searchParams.set('redirect', url);
+    return applySecurityHeaders(NextResponse.redirect(loginUrl));
   }
 
   const defaultResponse = NextResponse.next();
