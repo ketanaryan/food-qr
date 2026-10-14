@@ -19,6 +19,7 @@ export default function CashierDashboard() {
   // WhatsApp Modal State
   const [waModal, setWaModal] = useState<{isOpen: boolean, data: any, paymentMethod: 'CASH' | 'UPI' | null}>({isOpen: false, data: null, paymentMethod: null});
   const [waPhone, setWaPhone] = useState('');
+  const [tableServiceChargeDisabled, setTableServiceChargeDisabled] = useState<{ [table: string]: boolean }>({});
 
   // Sync state to ref
   useEffect(() => {
@@ -733,9 +734,10 @@ export default function CashierDashboard() {
               </div>
 
               {(() => {
+                const isScDisabled = !!tableServiceChargeDisabled[group.table];
                 const subtotal = group.total;
                 const gst = Math.round(subtotal * 0.05);
-                const serviceCharge = Math.round(subtotal * 0.05);
+                const serviceCharge = isScDisabled ? 0 : Math.round(subtotal * 0.05);
                 const grandTotal = subtotal + gst + serviceCharge;
 
                 return (
@@ -749,9 +751,30 @@ export default function CashierDashboard() {
                         <span>GST (5%)</span>
                         <span>₹{gst}</span>
                       </div>
-                      <div className="flex justify-between font-medium opacity-80">
-                        <span>Service Charge (5%)</span>
-                        <span>₹{serviceCharge}</span>
+                      <div className="flex items-center justify-between font-medium opacity-90 py-0.5">
+                        <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={!isScDisabled}
+                            onChange={(e) => setTableServiceChargeDisabled(prev => ({ ...prev, [group.table]: !e.target.checked }))}
+                            className="rounded text-blue-600 accent-blue-600 w-3.5 h-3.5"
+                          />
+                          <span>Service Charge (5%)</span>
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <span className={isScDisabled ? "line-through text-gray-400" : ""}>₹{Math.round(subtotal * 0.05)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setTableServiceChargeDisabled(prev => ({ ...prev, [group.table]: !isScDisabled }))}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
+                              isScDisabled 
+                                ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" 
+                                : "bg-red-100 text-red-800 hover:bg-red-200"
+                            }`}
+                          >
+                            {isScDisabled ? "+ Add SC" : "Remove SC"}
+                          </button>
+                        </div>
                       </div>
                       <div className="flex items-center justify-between pt-2 mt-2 border-t border-blue-200">
                         <span className="font-bold text-blue-950">Grand Total</span>
@@ -814,6 +837,59 @@ export default function CashierDashboard() {
               <p className="text-white/80 text-sm">Table {waModal.data?.tableNumber} • Paid via {waModal.paymentMethod}</p>
             </div>
             <div className="p-6 space-y-4">
+              {/* Service Charge Toggle in Modal */}
+              <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-200 rounded-xl">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs font-bold text-blue-950">
+                  <input
+                    type="checkbox"
+                    checked={(waModal.data?.serviceCharge || 0) > 0}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      const sub = waModal.data?.subtotal || 0;
+                      const g = waModal.data?.gst || Math.round(sub * 0.05);
+                      const sc = enabled ? Math.round(sub * 0.05) : 0;
+                      const newGrand = sub + g + sc;
+                      setWaModal(prev => ({
+                        ...prev,
+                        data: {
+                          ...prev.data,
+                          serviceCharge: sc,
+                          grandTotal: newGrand
+                        }
+                      }));
+                    }}
+                    className="rounded text-blue-600 accent-blue-600 w-3.5 h-3.5 cursor-pointer"
+                  />
+                  <span>Service Charge (5% - ₹{Math.round((waModal.data?.subtotal || 0) * 0.05)})</span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentlyOn = (waModal.data?.serviceCharge || 0) > 0;
+                    const enabled = !currentlyOn;
+                    const sub = waModal.data?.subtotal || 0;
+                    const g = waModal.data?.gst || Math.round(sub * 0.05);
+                    const sc = enabled ? Math.round(sub * 0.05) : 0;
+                    const newGrand = sub + g + sc;
+                    setWaModal(prev => ({
+                      ...prev,
+                      data: {
+                        ...prev.data,
+                        serviceCharge: sc,
+                        grandTotal: newGrand
+                      }
+                    }));
+                  }}
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded transition ${
+                    (waModal.data?.serviceCharge || 0) > 0 
+                      ? "bg-red-100 text-red-800" 
+                      : "bg-emerald-100 text-emerald-800"
+                  }`}
+                >
+                  {(waModal.data?.serviceCharge || 0) > 0 ? "Remove SC" : "+ Add SC"}
+                </button>
+              </div>
+
               <div>
                 <label className="block text-sm font-bold text-gray-700 mb-2">Customer Phone Number (Optional)</label>
                 <input 
@@ -826,7 +902,7 @@ export default function CashierDashboard() {
                   onKeyDown={(e) => e.key === 'Enter' && handleSendWa()}
                 />
               </div>
-              <div className="flex flex-col gap-3 pt-2">
+              <div className="flex flex-col gap-2.5 pt-1">
                 <button 
                   onClick={handleSendWa}
                   className="w-full bg-[#25D366] text-white font-bold py-3 rounded-xl hover:bg-[#1ebd5b] transition shadow-md"
@@ -851,6 +927,18 @@ export default function CashierDashboard() {
                   className="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition shadow-sm text-sm"
                 >
                   🖨️ Print Receipt & Clear Table
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    if (!waModal.data) return;
+                    const { tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal } = waModal.data;
+                    printReceipt(tableNumber, groupOrders, subtotal, gst, serviceCharge, grandTotal, waModal.paymentMethod || undefined);
+                    toast.success("Printed updated slip to show customer!", { icon: "🖨️" });
+                  }}
+                  className="w-full bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 font-bold py-2.5 rounded-xl transition shadow-2xs text-xs"
+                >
+                  📄 Reprint Slip for Customer (Keep Open)
                 </button>
                 <button 
                   onClick={handleSkipWa}

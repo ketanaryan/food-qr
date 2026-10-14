@@ -2500,6 +2500,82 @@ export default function PetpoojaPOSPage() {
             </div>
 
             <div className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1">
+              {/* Service Charge Quick Opt-Out / Toggle */}
+              <div className="flex items-center justify-between p-2.5 bg-amber-50/80 border border-amber-200 rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="waModalScToggle"
+                    checked={(waModal.data.serviceCharge || 0) > 0}
+                    onChange={(e) => {
+                      const enabled = e.target.checked;
+                      const sub = waModal.data.subtotal || 0;
+                      const disc = waModal.data.discount || 0;
+                      const net = Math.max(0, sub - disc);
+                      const g = waModal.data.gst || Math.round(net * 0.05);
+                      const sc = enabled ? Math.round(net * 0.05) : 0;
+                      const newGrand = net + g + sc;
+                      setWaModal(prev => ({
+                        ...prev,
+                        data: {
+                          ...prev.data,
+                          serviceCharge: sc,
+                          grandTotal: newGrand
+                        }
+                      }));
+                      if (waModal.paymentMethod === 'CASH') {
+                        setCashTendered(newGrand);
+                      } else if (waModal.paymentMethod === 'SPLIT') {
+                        setSplitCashAmt(Math.round(newGrand / 2));
+                      }
+                      toast(enabled ? "Service charge added" : "Service charge removed (₹0)", {
+                        icon: enabled ? "➕" : "➖"
+                      });
+                    }}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                  />
+                  <label htmlFor="waModalScToggle" className="cursor-pointer text-xs font-bold text-gray-800">
+                    Service Charge (5% - ₹{Math.round((waModal.data.subtotal || 0) * 0.05)})
+                  </label>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const currentlyOn = (waModal.data.serviceCharge || 0) > 0;
+                    const enabled = !currentlyOn;
+                    const sub = waModal.data.subtotal || 0;
+                    const disc = waModal.data.discount || 0;
+                    const net = Math.max(0, sub - disc);
+                    const g = waModal.data.gst || Math.round(net * 0.05);
+                    const sc = enabled ? Math.round(net * 0.05) : 0;
+                    const newGrand = net + g + sc;
+                    setWaModal(prev => ({
+                      ...prev,
+                      data: {
+                        ...prev.data,
+                        serviceCharge: sc,
+                        grandTotal: newGrand
+                      }
+                    }));
+                    if (waModal.paymentMethod === 'CASH') {
+                      setCashTendered(newGrand);
+                    } else if (waModal.paymentMethod === 'SPLIT') {
+                      setSplitCashAmt(Math.round(newGrand / 2));
+                    }
+                    toast(enabled ? "Service charge added" : "Service charge removed (₹0)", {
+                      icon: enabled ? "➕" : "➖"
+                    });
+                  }}
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-xl transition ${
+                    (waModal.data.serviceCharge || 0) > 0 
+                      ? "text-red-700 bg-red-100 hover:bg-red-200" 
+                      : "text-emerald-700 bg-emerald-100 hover:bg-emerald-200"
+                  }`}
+                >
+                  {(waModal.data.serviceCharge || 0) > 0 ? "Remove SC" : "+ Add SC"}
+                </button>
+              </div>
+
               {/* CASH TENDER CALCULATOR */}
               {waModal.paymentMethod === 'CASH' && (
                 <div className="bg-emerald-50 border border-emerald-200 p-3 rounded-2xl space-y-2">
@@ -2654,6 +2730,24 @@ export default function PetpoojaPOSPage() {
                   className="w-full bg-gray-900 hover:bg-black text-white font-bold py-2.5 rounded-xl transition text-xs flex items-center justify-center gap-2"
                 >
                   <Printer size={14} /> Print 80mm GST Invoice & Clear Table
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { tableNumber, groupOrders, grandTotal, subtotal, discount, gst, serviceCharge } = waModal.data;
+                    const finalSub = subtotal || groupOrders.reduce((a: any, o: any) => a + Number(o.total_amount || 0), 0);
+                    const finalDisc = discount || 0;
+                    const finalGst = gst || Math.round(finalSub * 0.05);
+                    const finalSc = serviceCharge || 0;
+                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
+                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode);
+                    toast.success("Printed updated slip to hand customer!", { icon: "🖨️" });
+                  }}
+                  className="w-full bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-2xs"
+                >
+                  <Printer size={13} className="text-blue-600" />
+                  <span>Reprint Slip for Customer (Keep Open)</span>
                 </button>
 
                 {waPhone.replace(/\D/g, '').length >= 10 && (

@@ -32,13 +32,30 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       const tableNumber = orders[0].table_number;
       let subtotal = 0;
       
+      let storedSubtotal: number | undefined;
+      let storedGst: number | undefined;
+      let storedServiceCharge: number | undefined;
+      let storedGrandTotal: number | undefined;
+
       orders.forEach(order => {
         subtotal += Number(order.total_amount);
+        let itArr: any[] = [];
+        try { itArr = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; } catch(e) {}
+        if (Array.isArray(itArr)) {
+          const sInfo = itArr.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
+          if (sInfo) {
+            if (typeof sInfo.subtotal === 'number') storedSubtotal = sInfo.subtotal;
+            if (typeof sInfo.gst === 'number') storedGst = sInfo.gst;
+            if (typeof sInfo.service_charge === 'number') storedServiceCharge = sInfo.service_charge;
+            if (typeof sInfo.grand_total === 'number') storedGrandTotal = sInfo.grand_total;
+          }
+        }
       });
 
-      const gst = Math.round(subtotal * 0.05);
-      const serviceCharge = Math.round(subtotal * 0.05);
-      const grandTotal = subtotal + gst + serviceCharge;
+      const finalSub = storedSubtotal !== undefined ? storedSubtotal : subtotal;
+      const gst = storedGst !== undefined ? storedGst : Math.round(finalSub * 0.05);
+      const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(finalSub * 0.05);
+      const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : (finalSub + gst + serviceCharge);
 
       // Generate PDF
       const doc = new jsPDF();
