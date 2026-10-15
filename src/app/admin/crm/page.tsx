@@ -73,9 +73,12 @@ export default function GuestCRMPage() {
           // Normalize to last 10 digits
           const cleanPhone = phone.slice(-10);
           
-          // Grand total calculation with taxes
+          // Read exact grand total from settlement info if available
+          const sInfo = items.find((i: any) => i && i.id === "SETTLEMENT_INFO");
           const subtotal = Number(order.total_amount) || 0;
-          const grandTotal = Math.round(subtotal * 1.10); // 5% GST + 5% Service Charge
+          const grandTotal = (sInfo && typeof sInfo.grand_total === "number")
+            ? sInfo.grand_total
+            : Math.round(subtotal * 1.10);
 
           const existing = customerMap.get(cleanPhone);
           if (existing) {

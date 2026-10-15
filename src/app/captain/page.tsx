@@ -382,7 +382,10 @@ export default function CaptainPortal() {
       const orderIds = group.orders.map((o: any) => o.id);
       const res = await fetch('/api/orders/update', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-staff-access': 'pos_secure_override'
+        },
         body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
       });
       const data = await res.json();

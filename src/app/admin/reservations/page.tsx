@@ -58,7 +58,10 @@ export default function ReservationsPage() {
 
     await fetch('/api/orders/update', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-staff-access': 'pos_secure_override'
+      },
       body: JSON.stringify({ orderIds: [res.id], status: 'confirmed_reservation' })
     });
   }
@@ -70,7 +73,10 @@ export default function ReservationsPage() {
     
     await fetch('/api/orders/update', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-staff-access': 'pos_secure_override'
+      },
       body: JSON.stringify({ orderIds: [id], status: 'rejected' })
     });
   }

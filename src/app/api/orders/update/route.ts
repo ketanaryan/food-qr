@@ -15,7 +15,8 @@ const ALLOWED_STATUSES = [
   'ready',
   'served',
   'archived',
-  'rejected'
+  'rejected',
+  'confirmed_reservation'
 ];
 
 export async function POST(req: Request) {
