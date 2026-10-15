@@ -620,20 +620,27 @@ export default function InventoryDashboard() {
       notes: newInvoiceForm.notes
     };
 
-    // Update vendor due if credit
-    if (newInvoiceForm.paymentStatus === "PENDING_CREDIT") {
-      const updatedVendors = vendors.map(v => {
-        if (v.name.toLowerCase().includes(newInvoiceForm.vendorName.toLowerCase())) {
+    // Update vendor due if credit, or totalPurchased and totalPaid if paid
+    const updatedVendors = vendors.map(v => {
+      if (v.name.toLowerCase().includes(newInvoiceForm.vendorName.toLowerCase())) {
+        if (newInvoiceForm.paymentStatus === "PENDING_CREDIT") {
           return {
             ...v,
             totalPurchased: v.totalPurchased + amt,
             pendingDue: v.pendingDue + amt
           };
+        } else {
+          return {
+            ...v,
+            totalPurchased: v.totalPurchased + amt,
+            totalPaid: v.totalPaid + amt,
+            lastPaymentDate: "Today"
+          };
         }
-        return v;
-      });
-      saveVendors(updatedVendors);
-    }
+      }
+      return v;
+    });
+    saveVendors(updatedVendors);
 
     savePurchases([newInvoice, ...purchases]);
     setIsNewInvoiceModalOpen(false);

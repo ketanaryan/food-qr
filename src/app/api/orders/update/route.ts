@@ -31,7 +31,9 @@ export async function POST(req: Request) {
       discount,
       gst,
       serviceCharge,
-      grandTotal
+      grandTotal,
+      splitCash,
+      splitUpi
     } = body;
 
     // 1. Validate orderIds
@@ -128,7 +130,9 @@ export async function POST(req: Request) {
               discount: typeof discount === 'number' ? Math.round(discount) : undefined,
               gst: typeof gst === 'number' ? Math.round(gst) : undefined,
               service_charge: typeof serviceCharge === 'number' ? Math.round(serviceCharge) : undefined,
-              grand_total: typeof grandTotal === 'number' ? Math.round(grandTotal) : undefined
+              grand_total: typeof grandTotal === 'number' ? Math.round(grandTotal) : undefined,
+              split_cash: typeof splitCash === 'number' ? Math.round(splitCash) : undefined,
+              split_upi: typeof splitUpi === 'number' ? Math.round(splitUpi) : undefined
             });
           }
 

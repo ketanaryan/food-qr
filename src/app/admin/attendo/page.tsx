@@ -967,6 +967,10 @@ export default function AttendoPage() {
 
     const approvedPaidLeaves = leaves.filter(l => l.staffId === member.id && l.status === "APPROVED").reduce((acc, l) => acc + l.days, 0);
     const dayRate = member.monthlySalary / 30;
+    
+    // MTD actual earnings (for 15 days elapsed)
+    const mtdBaseEarned = Math.round(dayRate * mtdWorkedDays);
+    // Full month projected earnings (30 days)
     const baseEarned = Math.round(dayRate * payableDays);
 
     const overtimeBonus = (rec?.overtimeHours || 0) * overtimeRules.ratePerHour;
@@ -976,6 +980,7 @@ export default function AttendoPage() {
     const staffAdvance = advances.find(a => a.staffId === member.id && a.remainingBalance > 0);
     const installmentDeduction = staffAdvance ? Math.min(staffAdvance.monthlyInstallment, staffAdvance.remainingBalance) : 0;
 
+    const mtdGrossEarned = mtdBaseEarned + overtimeBonus;
     const grossEarned = baseEarned + overtimeBonus;
 
     let epfDeduction = 0;
@@ -989,6 +994,7 @@ export default function AttendoPage() {
     }
 
     const netSalary = Math.max(0, grossEarned - latePenalty - messFee - installmentDeduction - epfDeduction - esicDeduction - ptDeduction);
+    const mtdNetSalary = Math.max(0, mtdGrossEarned - latePenalty - messFee - installmentDeduction - epfDeduction - esicDeduction - ptDeduction);
 
     return {
       payableDays,
@@ -1001,14 +1007,17 @@ export default function AttendoPage() {
       approvedPaidLeaves,
       dayRate,
       baseEarned,
+      mtdBaseEarned,
       overtimeBonus,
       latePenalty,
       installmentDeduction,
       grossEarned,
+      mtdGrossEarned,
       epfDeduction,
       esicDeduction,
       ptDeduction,
-      netSalary
+      netSalary,
+      mtdNetSalary
     };
   };
 
@@ -1017,18 +1026,19 @@ export default function AttendoPage() {
     const msg = `*HOTEL WHITE BLISS — SALARY SLIP*\n` +
       `--------------------------------\n` +
       `*Employee:* ${member.name} (${member.role})\n` +
-      `*Period:* ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
+      `*Period:* Till Day 15, ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
       `--------------------------------\n` +
-      `*Base Salary:* ₹${member.monthlySalary.toLocaleString("en-IN")}\n` +
-      `*Payable Days:* ${payroll.payableDays} / 30 Days\n` +
-      `*Gross Earned:* ₹${payroll.grossEarned.toLocaleString("en-IN")}\n` +
+      `*Monthly Base Rate:* ₹${member.monthlySalary.toLocaleString("en-IN")}\n` +
+      `*Days Worked (MTD):* ${payroll.mtdWorkedDays} / 15 Days\n` +
+      `*Gross Earned Till Date:* ₹${payroll.mtdGrossEarned.toLocaleString("en-IN")}\n` +
       (payroll.overtimeBonus > 0 ? `*Overtime Bonus (+):* ₹${payroll.overtimeBonus}\n` : '') +
       (payroll.latePenalty > 0 ? `*Late Penalty (-):* ₹${payroll.latePenalty}\n` : '') +
       (payroll.installmentDeduction > 0 ? `*Advance Installment:* -₹${payroll.installmentDeduction.toLocaleString("en-IN")}\n` : '') +
       (complianceMode === "STATUTORY" ? `*Statutory Deductions (EPF/ESIC/PT):* -₹${payroll.epfDeduction + payroll.esicDeduction + payroll.ptDeduction}\n` : '') +
       (member.heldArrears > 0 ? `*Held Balance (Khata):* ₹${member.heldArrears.toLocaleString("en-IN")}\n` : '') +
       `--------------------------------\n` +
-      `*NET PAYABLE: ₹${payroll.netSalary.toLocaleString("en-IN")}*\n` +
+      `*NET PAYABLE (MTD 15d): ₹${payroll.mtdNetSalary.toLocaleString("en-IN")}*\n` +
+      `*(Projected Full Month Net: ₹${payroll.netSalary.toLocaleString("en-IN")} for ${payroll.payableDays}/30 Days)*\n` +
       `*Status:* ${isPayrollLocked ? 'APPROVED & PROCESSED' : 'CALCULATED'}\n` +
       `--------------------------------\n` +
       `Hotel White Bliss Management.`;
@@ -2007,11 +2017,11 @@ export default function AttendoPage() {
                   <tr>
                     <th className="py-3 px-4">Employee</th>
                     <th className="py-3 px-3 text-right">Base Salary</th>
-                    <th className="py-3 px-3 text-center">Payable Days</th>
-                    <th className="py-3 px-3 text-right">Gross Earned</th>
+                    <th className="py-3 px-3 text-center">Days (MTD / Full)</th>
+                    <th className="py-3 px-3 text-right">Gross Earned (MTD / Full)</th>
                     <th className="py-3 px-3 text-right">Advance Cut</th>
                     <th className="py-3 px-3 text-right">Held Balance</th>
-                    <th className="py-3 px-3 text-right font-semibold text-zinc-900">Net Take-Home</th>
+                    <th className="py-3 px-3 text-right font-semibold text-zinc-900">Net Take-Home (MTD / Full)</th>
                     <th className="py-3 px-4 text-right">Payslip</th>
                   </tr>
                 </thead>
@@ -2029,10 +2039,12 @@ export default function AttendoPage() {
                           ₹{member.monthlySalary.toLocaleString("en-IN")}
                         </td>
                         <td className="py-3.5 px-3 text-center font-mono font-medium text-zinc-900">
-                          {p.payableDays} / 30
+                          <div className="font-bold text-zinc-900">{p.mtdWorkedDays} / 15 d</div>
+                          <div className="text-[10px] text-zinc-400">Full: {p.payableDays} / 30 d</div>
                         </td>
                         <td className="py-3.5 px-3 text-right font-mono font-medium text-zinc-900">
-                          ₹{p.grossEarned.toLocaleString("en-IN")}
+                          <div className="font-bold text-zinc-900">₹{p.mtdGrossEarned.toLocaleString("en-IN")}</div>
+                          <div className="text-[10px] text-zinc-400">Full: ₹{p.grossEarned.toLocaleString("en-IN")}</div>
                         </td>
                         <td className="py-3.5 px-3 text-right font-mono text-rose-700">
                           {p.installmentDeduction > 0 ? `-₹${p.installmentDeduction.toLocaleString("en-IN")}` : "—"}
@@ -2041,7 +2053,8 @@ export default function AttendoPage() {
                           ₹{member.heldArrears.toLocaleString("en-IN")}
                         </td>
                         <td className="py-3.5 px-3 text-right font-mono font-semibold text-sm text-zinc-900">
-                          ₹{p.netSalary.toLocaleString("en-IN")}
+                          <div className="font-bold text-emerald-700">₹{p.mtdNetSalary.toLocaleString("en-IN")}</div>
+                          <div className="text-[10px] text-zinc-400">Full: ₹{p.netSalary.toLocaleString("en-IN")}</div>
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           <button
@@ -2056,6 +2069,28 @@ export default function AttendoPage() {
                     );
                   })}
                 </tbody>
+                <tfoot className="bg-zinc-100/90 font-mono font-bold text-zinc-900 border-t-2 border-zinc-300">
+                  <tr>
+                    <td className="py-3 px-4 font-sans font-black">TOTAL PAYROLL</td>
+                    <td className="py-3 px-3 text-right">₹{staff.reduce((acc, s) => acc + s.monthlySalary, 0).toLocaleString("en-IN")}</td>
+                    <td className="py-3 px-3 text-center text-[10px] text-zinc-500 font-sans">MTD 15d / 30d</td>
+                    <td className="py-3 px-3 text-right">
+                      <div className="font-bold text-zinc-900">₹{staff.reduce((acc, s) => acc + calculatePayrollForMember(s).mtdGrossEarned, 0).toLocaleString("en-IN")}</div>
+                      <div className="text-[10px] text-zinc-500 font-normal">Full: ₹{staff.reduce((acc, s) => acc + calculatePayrollForMember(s).grossEarned, 0).toLocaleString("en-IN")}</div>
+                    </td>
+                    <td className="py-3 px-3 text-right text-rose-700">
+                      -₹{totalAdvanceDeductionsMonth.toLocaleString("en-IN")}
+                    </td>
+                    <td className="py-3 px-3 text-right text-zinc-600">
+                      ₹{totalHeldArrearsAllStaff.toLocaleString("en-IN")}
+                    </td>
+                    <td className="py-3 px-3 text-right text-sm">
+                      <div className="font-black text-emerald-700">₹{staff.reduce((acc, s) => acc + calculatePayrollForMember(s).mtdNetSalary, 0).toLocaleString("en-IN")}</div>
+                      <div className="text-[10px] text-zinc-500 font-normal">Full: ₹{totalNetPayrollLiability.toLocaleString("en-IN")}</div>
+                    </td>
+                    <td className="py-3 px-4 text-right text-zinc-400 font-sans text-[11px] font-normal">—</td>
+                  </tr>
+                </tfoot>
               </table>
             </div>
           </div>
@@ -2067,14 +2102,14 @@ export default function AttendoPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Total Overtime Perks</span>
-              <div className="text-2xl font-semibold font-mono text-zinc-900">₹17,060</div>
-              <p className="text-[11px] text-zinc-500 mt-0.5">Dinner rush extra hours</p>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Today's OT Perks</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">₹{(totalTodayOvertimeHours * overtimeRules.ratePerHour).toLocaleString("en-IN")}</div>
+              <p className="text-[11px] text-zinc-500 mt-0.5">{totalTodayOvertimeHours} extra rush hours</p>
             </div>
 
             <div className="bg-white p-4 rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
-              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Total Penalties</span>
-              <div className="text-2xl font-semibold font-mono text-zinc-900">₹70</div>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-400 block mb-1">Today's Penalties</span>
+              <div className="text-2xl font-semibold font-mono text-zinc-900">₹{totalTodayLatePenalties.toLocaleString("en-IN")}</div>
               <p className="text-[11px] text-zinc-500 mt-0.5">Late check-in deductions</p>
             </div>
 
@@ -2094,7 +2129,7 @@ export default function AttendoPage() {
           <div className="bg-white rounded-xl border border-zinc-200/80 shadow-[0_1px_2px_rgba(0,0,0,0.03)] overflow-hidden">
             <div className="p-4 border-b border-zinc-100 flex items-center justify-between">
               <h3 className="font-semibold text-zinc-900 text-sm">Monthly Overtime & Penalty Ledger</h3>
-              <span className="text-xs text-zinc-500 font-mono">April 2026</span>
+              <span className="text-xs text-zinc-500 font-mono">{new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}</span>
             </div>
             <div className="divide-y divide-zinc-100 text-xs">
               <div className="p-4 flex items-center justify-between hover:bg-zinc-50/50">

@@ -33,6 +33,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       let subtotal = 0;
       
       let storedSubtotal: number | undefined;
+      let storedDiscount: number | undefined;
       let storedGst: number | undefined;
       let storedServiceCharge: number | undefined;
       let storedGrandTotal: number | undefined;
@@ -45,6 +46,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
           const sInfo = itArr.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
           if (sInfo) {
             if (typeof sInfo.subtotal === 'number') storedSubtotal = sInfo.subtotal;
+            if (typeof sInfo.discount === 'number') storedDiscount = sInfo.discount;
             if (typeof sInfo.gst === 'number') storedGst = sInfo.gst;
             if (typeof sInfo.service_charge === 'number') storedServiceCharge = sInfo.service_charge;
             if (typeof sInfo.grand_total === 'number') storedGrandTotal = sInfo.grand_total;
@@ -53,9 +55,15 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       });
 
       const finalSub = storedSubtotal !== undefined ? storedSubtotal : subtotal;
-      const gst = storedGst !== undefined ? storedGst : Math.round(finalSub * 0.05);
-      const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(finalSub * 0.05);
-      const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : (finalSub + gst + serviceCharge);
+      const discount = storedDiscount || 0;
+      const netFood = Math.max(0, finalSub - discount);
+      const cgst = (netFood * 0.025).toFixed(2);
+      const sgst = (netFood * 0.025).toFixed(2);
+      const exactTax = Number(cgst) + Number(sgst);
+      const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(netFood * 0.05);
+      const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : Math.round(netFood + exactTax + serviceCharge);
+      const exactSum = netFood + exactTax + serviceCharge;
+      const roundOff = (grandTotal - exactSum).toFixed(2);
 
       // Generate PDF
       const doc = new jsPDF();
@@ -95,35 +103,53 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         styles: { font: 'helvetica', fontSize: 10 },
       });
 
-      const finalY = (doc as any).lastAutoTable.finalY + 8;
-      const cgst = (subtotal * 0.025).toFixed(2);
-      const sgst = (subtotal * 0.025).toFixed(2);
-
+      let curY = (doc as any).lastAutoTable.finalY + 8;
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text("Subtotal:", 135, finalY);
-      doc.text(`Rs. ${subtotal}`, 190, finalY, { align: 'right' });
       
-      doc.text("CGST (2.5%):", 135, finalY + 6);
-      doc.text(`Rs. ${cgst}`, 190, finalY + 6, { align: 'right' });
-      
-      doc.text("SGST (2.5%):", 135, finalY + 12);
-      doc.text(`Rs. ${sgst}`, 190, finalY + 12, { align: 'right' });
-      
-      if (serviceCharge > 0) {
-        doc.text("Service Charge (5%):", 135, finalY + 18);
-        doc.text(`Rs. ${serviceCharge}`, 190, finalY + 18, { align: 'right' });
+      doc.text("Subtotal:", 135, curY);
+      doc.text(`Rs. ${finalSub}`, 190, curY, { align: 'right' });
+      curY += 6;
+
+      if (discount > 0) {
+        doc.setTextColor(22, 163, 74);
+        doc.text("Discount:", 135, curY);
+        doc.text(`-Rs. ${discount}`, 190, curY, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        curY += 6;
       }
       
-      const grandTotalY = serviceCharge > 0 ? finalY + 28 : finalY + 22;
+      doc.text("CGST (2.5%):", 135, curY);
+      doc.text(`Rs. ${cgst}`, 190, curY, { align: 'right' });
+      curY += 6;
+      
+      doc.text("SGST (2.5%):", 135, curY);
+      doc.text(`Rs. ${sgst}`, 190, curY, { align: 'right' });
+      curY += 6;
+      
+      if (serviceCharge > 0) {
+        doc.text("Service Charge (5%):", 135, curY);
+        doc.text(`Rs. ${serviceCharge}`, 190, curY, { align: 'right' });
+        curY += 6;
+      }
+
+      if (Math.abs(Number(roundOff)) >= 0.01) {
+        doc.setTextColor(100, 100, 100);
+        doc.text("Round Off:", 135, curY);
+        doc.text(`${Number(roundOff) > 0 ? '+' : ''}Rs. ${roundOff}`, 190, curY, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        curY += 6;
+      }
+      
+      curY += 2;
       doc.setFontSize(13);
       doc.setFont("helvetica", "bold");
-      doc.text("GRAND TOTAL:", 125, grandTotalY);
-      doc.text(`Rs. ${grandTotal}`, 190, grandTotalY, { align: 'right' });
+      doc.text("GRAND TOTAL:", 125, curY);
+      doc.text(`Rs. ${grandTotal}`, 190, curY, { align: 'right' });
 
       doc.setFontSize(10);
       doc.setFont("helvetica", "italic");
-      doc.text("Thank you for dining with us!", 105, finalY + 40, { align: "center" });
+      doc.text("Thank you for dining with us!", 105, curY + 16, { align: "center" });
 
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);

@@ -541,6 +541,10 @@ export default function PetpoojaPOSPage() {
       gst?: number;
       serviceCharge?: number;
       grandTotal?: number;
+    },
+    splitDetails?: {
+      cash?: number;
+      upi?: number;
     }
   ) => {
     setOrders(prev => prev.filter(o => o.table_number !== tableNumber));
@@ -557,7 +561,9 @@ export default function PetpoojaPOSPage() {
           status: 'completed', 
           paymentMethod, 
           customerPhone: customerPhoneNum || customerPhone,
-          ...(financials || {})
+          ...(financials || {}),
+          splitCash: splitDetails?.cash,
+          splitUpi: splitDetails?.upi
         })
       });
       const data = await res.json();
@@ -616,7 +622,8 @@ export default function PetpoojaPOSPage() {
     gstAmt: number, 
     scAmt: number, 
     gTotal: number, 
-    payMethod?: string
+    payMethod?: string,
+    splitDetails?: { cash: number; upi: number }
   ) => {
     const printWindow = window.open('', '', 'width=420,height=700');
     if (!printWindow) return toast.error('Please allow popups to print receipts');
@@ -653,11 +660,16 @@ export default function PetpoojaPOSPage() {
       </tr>
     `).join('');
 
-    const cgst = (gstAmt / 2).toFixed(2);
-    const sgst = (gstAmt / 2).toFixed(2);
-    const exactSum = (subTot - discAmt) + gstAmt + scAmt;
+    const netFood = Math.max(0, subTot - discAmt);
+    const cgst = (netFood * 0.025).toFixed(2);
+    const sgst = (netFood * 0.025).toFixed(2);
+    const exactTax = Number(cgst) + Number(sgst);
+    const exactSum = netFood + exactTax + scAmt;
     const roundOff = (gTotal - exactSum).toFixed(2);
-    const paidLabel = payMethod ? `PAID • ${payMethod}` : '';
+    const paidLabel = (payMethod === 'SPLIT' && splitDetails)
+      ? `PAID • SPLIT (Cash ₹${splitDetails.cash} + UPI ₹${splitDetails.upi})`
+      : payMethod ? `PAID • ${payMethod}` : '';
+    const upiPayAmt = (payMethod === 'SPLIT' && splitDetails) ? splitDetails.upi : gTotal;
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -747,15 +759,15 @@ export default function PetpoojaPOSPage() {
           <div class="text-center" style="font-size: 9.5px; color: #666; margin-bottom: 4px;">
             Taxes as applicable
           </div>
-          ${payMethod !== 'CASH' ? `
+          ${(payMethod !== 'CASH' && upiPayAmt > 0) ? `
           <div class="qr-box">
-            <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">SCAN TO PAY VIA UPI</div>
+            <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">${payMethod === 'SPLIT' ? 'SCAN TO PAY UPI BALANCE' : 'SCAN TO PAY VIA UPI'}</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${gTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" height="130" style="margin: 0 auto; display: block;" alt="UPI QR"
             />
-            <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${gTotal}</div>
+            <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${upiPayAmt}</div>
             <div style="font-size: 9px; color: #666;">Google Pay • PhonePe • Paytm • BHIM</div>
           </div>
           <div class="divider"></div>
@@ -916,7 +928,15 @@ export default function PetpoojaPOSPage() {
     const orderIds = groupOrders.map((o: any) => o.id).join('-');
     const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\nTable ${tableNumber} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: PAID VIA ${waModal.paymentMethod}\n------------------------\n📄 *View & Download Tax Invoice PDF:*\n${cleanUrl}\n------------------------\n⭐ *Review us on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
+    const splitObj = waModal.paymentMethod === 'SPLIT' 
+      ? { cash: splitCashAmt, upi: Math.max(0, grandTotal - splitCashAmt) } 
+      : undefined;
+
+    const paymentText = (waModal.paymentMethod === 'SPLIT' && splitObj)
+      ? `PAID VIA SPLIT (Cash ₹${splitObj.cash} + UPI ₹${splitObj.upi})`
+      : `PAID VIA ${waModal.paymentMethod}`;
+
+    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\nTable ${tableNumber} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: ${paymentText}\n------------------------\n📄 *View & Download Tax Invoice PDF:*\n${cleanUrl}\n------------------------\n⭐ *Review us on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
 
     window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
     markPaid(
@@ -924,7 +944,8 @@ export default function PetpoojaPOSPage() {
       groupOrders.map((o: any) => o.id), 
       waModal.paymentMethod, 
       cleanPhone,
-      { subtotal, discount, gst, serviceCharge, grandTotal }
+      { subtotal, discount, gst, serviceCharge, grandTotal },
+      splitObj
     );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
@@ -933,12 +954,17 @@ export default function PetpoojaPOSPage() {
   const handleSkipWa = () => {
     if (!waModal.data || !waModal.paymentMethod) return;
     const { tableNumber, groupOrders, grandTotal, subtotal, discount, gst, serviceCharge } = waModal.data;
+    const splitObj = waModal.paymentMethod === 'SPLIT' 
+      ? { cash: splitCashAmt, upi: Math.max(0, grandTotal - splitCashAmt) } 
+      : undefined;
+
     markPaid(
       tableNumber, 
       groupOrders.map((o: any) => o.id), 
       waModal.paymentMethod,
       undefined,
-      { subtotal, discount, gst, serviceCharge, grandTotal }
+      { subtotal, discount, gst, serviceCharge, grandTotal },
+      splitObj
     );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
@@ -2687,7 +2713,8 @@ export default function PetpoojaPOSPage() {
               <div className="space-y-2 pt-1">
                 <button
                   onClick={() => {
-                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
+                    const payMode = waModal.paymentMethod || 'CASH';
+                    const splitObj = payMode === 'SPLIT' ? { cash: splitCashAmt, upi: Math.max(0, waModal.data.grandTotal - splitCashAmt) } : undefined;
                     if (waPhone.replace(/\D/g, '').length >= 10) {
                       handleSendWa();
                     } else {
@@ -2702,7 +2729,8 @@ export default function PetpoojaPOSPage() {
                           gst: waModal.data.gst,
                           serviceCharge: waModal.data.serviceCharge,
                           grandTotal: waModal.data.grandTotal
-                        }
+                        },
+                        splitObj
                       );
                       setWaModal({ isOpen: false, data: null, paymentMethod: null });
                       setWaPhone('');
@@ -2720,14 +2748,16 @@ export default function PetpoojaPOSPage() {
                     const finalDisc = discount || 0;
                     const finalGst = gst || Math.round(finalSub * 0.05);
                     const finalSc = serviceCharge || 0;
-                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
-                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode);
+                    const payMode = waModal.paymentMethod || 'CASH';
+                    const splitObj = payMode === 'SPLIT' ? { cash: splitCashAmt, upi: Math.max(0, grandTotal - splitCashAmt) } : undefined;
+                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode, splitObj);
                     markPaid(
                       tableNumber, 
                       groupOrders.map((o: any) => o.id), 
                       payMode,
                       undefined,
-                      { subtotal: finalSub, discount: finalDisc, gst: finalGst, serviceCharge: finalSc, grandTotal }
+                      { subtotal: finalSub, discount: finalDisc, gst: finalGst, serviceCharge: finalSc, grandTotal },
+                      splitObj
                     );
                     setWaModal({ isOpen: false, data: null, paymentMethod: null });
                     setWaPhone('');
@@ -2745,8 +2775,9 @@ export default function PetpoojaPOSPage() {
                     const finalDisc = discount || 0;
                     const finalGst = gst || Math.round(finalSub * 0.05);
                     const finalSc = serviceCharge || 0;
-                    const payMode = waModal.paymentMethod === 'SPLIT' ? 'CASH' : waModal.paymentMethod!;
-                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode);
+                    const payMode = waModal.paymentMethod || 'CASH';
+                    const splitObj = payMode === 'SPLIT' ? { cash: splitCashAmt, upi: Math.max(0, grandTotal - splitCashAmt) } : undefined;
+                    printOfficialInvoice(tableNumber, groupOrders, finalSub, finalDisc, finalGst, finalSc, grandTotal, payMode, splitObj);
                     toast.success("Printed updated slip to hand customer!", { icon: "🖨️" });
                   }}
                   className="w-full bg-white hover:bg-gray-100 text-gray-800 border border-gray-300 font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-2xs"

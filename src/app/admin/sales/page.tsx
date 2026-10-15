@@ -22,6 +22,7 @@ export default function SalesReport() {
   const [totalTaxAndCharges, setTotalTaxAndCharges] = useState(0);
   const [totalCash, setTotalCash] = useState(0);
   const [totalUpi, setTotalUpi] = useState(0);
+  const [totalOther, setTotalOther] = useState(0);
   const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
@@ -66,11 +67,28 @@ export default function SalesReport() {
       setOrders(consolidated);
       
       const rev = consolidated.reduce((acc, b) => acc + b.grand_total, 0);
-      const net = consolidated.reduce((acc, b) => acc + b.subtotal, 0);
+      const net = consolidated.reduce((acc, b) => acc + Math.max(0, b.subtotal - (b.discount || 0)), 0);
       const gst = consolidated.reduce((acc, b) => acc + b.gst, 0);
       const sc = consolidated.reduce((acc, b) => acc + (b.service_charge || 0), 0);
-      const cash = consolidated.filter(b => b.payment_method === 'CASH').reduce((acc, b) => acc + b.grand_total, 0);
-      const upi = consolidated.filter(b => b.payment_method === 'UPI').reduce((acc, b) => acc + b.grand_total, 0);
+      
+      let cash = 0;
+      let upi = 0;
+      let other = 0;
+
+      consolidated.forEach(b => {
+        if (b.payment_method === 'CASH') {
+          cash += b.grand_total;
+        } else if (b.payment_method === 'UPI') {
+          upi += b.grand_total;
+        } else if (b.payment_method === 'SPLIT') {
+          const splitCash = typeof b.split_cash === 'number' ? b.split_cash : Math.round(b.grand_total / 2);
+          const splitUpi = typeof b.split_upi === 'number' ? b.split_upi : (b.grand_total - splitCash);
+          cash += splitCash;
+          upi += splitUpi;
+        } else {
+          other += b.grand_total;
+        }
+      });
 
       setTotalRevenue(rev);
       setTotalNetSales(net);
@@ -79,6 +97,7 @@ export default function SalesReport() {
       setTotalTaxAndCharges(gst + sc);
       setTotalCash(cash);
       setTotalUpi(upi);
+      setTotalOther(other);
       setTotalOrders(consolidated.length);
     }
     
@@ -88,7 +107,7 @@ export default function SalesReport() {
   const exportCSV = () => {
     if (orders.length === 0) return toast.error("No data to export");
     
-    let csvContent = "Bill ID,Table,KOTs,Payment Mode,Paid Time,Order Time,Net Food Amount (Rs),GST 5% (Rs),CGST 2.5% (Rs),SGST 2.5% (Rs),Service Charge (Rs),Grand Total (Rs),Status,Items\n";
+    let csvContent = "Bill ID,Table,KOTs,Payment Mode,Paid Time,Order Time,Gross Subtotal (Rs),Discount (Rs),Net Food (Rs),GST 5% (Rs),CGST 2.5% (Rs),SGST 2.5% (Rs),Service Charge (Rs),Grand Total (Rs),Status,Items\n";
     
     orders.forEach(o => {
       const paidDate = new Date(o.settled_at || o.created_at);
@@ -97,10 +116,11 @@ export default function SalesReport() {
       const orderStr = `${orderDate.toLocaleDateString()} ${orderDate.toLocaleTimeString()}`;
       
       const itemsStr = o.items.map(i => `${i.qty}x ${i.name}`).join(' | ').replace(/"/g, '""');
-      const cgst = (o.gst / 2).toFixed(2);
-      const sgst = (o.gst / 2).toFixed(2);
+      const netFood = Math.max(0, o.subtotal - (o.discount || 0));
+      const cgst = (netFood * 0.025).toFixed(2);
+      const sgst = (netFood * 0.025).toFixed(2);
 
-      csvContent += `"${o.id}","${o.table_number}","${o.kot_count}","${o.payment_method}","${paidStr}","${orderStr}","${o.subtotal}","${o.gst}","${cgst}","${sgst}","${o.service_charge}","${o.grand_total}","${o.status}","${itemsStr}"\n`;
+      csvContent += `"${o.id}","${o.table_number}","${o.kot_count}","${o.payment_method}","${paidStr}","${orderStr}","${o.subtotal}","${o.discount || 0}","${netFood}","${o.gst}","${cgst}","${sgst}","${o.service_charge}","${o.grand_total}","${o.status}","${itemsStr}"\n`;
     });
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -191,6 +211,11 @@ export default function SalesReport() {
               <div className="flex justify-between font-bold text-purple-700">
                 <span>📱 UPI:</span> <span>₹{totalUpi}</span>
               </div>
+              {totalOther > 0 && (
+                <div className="flex justify-between font-bold text-amber-700">
+                  <span>🛵 Online / Other:</span> <span>₹{totalOther}</span>
+                </div>
+              )}
             </div>
           </div>
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">

@@ -60,7 +60,7 @@ export default function Dashboard() {
 
       todaysBills.forEach(b => {
         sales += b.grand_total;
-        netSales += b.subtotal;
+        netSales += Math.max(0, b.subtotal - (b.discount || 0));
         gstAmt += b.gst;
         scAmt += (b.service_charge || 0);
         b.items.forEach(item => {

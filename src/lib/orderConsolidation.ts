@@ -6,11 +6,14 @@ export interface ConsolidatedBill {
   created_at: string; // Earliest order punch time
   settled_at: string; // Actual payment / settlement time
   subtotal: number;
+  discount?: number;
   gst: number;
   service_charge: number;
   grand_total: number;
   kot_count: number;
   payment_method: 'UPI' | 'CASH' | 'SWIGGY' | 'ZOMATO' | 'SPLIT' | 'UNKNOWN';
+  split_cash?: number;
+  split_upi?: number;
   customer_phone?: string;
   items: Array<{
     id: string;
@@ -101,9 +104,12 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
     let settledAt: string = lastOrder.created_at;
 
     let storedSubtotal: number | undefined = undefined;
+    let storedDiscount: number | undefined = undefined;
     let storedGst: number | undefined = undefined;
     let storedServiceCharge: number | undefined = undefined;
     let storedGrandTotal: number | undefined = undefined;
+    let storedSplitCash: number | undefined = undefined;
+    let storedSplitUpi: number | undefined = undefined;
 
     for (const ord of orderGroup) {
       const sInfo = ord.settlementInfo || ord.parsedItems?.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
@@ -111,9 +117,12 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
         if (sInfo.settled_at) settledAt = sInfo.settled_at;
         if (sInfo.payment_method) paymentMethod = sInfo.payment_method;
         if (typeof sInfo.subtotal === 'number') storedSubtotal = sInfo.subtotal;
+        if (typeof sInfo.discount === 'number') storedDiscount = sInfo.discount;
         if (typeof sInfo.gst === 'number') storedGst = sInfo.gst;
         if (typeof sInfo.service_charge === 'number') storedServiceCharge = sInfo.service_charge;
         if (typeof sInfo.grand_total === 'number') storedGrandTotal = sInfo.grand_total;
+        if (typeof sInfo.split_cash === 'number') storedSplitCash = sInfo.split_cash;
+        if (typeof sInfo.split_upi === 'number') storedSplitUpi = sInfo.split_upi;
       }
       const payObj = ord.parsedItems?.find((i: any) => i && i.id === 'PAYMENT_METHOD');
       if (payObj && payObj.method) {
@@ -145,9 +154,10 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
     });
 
     const finalSubtotal = storedSubtotal !== undefined ? storedSubtotal : subtotal;
-    const gst = storedGst !== undefined ? storedGst : Math.round(finalSubtotal * 0.05);
-    const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(finalSubtotal * 0.05);
-    const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : (finalSubtotal + gst + serviceCharge);
+    const netFood = Math.max(0, finalSubtotal - (storedDiscount || 0));
+    const gst = storedGst !== undefined ? storedGst : Math.round(netFood * 0.05);
+    const serviceCharge = storedServiceCharge !== undefined ? storedServiceCharge : Math.round(netFood * 0.05);
+    const grandTotal = storedGrandTotal !== undefined ? storedGrandTotal : (netFood + gst + serviceCharge);
 
     const orderIds = orderGroup.map(o => o.id);
     const billId = orderGroup[0].settlementInfo?.bill_session_id || `BILL-${orderIds.join('-')}`;
@@ -159,12 +169,15 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       status: orderGroup.every(o => o.status === 'completed') ? 'completed' : firstOrder.status,
       created_at: firstOrder.created_at,
       settled_at: settledAt,
-      subtotal,
+      subtotal: finalSubtotal,
+      discount: storedDiscount || 0,
       gst,
       service_charge: serviceCharge,
       grand_total: grandTotal,
       kot_count: orderGroup.length,
       payment_method: paymentMethod,
+      split_cash: storedSplitCash,
+      split_upi: storedSplitUpi,
       customer_phone: customerPhone,
       items: Object.values(foodItemsMap)
     });
