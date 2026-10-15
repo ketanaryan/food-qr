@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const isStaff = isStaffAuthorized(req);
 
   return NextResponse.json({
-    authenticated: isOwner || isStaff,
+    authenticated: isOwner,
     isOwner,
     isStaff
   });

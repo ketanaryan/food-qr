@@ -42,18 +42,20 @@ export function middleware(req: NextRequest) {
   }
 
   // 2. Owner & Admin UI Pages (/admin, /owner)
-  // Allowed to proceed so src/app/admin/layout.tsx renders the Executive Owner Login Screen when unauthorized
   if (url.startsWith('/admin') || url.startsWith('/owner')) {
-    const response = NextResponse.next();
-    if (isStaff && !isOwner) {
-      response.cookies.set('staff_session', getStaffSessionToken(), {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 24 * 7,
-        path: '/'
-      });
+    if (!isOwner) {
+      // Allow /admin or /owner root so the Executive Owner Login Screen can render
+      if (url === '/admin' || url === '/admin/' || url === '/owner' || url === '/owner/') {
+        return applySecurityHeaders(NextResponse.next());
+      }
+
+      // If user tries to access any deep sub-route (/admin/sales, /admin/dashboard, /admin/crm, etc.) without owner session:
+      // Instantly redirect them to /admin root login screen!
+      const loginUrl = new URL('/admin', req.url);
+      return applySecurityHeaders(NextResponse.redirect(loginUrl));
     }
+
+    const response = NextResponse.next();
     return applySecurityHeaders(response);
   }
 

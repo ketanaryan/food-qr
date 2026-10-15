@@ -1,5 +1,9 @@
 // Owner Authentication Utilities (Edge and Node.js Compatible - Zero Node:fs/path dependencies)
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
+const supabaseServerAdmin = createClient(supabaseUrl, supabaseKey);
 
 const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
 
@@ -89,9 +93,9 @@ export async function fetchDynamicOwnerCredentials(): Promise<{ email: string; p
     return memoryOwnerCredentials;
   }
 
-  // 2. Try Supabase hotel_settings table
+  // 2. Try Supabase hotel_settings table using privileged server admin client (never exposed to client/anon)
   try {
-    const { data } = await supabase
+    const { data } = await supabaseServerAdmin
       .from('hotel_settings')
       .select('value')
       .eq('key', 'owner_auth')
@@ -118,9 +122,9 @@ export async function saveDynamicOwnerCredentials(email: string, password: strin
   // 1. Update memory
   memoryOwnerCredentials = { email: cleanEmail, password: cleanPassword };
 
-  // 2. Update Supabase hotel_settings
+  // 2. Update Supabase hotel_settings using privileged server admin client
   try {
-    const { error } = await supabase
+    const { error } = await supabaseServerAdmin
       .from('hotel_settings')
       .upsert({
         key: 'owner_auth',
