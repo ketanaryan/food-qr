@@ -1,3 +1,5 @@
+import { isOwnerAuthorized } from '@/lib/ownerAuth';
+
 const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
 
 export function getExpectedCredentials() {
@@ -32,6 +34,11 @@ export function getStaffSessionToken(): string {
 
 export function isStaffAuthorized(req: Request | any): boolean {
   try {
+    // 0. Super-admin: Owner authorization automatically confers staff authorization
+    if (isOwnerAuthorized(req)) {
+      return true;
+    }
+
     const { user: expectedUser, pwd: expectedPwd } = getExpectedCredentials();
 
     // 1. Check Authorization Header (Basic Auth: "Basic <base64>")
@@ -52,18 +59,6 @@ export function isStaffAuthorized(req: Request | any): boolean {
           return true;
         }
       }
-    }
-
-    // 2. Check Staff Access Override Header
-    let staffAccess = '';
-    if (typeof req.headers?.get === 'function') {
-      staffAccess = req.headers.get('x-staff-access') || '';
-    } else if (req.headers?.['x-staff-access']) {
-      staffAccess = req.headers['x-staff-access'];
-    }
-
-    if (staffAccess === 'pos_secure_override') {
-      return true;
     }
 
     // 3. Check Custom Staff Token Header

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isStaffAuthorized } from '@/lib/staffAuth';
+import { isOwnerAuthorized } from '@/lib/ownerAuth';
+import { verifyTableToken } from '@/lib/security';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -34,7 +36,9 @@ export async function POST(req: Request) {
       serviceCharge,
       grandTotal,
       splitCash,
-      splitUpi
+      splitUpi,
+      table,
+      tableToken
     } = body;
 
     // 1. Validate orderIds
@@ -60,15 +64,61 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: `Invalid status: ${status}` }, { status: 400 });
     }
 
-    // 3. Authorization Enforcement
-    const isCustomerBillRequest = status === 'billing' && !newTableNumber;
-    const isAuthorizedStaff = isStaffAuthorized(req);
+    // 3. Authorization Enforcement & IDOR Hardening
+    const isAuthorizedStaff = isStaffAuthorized(req) || isOwnerAuthorized(req);
+    const isCustomerBillRequest = status === 'billing' && !newTableNumber && !paymentMethod;
 
-    if (!isCustomerBillRequest && !isAuthorizedStaff) {
-      return NextResponse.json(
-        { success: false, message: 'Unauthorized: Staff credentials required to perform this action.' },
-        { status: 403 }
-      );
+    if (!isAuthorizedStaff) {
+      if (!isCustomerBillRequest) {
+        return NextResponse.json(
+          { success: false, message: 'Unauthorized: Staff credentials required to perform this action.' },
+          { status: 403 }
+        );
+      }
+
+      // Customer Bill Request Security: Verify Table Token & Ownership
+      const cleanTable = String(table || '').trim().slice(0, 30);
+      if (!cleanTable) {
+        return NextResponse.json(
+          { success: false, message: 'Table identifier required to request bill.' },
+          { status: 400 }
+        );
+      }
+
+      if (!verifyTableToken(cleanTable, tableToken || null)) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid or expired table session. Please scan table QR code.' },
+          { status: 403 }
+        );
+      }
+
+      // IDOR Verification: Ensure all requested order IDs belong strictly to this customer's table
+      const { data: dbOrders, error: fetchErr } = await supabaseAdmin
+        .from('orders')
+        .select('id, table_number, status')
+        .in('id', cleanOrderIds);
+
+      if (fetchErr || !dbOrders || dbOrders.length !== cleanOrderIds.length) {
+        return NextResponse.json(
+          { success: false, message: 'Access denied: One or more orders could not be verified.' },
+          { status: 403 }
+        );
+      }
+
+      for (const ord of dbOrders) {
+        if (String(ord.table_number) !== cleanTable) {
+          return NextResponse.json(
+            { success: false, message: 'Security Alert: Cannot request bill for orders belonging to another table.' },
+            { status: 403 }
+          );
+        }
+        if (!['received', 'pending', 'preparing', 'ready', 'served', 'billing'].includes(ord.status)) {
+          return NextResponse.json(
+            { success: false, message: 'Cannot request bill for completed or archived orders.' },
+            { status: 400 }
+          );
+        }
+      }
     }
 
     // 4. Handle Table Shift / Transfer (Staff Only)

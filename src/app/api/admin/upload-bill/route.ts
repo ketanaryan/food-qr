@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from('menu-images')
-      .getPublicUrl(`bills/${fileName}`);
+      .getPublicUrl(`bills/${cleanFileName}`);
 
     return NextResponse.json({ success: true, publicUrl }, { status: 200 });
   } catch (error: any) {

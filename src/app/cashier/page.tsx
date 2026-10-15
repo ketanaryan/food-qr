@@ -8,6 +8,15 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers } from "@/lib/tableConfig"
 
+function escapeHtml(str: any): string {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export default function CashierDashboard() {
   const [orders, setOrders] = useState<any[]>([])
   const [sections, setSections] = useState<TableSection[]>(DEFAULT_TABLE_SECTIONS)
@@ -149,8 +158,7 @@ export default function CashierDashboard() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'x-staff-access': 'pos_secure_override'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
           orderIds, 
@@ -201,10 +209,10 @@ export default function CashierDashboard() {
       return parsed.filter((it: any) => it.id !== 'NOTE');
     }).map((it: any) => `
       <tr>
-        <td style="padding: 3px 0; text-align: left; word-break: break-word;">${it.name}</td>
-        <td style="padding: 3px 0; text-align: center;">${it.qty}</td>
-        <td style="padding: 3px 0; text-align: right;">${it.price}</td>
-        <td style="padding: 3px 0; text-align: right; font-weight: 600;">${it.price * it.qty}</td>
+        <td style="padding: 3px 0; text-align: left; word-break: break-word;">${escapeHtml(it.name)}</td>
+        <td style="padding: 3px 0; text-align: center;">${escapeHtml(it.qty)}</td>
+        <td style="padding: 3px 0; text-align: right;">${escapeHtml(it.price)}</td>
+        <td style="padding: 3px 0; text-align: right; font-weight: 600;">${Number(it.price) * Number(it.qty)}</td>
       </tr>
     `).join('');
 
@@ -222,7 +230,7 @@ export default function CashierDashboard() {
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Invoice ${invoiceNo} - ${location}</title>
+          <title>Invoice ${escapeHtml(invoiceNo)} - ${escapeHtml(location)}</title>
           <style>
             @page { margin: 0; size: 80mm auto; }
             * { box-sizing: border-box; }
@@ -338,19 +346,19 @@ export default function CashierDashboard() {
           <table class="meta-grid">
             <tr>
               <td class="text-left" style="color:#555; width:35%;">Invoice No</td>
-              <td class="text-right bold">${invoiceNo}</td>
+              <td class="text-right bold">${escapeHtml(invoiceNo)}</td>
             </tr>
             <tr>
               <td class="text-left" style="color:#555;">Date</td>
-              <td class="text-right">${formattedDate}</td>
+              <td class="text-right">${escapeHtml(formattedDate)}</td>
             </tr>
             <tr>
               <td class="text-left" style="color:#555;">Type</td>
-              <td class="text-right">${orderType}</td>
+              <td class="text-right">${escapeHtml(orderType)}</td>
             </tr>
             <tr>
               <td class="text-left" style="color:#555;">Location</td>
-              <td class="text-right bold">${location}</td>
+              <td class="text-right bold">${escapeHtml(location)}</td>
             </tr>
           </table>
 
@@ -408,7 +416,7 @@ export default function CashierDashboard() {
           <!-- Payment Status (shown only when settled) -->
           ${paymentMethod ? `
           <div class="text-center bold" style="font-size: 12px; margin: 4px 0 2px 0; letter-spacing: 0.5px; border: 1px solid #222; padding: 2px 4px; border-radius: 4px;">
-            ${paidLabel}
+            ${escapeHtml(paidLabel)}
           </div>
           ` : ''}
           <div class="text-center" style="font-size: 9.5px; color: #666; margin-bottom: 6px;">

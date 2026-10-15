@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { isStaffAuthorized } from '@/lib/staffAuth';
+import { isOwnerAuthorized } from '@/lib/ownerAuth';
+import { verifyTableToken } from '@/lib/security';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -19,7 +21,7 @@ function sanitizeText(str: string): string {
 
 export async function POST(req: Request) {
   try {
-    const isStaff = isStaffAuthorized(req);
+    const isStaff = isStaffAuthorized(req) || isOwnerAuthorized(req);
 
     // 1. IP Rate Limiting (Skipped for authenticated POS/Captain staff)
     if (!isStaff) {
@@ -42,12 +44,23 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { table_number, items } = body;
+    const { table_number, items, token } = body;
 
     // 2. Table Number Validation & Sanitization
     const cleanTableNumber = sanitizeText(table_number).slice(0, 30);
     if (!cleanTableNumber) {
       return NextResponse.json({ success: false, message: 'Valid table identifier required' }, { status: 400 });
+    }
+
+    // 2.1 Table Token Validation for Non-Staff Guests
+    if (!isStaff) {
+      const isTokenValid = verifyTableToken(cleanTableNumber, token || null);
+      if (!isTokenValid) {
+        return NextResponse.json(
+          { success: false, message: 'Invalid or expired table session. Please scan table QR code.' },
+          { status: 403 }
+        );
+      }
     }
 
     // 3. Table Cooldown (Skipped for staff)
@@ -112,7 +125,8 @@ export async function POST(req: Request) {
           image: menuDbItem.image_url,
           price: Number(menuDbItem.price),
         });
-      } else if (item.name && item.price !== undefined) {
+      } else if (isStaff && item.name && item.price !== undefined) {
+        // Authenticated Staff Only (POS & Captain can enter custom off-menu items)
         const customPrice = Math.max(0, Number(item.price) || 0);
         totalAmount += customPrice * qty;
         validatedItems.push({

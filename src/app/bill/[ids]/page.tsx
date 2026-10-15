@@ -18,12 +18,19 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
 
   const generateBill = async () => {
     try {
-      const orderIds = ids.split('-');
+      const cleanOrderIds = String(ids || '')
+        .split('-')
+        .map(id => parseInt(id.trim(), 10))
+        .filter(id => !isNaN(id) && id > 0);
+
+      if (cleanOrderIds.length === 0) {
+        throw new Error("Invalid bill reference ID.");
+      }
       
       const { data: orders, error: dbError } = await supabase
         .from('orders')
         .select('*')
-        .in('id', orderIds);
+        .in('id', cleanOrderIds);
 
       if (dbError || !orders || orders.length === 0) {
         throw new Error("Bill not found.");

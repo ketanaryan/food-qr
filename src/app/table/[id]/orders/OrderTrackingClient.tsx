@@ -66,7 +66,12 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
       await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderIds: activeOrderIds, status: 'billing' })
+        body: JSON.stringify({ 
+          orderIds: activeOrderIds, 
+          status: 'billing',
+          table: tableId,
+          tableToken: token || undefined
+        })
       });
     } catch {
       // realtime sync will update

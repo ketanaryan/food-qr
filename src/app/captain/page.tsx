@@ -267,8 +267,7 @@ export default function CaptainPortal() {
       const res = await fetch("/api/orders", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "x-staff-access": "pos_secure_override"
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           table_number: selectedTable,
@@ -309,8 +308,7 @@ export default function CaptainPortal() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-staff-access': 'pos_secure_override'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           orderIds,
@@ -341,8 +339,7 @@ export default function CaptainPortal() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-staff-access': 'pos_secure_override'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           orderIds,
@@ -383,8 +380,7 @@ export default function CaptainPortal() {
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'x-staff-access': 'pos_secure_override'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
       });

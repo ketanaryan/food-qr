@@ -45,6 +45,13 @@ export function generateTableToken(tableNumber: string) {
 }
 
 export async function GET(req: Request) {
+  if (!isStaffAuthorized(req) && !isOwnerAuthorized(req)) {
+    return NextResponse.json(
+      { success: false, message: 'Unauthorized: Staff or Owner credentials required to access table QR keys.' },
+      { status: 401 }
+    );
+  }
+
   const { searchParams } = new URL(req.url);
   const table = searchParams.get('table');
   const countStr = searchParams.get('count');

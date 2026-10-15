@@ -38,7 +38,7 @@ function CheckoutPage({ merchantId, isPosMode = false }: { merchantId: string, i
           'Content-Type': 'application/json',
           'Idempotency-Key': idempotencyKey 
         },
-        body: JSON.stringify({ table_number: merchantId, items }),
+        body: JSON.stringify({ table_number: merchantId, items, token: token || undefined }),
       });
       const data = await res.json();
       
