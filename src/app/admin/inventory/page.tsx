@@ -12,7 +12,7 @@ import toast from "react-hot-toast";
 export interface InventoryItem {
   id: string;
   name: string;
-  category: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices";
+  category: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices" | "Bakery";
   currentStock: number;
   unit: "kg" | "L" | "Pcs" | "Packets" | "Grams";
   minAlertStock: number;
@@ -57,7 +57,8 @@ export interface DailyReconciliation {
   expectedClosing: number;
   physicalClosing: number;
   variance: number;
-  status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS";
+  status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS" | "HIGH_VARIANCE_THEFT_ALERT";
+  costLoss?: number;
 }
 
 export interface StockLog {
@@ -1158,6 +1159,7 @@ export default function InventoryDashboard() {
                 <option value="Beverages">Beverages</option>
                 <option value="Packaging">Packaging</option>
                 <option value="Spices">Spices</option>
+                <option value="Bakery">Bakery</option>
               </select>
 
               <button
@@ -1582,13 +1584,53 @@ export default function InventoryDashboard() {
                       <td className="py-4 px-4 text-center font-extrabold text-gray-900 bg-gray-50/70">
                         {r.expectedClosing} {r.unit}
                       </td>
-                      <td className="py-4 px-4 text-center font-black text-gray-900 bg-gray-100/70">
-                        {r.physicalClosing} {r.unit}
+                      <td className="py-2 px-3 text-center bg-gray-50/70">
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={r.physicalClosing}
+                            onChange={(e) => {
+                              const newPhysical = parseFloat(e.target.value) || 0;
+                              const variance = Number((newPhysical - r.expectedClosing).toFixed(2));
+                              const item = items.find(i => i.name.toLowerCase() === r.itemName.toLowerCase());
+                              const costUnit = item ? item.costPerUnit : 100;
+                              let status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS" | "HIGH_VARIANCE_THEFT_ALERT" = "MATCHED";
+                              let costLoss = 0;
+                              if (variance <= -0.5) {
+                                status = "HIGH_VARIANCE_THEFT_ALERT";
+                                costLoss = Number((Math.abs(variance) * costUnit).toFixed(2));
+                              } else if (variance < 0) {
+                                status = "LEAKAGE_THEFT";
+                                costLoss = Number((Math.abs(variance) * costUnit).toFixed(2));
+                              } else if (variance > 0) {
+                                status = "SURPLUS";
+                              }
+                              setReconciliations(prev => prev.map(rec => rec.id === r.id ? {
+                                ...rec,
+                                physicalClosing: newPhysical,
+                                variance,
+                                status,
+                                costLoss
+                              } : rec));
+                            }}
+                            className="w-20 px-2 py-1 text-center font-bold text-gray-900 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                          />
+                          <span className="text-xs text-gray-500">{r.unit}</span>
+                        </div>
                       </td>
                       <td className="py-4 px-5 text-right">
-                        {hasLeakage ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-rose-100 text-rose-800">
-                            {r.variance} {r.unit} (⚠️ Theft / Leakage)
+                        {r.status === "HIGH_VARIANCE_THEFT_ALERT" || r.variance <= -0.5 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-black bg-rose-600 text-white shadow-sm animate-pulse">
+                            🚨 HIGH_VARIANCE_THEFT_ALERT ({r.variance} {r.unit} | Loss: ₹{r.costLoss || Math.abs(Number((r.variance * (items.find(i => i.name.toLowerCase() === r.itemName.toLowerCase())?.costPerUnit || 100)).toFixed(2)))})
+                          </span>
+                        ) : r.variance < 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900">
+                            ⚠️ Leakage: {r.variance} {r.unit} (Loss: ₹{r.costLoss || Math.abs(Number((r.variance * (items.find(i => i.name.toLowerCase() === r.itemName.toLowerCase())?.costPerUnit || 100)).toFixed(2)))})
+                          </span>
+                        ) : r.variance > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+                            + {r.variance} {r.unit} (Surplus)
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
@@ -2082,6 +2124,7 @@ export default function InventoryDashboard() {
                     <option value="Beverages">Beverages</option>
                     <option value="Packaging">Packaging</option>
                     <option value="Spices">Spices</option>
+                    <option value="Bakery">Bakery</option>
                   </select>
                 </div>
                 <div>

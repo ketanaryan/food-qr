@@ -5,7 +5,7 @@ import path from 'path';
 export interface InventoryItem {
   id: string;
   name: string;
-  category: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices";
+  category: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices" | "Bakery";
   currentStock: number;
   unit: "kg" | "L" | "Pcs" | "Packets" | "Grams";
   minAlertStock: number;
@@ -50,7 +50,8 @@ export interface DailyReconciliation {
   expectedClosing: number;
   physicalClosing: number;
   variance: number;
-  status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS";
+  status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS" | "HIGH_VARIANCE_THEFT_ALERT";
+  costLoss?: number;
 }
 
 export interface StockLog {
@@ -421,6 +422,14 @@ const DEFAULT_RECIPES: RecipeBOM[] = [
     ingredients: [
       { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
     ]
+  },
+  {
+    menuItem: "Cold Coffee with Ice Cream",
+    category: "Beverages",
+    ingredients: [
+      { name: "Fresh Full Cream Milk", qty: 0.25, unit: "L" },
+      { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
+    ]
   }
 ];
 
@@ -500,13 +509,25 @@ export function getInventoryStore(): InventoryStoreData {
   try {
     const raw = fs.readFileSync(INVENTORY_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
+    const recipes = Array.isArray(parsed.recipes) ? parsed.recipes : DEFAULT_RECIPES;
+    if (!recipes.some((r: any) => (r.menuItem || '').toLowerCase() === 'cold coffee with ice cream')) {
+      recipes.push({
+        menuItem: "Cold Coffee with Ice Cream",
+        category: "Beverages",
+        ingredients: [
+          { name: "Fresh Full Cream Milk", qty: 0.25, unit: "L" },
+          { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
+        ]
+      });
+    }
+
     return {
       items: Array.isArray(parsed.items) ? parsed.items : DEFAULT_INVENTORY_ITEMS,
       purchases: Array.isArray(parsed.purchases) ? parsed.purchases : DEFAULT_PURCHASES,
       vendors: Array.isArray(parsed.vendors) ? parsed.vendors : DEFAULT_VENDORS,
       reconciliations: Array.isArray(parsed.reconciliations) ? parsed.reconciliations : DEFAULT_RECONCILIATION,
       logs: Array.isArray(parsed.logs) ? parsed.logs : DEFAULT_LOGS,
-      recipes: Array.isArray(parsed.recipes) ? parsed.recipes : DEFAULT_RECIPES,
+      recipes
     };
   } catch (e) {
     console.error('Error reading inventory store file, restoring defaults:', e);
@@ -542,6 +563,8 @@ export function recordStockInward(payload: {
   paymentStatus?: "PAID" | "PENDING_CREDIT";
   paymentMethod?: "CASH" | "UPI" | "BANK_TRANSFER";
   notes?: string;
+  category?: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices" | "Bakery";
+  unit?: "kg" | "L" | "Pcs" | "Packets" | "Grams";
 }) {
   const store = getInventoryStore();
   const { qty } = payload;
@@ -560,14 +583,21 @@ export function recordStockInward(payload: {
   if (target) {
     target.currentStock = Number((target.currentStock + qty).toFixed(2));
     target.costPerUnit = costUnit;
+    if (payload.unit) target.unit = payload.unit;
+    if (payload.category) target.category = payload.category;
     target.lastUpdated = "Just now";
   } else {
+    const isMilk = (payload.itemName || "").toLowerCase().includes("milk");
+    const isPaneer = (payload.itemName || "").toLowerCase().includes("paneer");
+    const defaultCat = isMilk || isPaneer ? "Dairy" : "Grocery";
+    const defaultUnit = isMilk ? "L" : "kg";
+
     target = {
       id: "inv-" + Date.now(),
       name: payload.itemName || "Raw Ingredient",
-      category: "Grocery",
+      category: payload.category || defaultCat,
       currentStock: qty,
-      unit: "kg",
+      unit: payload.unit || defaultUnit,
       minAlertStock: 5.0,
       costPerUnit: costUnit,
       vendorName: vName,
@@ -692,10 +722,41 @@ export function recordVendorPayment(vendorId: string, amount: number, paymentMet
 // 4. Save Daily Physical Reconciliation Audit
 export function recordDailyReconciliation(reconciliations: DailyReconciliation[]) {
   const store = getInventoryStore();
-  store.reconciliations = reconciliations;
+
+  const processed = reconciliations.map(r => {
+    const item = store.items.find(i => i.name.toLowerCase() === r.itemName.toLowerCase());
+    const costPerUnit = item ? item.costPerUnit : 100;
+    const expected = Number((r.openingStock + r.inwardToday - r.consumedSales - r.wastage).toFixed(2));
+    const physical = Number(r.physicalClosing !== undefined && !isNaN(r.physicalClosing) ? r.physicalClosing : expected);
+    const variance = Number((physical - expected).toFixed(2));
+
+    let status: "MATCHED" | "LEAKAGE_THEFT" | "SURPLUS" | "HIGH_VARIANCE_THEFT_ALERT" = "MATCHED";
+    let costLoss = 0;
+
+    if (variance <= -0.5) {
+      status = "HIGH_VARIANCE_THEFT_ALERT";
+      costLoss = Number((Math.abs(variance) * costPerUnit).toFixed(2));
+    } else if (variance < 0) {
+      status = "LEAKAGE_THEFT";
+      costLoss = Number((Math.abs(variance) * costPerUnit).toFixed(2));
+    } else if (variance > 0) {
+      status = "SURPLUS";
+    }
+
+    return {
+      ...r,
+      expectedClosing: expected,
+      physicalClosing: physical,
+      variance,
+      status,
+      costLoss
+    };
+  });
+
+  store.reconciliations = processed;
   
   // Update current stock to match physical counts for audited items
-  for (const r of reconciliations) {
+  for (const r of processed) {
     const item = store.items.find(i => i.name.toLowerCase() === r.itemName.toLowerCase());
     if (item && r.physicalClosing !== undefined && !isNaN(r.physicalClosing)) {
       item.currentStock = r.physicalClosing;
@@ -729,10 +790,26 @@ export function depleteStockForOrderItems(orderNumber: string, items: Array<{ na
     if (recipe && recipe.ingredients && recipe.ingredients.length > 0) {
       for (const ing of recipe.ingredients) {
         const totalIngNeeded = Number((ing.qty * orderQty).toFixed(3));
-        const invItem = store.items.find(i => i.name.toLowerCase() === ing.name.toLowerCase());
+        const ingNameLower = ing.name.toLowerCase();
+        
+        // Exact match first, then ingredient type match
+        let invItem = store.items.find(i => i.name.toLowerCase() === ingNameLower);
+        if (!invItem) {
+          invItem = store.items.find(i => {
+            const iNameLower = i.name.toLowerCase();
+            return (
+              (ingNameLower.includes("paneer") && iNameLower.includes("paneer")) ||
+              (ingNameLower.includes("milk") && iNameLower.includes("milk")) ||
+              (ingNameLower.includes("butter") && iNameLower.includes("butter")) ||
+              (ingNameLower.includes("tomatoes") && iNameLower.includes("tomatoes")) ||
+              (ingNameLower.includes("rice") && iNameLower.includes("rice")) ||
+              ((ingNameLower.includes("kulfi") || ingNameLower.includes("ice cream")) &&
+               (iNameLower.includes("kulfi") || iNameLower.includes("ice cream")))
+            );
+          });
+        }
         
         if (invItem) {
-          const oldStock = invItem.currentStock;
           invItem.currentStock = Math.max(0, Number((invItem.currentStock - totalIngNeeded).toFixed(2)));
           invItem.lastUpdated = "Order #" + orderNumber;
 
