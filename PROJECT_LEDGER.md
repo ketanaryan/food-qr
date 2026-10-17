@@ -197,6 +197,11 @@ All variables documented in [`.env.example`](file:///c:/Users/KETAN/Documents/an
 
 ## 8. Git Commit Log
 
+* `9c2a52c`: `chore: ensure clean TypeScript compilation and Next.js 16 build compatibility`
+* `3b75bc3`: `feat(branding): update user-facing restaurant identity and UI to Hotel Marquis`
+* `3289ab8`: `fix(whatsapp): eliminate mobile blank white screen / orphaned Safari sheet on returning from WhatsApp`
+* `8a6e687`: `fix(bill): redesign WhatsApp bill with responsive digital receipt and 80mm POS PDF layout`
+* `1b019b2`: `fix(schema): update category check constraint to include Bakery and HIGH_VARIANCE_THEFT_ALERT status`
 * `bc65c65`: `feat(inventory): add Bakery category, interactive physical count audit, cost loss & fuzzy BOM matching`
 * `08020bb`: `docs(ledger): record Station 6 Enterprise Inventory Management suite, BOM depletion & vendor khata`
 * `ef933f4`: `feat(inventory): enterprise inventory management suite, live recipe order depletion & vendor procurement`
@@ -206,3 +211,25 @@ All variables documented in [`.env.example`](file:///c:/Users/KETAN/Documents/an
 * `c0616e6`: `security(auth): Edge-native Web Crypto API, HMAC-SHA256 sessions, PBKDF2 hashing & rate limiting`
 * `a13818c`: `docs: add Master Architecture & Feature Ledger (PROJECT_LEDGER.md)`
 * `78de373`: `feat(orders): resilient hybrid order persistence and multi-party rush concurrency support`
+
+---
+
+## 9. WhatsApp Integration & Mobile Safari Sheet Architecture
+
+### The Problem
+When invoking WhatsApp via `window.open('https://wa.me/...', '_blank')` on mobile devices (iOS Safari, mobile WebKit, and Android Chrome):
+1. The browser immediately spawns an orphaned blank popup window/tab (`about:blank` or blank Safari sheet with a close `✕` button).
+2. The operating system hands off the universal link to the native WhatsApp app.
+3. When staff or customers return to the browser from WhatsApp, the orphaned blank window remains stuck on screen with an `✕` button until manually dismissed.
+
+### The Solution (`src/lib/whatsapp.ts`)
+* Uses dynamic device detection (`/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)`).
+* On mobile devices, navigates natively via `window.location.href = waUrl`. iOS and Android intercept universal links in-place and directly launch the native WhatsApp app without leaving any blank popup sheet or orphaned tab behind.
+* On desktop browsers, uses programmatic anchor clicking with `target="_blank"` and `rel="noopener noreferrer"` so POS cashiers can keep the billing terminal active while WhatsApp Web opens in a tab.
+* Guarantees table payment settlement and modal dismissal occur before URL redirection.
+
+### Digital Invoice & 80mm Receipt PDF Architecture (`src/app/bill/[ids]/page.tsx`)
+* Replaces bare `<iframe src={pdfBlob}>` with a luxury, responsive digital invoice card rendered directly in the DOM.
+* Standardizes jsPDF receipt output to 80mm standard POS width with dynamically computed height based on line items (`Math.max(125, Math.ceil(header + items*6.5 + totals + footer))`), eliminating the 70% blank void of standard A4 PDFs on smartphones.
+* Generates clear, structured border boxes around totals, line items, and GST breakdowns.
+
