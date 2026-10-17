@@ -607,7 +607,7 @@ export default function InventoryDashboard() {
   // Top KPI calculations
   const totalValuation = items.reduce((acc, item) => acc + (item.currentStock * item.costPerUnit), 0);
   const totalInwardMonth = purchases.reduce((acc, p) => acc + p.totalAmount, 0);
-  const totalPendingUdhar = vendors.reduce((acc, v) => acc + v.pendingDue, 0);
+  const totalAccountsPayable = vendors.reduce((acc, v) => acc + v.pendingDue, 0);
   const lowStockItems = items.filter(i => i.currentStock <= i.minAlertStock);
   const totalWastageLoss = logs.filter(l => l.type === "WASTAGE").reduce((acc, l) => acc + l.cost, 0);
 
@@ -846,17 +846,17 @@ export default function InventoryDashboard() {
   // WhatsApp Vendor Statement Share
   const handleShareVendorStatement = (v: VendorAccount) => {
     const cleanPhone = v.phone.replace(/\D/g, "");
-    const msg = `🧾 *VENDOR LEDGER STATEMENT - HOTEL MARQUIS*\n` +
+    const msg = `🧾 *VENDOR ACCOUNT STATEMENT - HOTEL MARQUIS*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Vendor:* ${v.name}\n` +
       `*Category:* ${v.category}\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `*Total Purchased (This Month):* ₹${v.totalPurchased.toLocaleString("en-IN")}\n` +
+      `*Total Invoiced:* ₹${v.totalPurchased.toLocaleString("en-IN")}\n` +
       `*Total Paid:* ₹${v.totalPaid.toLocaleString("en-IN")}\n` +
-      `*Outstanding Balance (Udhar):* ₹${v.pendingDue.toLocaleString("en-IN")}\n` +
-      `*Last Payment:* ${v.lastPaymentDate}\n` +
+      `*Outstanding Balance (Payables):* ₹${v.pendingDue.toLocaleString("en-IN")}\n` +
+      `*Last Settlement:* ${v.lastPaymentDate}\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `Dhanyawad! Hotel Marquis Management. 🙏`;
+      `Regards,\nHotel Marquis Management.`;
 
     openWhatsApp(cleanPhone || "7499934257", msg);
     toast.success(`Opening WhatsApp statement for ${v.name}`);
@@ -871,11 +871,11 @@ export default function InventoryDashboard() {
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Item:* ${item.name} (${item.category})\n` +
       `*Required Quantity:* ${requiredRefill} ${item.unit}\n` +
-      `*Current Stock Status:* ${item.currentStock} ${item.unit} (Running Low ⚠️)\n` +
+      `*Current Stock Status:* ${item.currentStock} ${item.unit} (Below Par Level ⚠️)\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `Kripya jaldi se dispatch kara dijiye.\n` +
-      `Delivery Address: Hotel Marquis, Main Counter.\n` +
-      `Dhanyawad! 🙏`;
+      `Delivery Address: Hotel Marquis Main Kitchen.\n` +
+      `Please acknowledge and deliver at earliest.\n\n` +
+      `Regards,\nHotel Marquis Purchase Desk`;
 
     openWhatsApp(phone || "7499934257", message);
     toast.success(`Opening WhatsApp PO for ${item.vendorName}`, { icon: "📲" });
@@ -902,230 +902,247 @@ export default function InventoryDashboard() {
   };
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-200">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-[#A18D6D]/15 text-[#8c7653] rounded-2xl">
-              <Boxes size={28} />
+            <div className="p-2.5 bg-slate-900 text-white rounded-xl shadow-xs">
+              <Boxes size={24} />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
-                Inventory & Procurement Suite
-                <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-                  Enterprise Suite
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+                  Inventory & Stock Management
+                </h1>
+                <span className="text-[11px] bg-slate-100 text-slate-700 font-semibold px-2.5 py-0.5 rounded-md border border-slate-200 uppercase tracking-wide">
+                  Petpooja ERP Standard
                 </span>
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Raw material stocks, daily vendor inward purchases, supplier credit ledgers & closing audit
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Raw material master, purchase orders, goods received notes (GRN), supplier payables & live recipe depletion
               </p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Live Synced with Kitchen KDS & QR Orders
+                  Live Recipe Deduction Active (POS & KDS Linked)
                 </span>
                 <button
                   onClick={fetchServerInventory}
                   disabled={isSyncing}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg hover:bg-gray-200 transition"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-md hover:bg-slate-50 transition shadow-2xs"
                   title="Force re-sync with server"
                 >
-                  <RefreshCw size={12} className={isSyncing ? "animate-spin text-amber-600" : ""} />
+                  <RefreshCw size={12} className={isSyncing ? "animate-spin text-slate-600" : "text-slate-500"} />
                   {isSyncing ? "Syncing..." : "Sync Stock"}
                 </button>
-                <span className="text-[11px] text-gray-400">Last sync: {lastServerSync}</span>
+                <span className="text-[11px] text-slate-400 font-mono">Last sync: {lastServerSync}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Action Buttons Toolbar */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setIsNewInvoiceModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition active:scale-95"
           >
-            <FileText size={17} /> + Record Inward Bill
-          </button>
-
-          <button
-            onClick={() => setIsInwardModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
-          >
-            <ArrowDownRight size={17} /> + Quick Refill
-          </button>
-
-          <button
-            onClick={() => setIsWastageModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
-          >
-            <ArrowUpRight size={17} /> Log Wastage
+            <FileText size={15} /> + Record GRN / Inward
           </button>
 
           <button
             onClick={() => setIsAddItemModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow-sm transition active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition active:scale-95"
           >
-            <Plus size={17} /> New Raw Material
+            <Plus size={15} /> + Add Material
+          </button>
+
+          <button
+            onClick={() => setIsInwardModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition active:scale-95"
+          >
+            <ArrowDownRight size={15} className="text-emerald-600" /> Quick Refill
+          </button>
+
+          <button
+            onClick={() => setIsWastageModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold shadow-2xs transition active:scale-95"
+          >
+            <ArrowUpRight size={15} className="text-rose-600" /> Log Wastage
           </button>
 
           <button
             onClick={handleExportCSV}
-            className="p-2.5 bg-white hover:bg-gray-100 text-gray-700 border border-gray-200 rounded-xl transition shadow-sm"
-            title="Download CSV Audit"
+            className="p-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shadow-2xs transition active:scale-95"
+            title="Export CSV Audit"
           >
-            <Download size={18} />
+            <Download size={16} />
           </button>
         </div>
       </div>
 
-      {/* KPI Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* KPI Stats Grid - Enterprise Petpooja Standard */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Total Stock Value */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Current Stock Value</span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-xl">
-              <DollarSign size={17} />
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Stock Valuation</span>
+            <div className="p-1.5 bg-slate-100 text-slate-600 rounded-md">
+              <DollarSign size={15} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+          <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
             ₹{totalValuation.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Capital in kitchen storage</p>
+          <p className="text-[11px] text-slate-500">Live storage inventory value</p>
         </div>
 
-        {/* Monthly Inward Purchases */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Inward (Aaya)</span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-              <ArrowDownRight size={17} />
+        {/* Monthly Purchases (Inward / GRN) */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Purchases / GRN (Month)</span>
+            <div className="p-1.5 bg-slate-100 text-slate-600 rounded-md">
+              <ArrowDownRight size={15} className="text-emerald-600" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-700">
+          <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
             ₹{totalInwardMonth.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-gray-500 mt-1">{purchases.length} Delivery Invoices</p>
+          <p className="text-[11px] text-slate-500">{purchases.length} Inward Delivery Invoices</p>
         </div>
 
-        {/* Pending Vendor Udhar */}
-        <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden transition ${
-          totalPendingUdhar > 0 ? "bg-purple-50/70 border-purple-200" : "bg-white border-gray-200"
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-900">Vendor Udhar (Due)</span>
-            <div className="p-2 bg-purple-600 text-white rounded-xl">
-              <CreditCard size={17} />
+        {/* Accounts Payable (Outstanding Supplier Dues) */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Accounts Payable</span>
+            <div className="p-1.5 bg-slate-100 text-slate-600 rounded-md">
+              <CreditCard size={15} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-purple-900">
-            ₹{totalPendingUdhar.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+          <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
+            ₹{totalAccountsPayable.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-purple-700 mt-1">Payable to suppliers</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-slate-500">Pending supplier dues</p>
+            {totalAccountsPayable > 0 && (
+              <span className="text-[10px] font-semibold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                Action Due
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Low Stock Alerts */}
-        <div className={`p-5 rounded-2xl border shadow-sm relative overflow-hidden transition-all ${
-          lowStockItems.length > 0 ? "bg-amber-50/70 border-amber-300" : "bg-white border-gray-200"
-        }`}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-amber-800">Low Stock Alert</span>
-            <div className="p-2 bg-amber-500 text-white rounded-xl">
-              <AlertTriangle size={17} />
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Low Stock Alerts</span>
+            <div className={`p-1.5 rounded-md ${lowStockItems.length > 0 ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+              <AlertTriangle size={15} />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-amber-900">
-            {lowStockItems.length} Items
+          <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
+            {lowStockItems.length} <span className="text-sm font-normal text-slate-500">Items</span>
           </div>
-          <p className="text-xs text-amber-700 mt-1">
-            {lowStockItems.length > 0 ? "Re-order needed from vendor" : "Safe levels"}
+          <p className="text-[11px] text-slate-500">
+            {lowStockItems.length > 0 ? "Below minimum par level" : "All materials optimal"}
           </p>
         </div>
 
-        {/* Wastage Loss */}
-        <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Kitchen Wastage</span>
-            <div className="p-2 bg-rose-50 text-rose-600 rounded-xl">
-              <ArrowUpRight size={17} />
+        {/* Kitchen Wastage */}
+        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Kitchen Wastage</span>
+            <div className="p-1.5 bg-slate-100 text-slate-600 rounded-md">
+              <ArrowUpRight size={15} className="text-rose-600" />
             </div>
           </div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-rose-600">
+          <div className="text-2xl font-bold tracking-tight text-slate-900 font-mono">
             ₹{totalWastageLoss.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Spoilage & loss recorded</p>
+          <p className="text-[11px] text-slate-500">Recorded food spoilage loss</p>
         </div>
       </div>
 
       {/* Main Navigation Tabs */}
-      <div className="flex items-center justify-between border-b border-gray-200 overflow-x-auto pb-px">
-        <div className="flex gap-1 sm:gap-2 min-w-max">
+      <div className="flex items-center justify-between border-b border-slate-200 overflow-x-auto pb-px">
+        <div className="flex gap-1.5 min-w-max">
           <button
             onClick={() => setActiveTab("stocks")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "stocks"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Boxes size={16} /> Raw Materials ({items.length})
+            <Boxes size={15} /> Raw Materials
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700">
+              {items.length}
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab("inward")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "inward"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <FileText size={16} className="text-blue-600" /> Inward Bills & Delivery ({purchases.length})
+            <FileText size={15} /> Goods Received Notes (GRN)
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700">
+              {purchases.length}
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab("vendors")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "vendors"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Users size={16} className="text-purple-600" /> Vendor Udhar Ledger ({vendors.length})
+            <Users size={15} /> Vendor Payables Ledger
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700">
+              {vendors.length}
+            </span>
           </button>
 
           <button
             onClick={() => setActiveTab("audit")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "audit"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Calculator size={16} className="text-emerald-600" /> Daily Closing Audit
+            <Calculator size={15} /> Stock Audit & Variance
           </button>
 
           <button
             onClick={() => setActiveTab("recipes")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "recipes"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <Sparkles size={16} className="text-amber-500" /> Recipe BOM
+            <Sparkles size={15} /> Recipe BOM Master
           </button>
 
           <button
             onClick={() => setActiveTab("logs")}
-            className={`pb-3 px-3 sm:px-4 font-bold text-sm border-b-2 transition flex items-center gap-2 ${
+            className={`pb-3 px-3 font-semibold text-xs sm:text-sm border-b-2 transition flex items-center gap-1.5 ${
               activeTab === "logs"
-                ? "border-gray-900 text-gray-900"
-                : "border-transparent text-gray-400 hover:text-gray-700"
+                ? "border-slate-900 text-slate-900"
+                : "border-transparent text-slate-500 hover:text-slate-800"
             }`}
           >
-            <RefreshCw size={16} /> Audit Logs ({logs.length})
+            <RefreshCw size={15} /> Movement History
+            <span className="font-mono text-[11px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-700">
+              {logs.length}
+            </span>
           </button>
         </div>
       </div>
@@ -1372,67 +1389,67 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* TAB 2: INWARD BILLS & DELIVERIES (Kitna Samaan Aaya Register) */}
+      {/* TAB 2: GOODS RECEIVED NOTES (GRN) & PURCHASE INVOICES */}
       {activeTab === "inward" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div>
-              <h3 className="font-bold text-gray-900 text-base flex items-center gap-2">
-                <span>📥</span> Daily Vendor Inward Register (Khareedi / Purchase Bills)
+              <h3 className="font-bold text-slate-900 text-sm sm:text-base flex items-center gap-2">
+                <FileText size={18} className="text-slate-700" /> Goods Received Notes (GRN) & Purchase Register
               </h3>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Every delivery from dairy, meat, mandi & grocery logged with bill number, items and payment status
+              <p className="text-xs text-slate-500 mt-0.5">
+                Verified delivery logs recording supplier invoices, physical receiving dates, bill amounts, and payment status.
               </p>
             </div>
             <button
               onClick={() => setIsNewInvoiceModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-xs transition active:scale-95"
             >
-              <Plus size={15} /> + Add Inward Delivery Bill
+              <Plus size={15} /> + Record GRN / Purchase
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
             <table className="w-full text-left text-sm">
-              <thead className="bg-gray-50 text-gray-500 text-xs font-bold uppercase tracking-wider border-b border-gray-200">
+              <thead className="bg-slate-50 text-slate-600 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
                 <tr>
-                  <th className="py-3.5 px-5">Invoice / Date</th>
-                  <th className="py-3.5 px-4">Vendor Name</th>
-                  <th className="py-3.5 px-4">Delivered Items Summary</th>
-                  <th className="py-3.5 px-4 text-right">Bill Amount</th>
-                  <th className="py-3.5 px-4 text-center">Payment Status</th>
-                  <th className="py-3.5 px-5 text-right">Notes</th>
+                  <th className="py-3 px-4">GRN / Invoice #</th>
+                  <th className="py-3 px-4">Supplier</th>
+                  <th className="py-3 px-4">Delivered Items Summary</th>
+                  <th className="py-3 px-4 text-right">Invoice Value</th>
+                  <th className="py-3 px-4 text-center">Payment Status</th>
+                  <th className="py-3 px-4 text-right">Receiving Notes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-slate-100">
                 {purchases.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50/70 transition">
-                    <td className="py-4 px-5">
-                      <div className="font-bold text-gray-900">{p.invoiceNo}</div>
-                      <div className="text-xs text-gray-400 mt-0.5">{p.date}</div>
+                  <tr key={p.id} className="hover:bg-slate-50/60 transition">
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-slate-900">{p.invoiceNo}</div>
+                      <div className="text-xs text-slate-400 mt-0.5">{p.date}</div>
                     </td>
-                    <td className="py-4 px-4 font-semibold text-gray-800">
-                      <div>{p.vendorName}</div>
-                      <div className="text-xs text-gray-400">{p.vendorPhone}</div>
+                    <td className="py-3.5 px-4 text-slate-800">
+                      <div className="font-medium text-slate-900">{p.vendorName}</div>
+                      <div className="text-xs text-slate-400">{p.vendorPhone}</div>
                     </td>
-                    <td className="py-4 px-4 text-xs text-gray-700 max-w-xs font-medium">
+                    <td className="py-3.5 px-4 text-xs text-slate-600 max-w-xs">
                       {p.itemsSummary}
                     </td>
-                    <td className="py-4 px-4 text-right font-extrabold text-base text-gray-900">
+                    <td className="py-3.5 px-4 text-right font-bold text-slate-900 font-mono">
                       ₹{p.totalAmount.toLocaleString("en-IN")}
                     </td>
-                    <td className="py-4 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center">
                       {p.paymentStatus === "PAID" ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                          <Check size={12} /> PAID ({p.paymentMethod || "CASH"})
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Check size={11} /> PAID ({p.paymentMethod || "CASH"})
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-800 animate-pulse">
-                          🟡 CREDIT (Udhar)
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                          CREDIT (Pending)
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-5 text-right text-xs text-gray-400">
+                    <td className="py-3.5 px-4 text-right text-xs text-slate-400">
                       {p.notes || "-"}
                     </td>
                   </tr>
@@ -1443,55 +1460,55 @@ export default function InventoryDashboard() {
         </div>
       )}
 
-      {/* TAB 3: VENDOR UDHAR LEDGER (Kaun Se Supplier Ka Kitna Baki Hai) */}
+      {/* TAB 3: VENDOR PAYABLES LEDGER */}
       {activeTab === "vendors" && (
-        <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-purple-50/70 border border-purple-200 p-4 rounded-2xl flex items-start gap-3">
-            <Users className="text-purple-700 mt-0.5 shrink-0" size={20} />
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-start gap-3">
+            <Users className="text-slate-700 mt-0.5 shrink-0" size={18} />
             <div>
-              <h3 className="font-bold text-purple-950 text-sm">Supplier Accounts & Udhar Payables (Khata Book)</h3>
-              <p className="text-xs text-purple-800 mt-0.5 leading-relaxed">
-                Track how much stock came from each supplier, how much has been paid, and exact pending credit due. Send WhatsApp payment receipts with 1-click!
+              <h3 className="font-bold text-slate-900 text-sm">Supplier Accounts & Accounts Payable Ledger</h3>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                Track cumulative deliveries, payments released, and live outstanding balances per supplier. Send 1-click WhatsApp account statements.
               </p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {vendors.map(v => (
-              <div key={v.id} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-                <div className="flex items-start justify-between border-b pb-3 border-gray-100">
+              <div key={v.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs space-y-3">
+                <div className="flex items-start justify-between border-b pb-2.5 border-slate-100">
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base">{v.name}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{v.category}</p>
-                    <p className="text-xs text-gray-500 font-medium mt-1">📱 {v.phone}</p>
+                    <h3 className="font-bold text-slate-900 text-sm sm:text-base">{v.name}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">{v.category}</p>
+                    <p className="text-xs text-slate-500 font-mono mt-0.5">📞 {v.phone}</p>
                   </div>
                   {v.pendingDue > 0 ? (
-                    <span className="text-xs font-bold px-2.5 py-1 bg-purple-100 text-purple-800 rounded-lg">
+                    <span className="text-xs font-semibold px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-md font-mono">
                       Due: ₹{v.pendingDue.toLocaleString("en-IN")}
                     </span>
                   ) : (
-                    <span className="text-xs font-bold px-2.5 py-1 bg-green-100 text-green-700 rounded-lg">
-                      All Clear ✓
+                    <span className="text-xs font-semibold px-2.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md">
+                      Settled ✓
                     </span>
                   )}
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 bg-gray-50 p-3 rounded-xl text-center text-xs">
+                <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-lg text-center text-xs">
                   <div>
-                    <span className="text-gray-400 block font-medium">Purchased</span>
-                    <span className="font-bold text-gray-900 mt-0.5 block text-sm">
+                    <span className="text-slate-400 block text-[11px] font-medium">Invoiced</span>
+                    <span className="font-bold text-slate-900 mt-0.5 block text-xs sm:text-sm font-mono">
                       ₹{v.totalPurchased.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block font-medium">Paid</span>
-                    <span className="font-bold text-emerald-700 mt-0.5 block text-sm">
+                    <span className="text-slate-400 block text-[11px] font-medium">Settled</span>
+                    <span className="font-bold text-emerald-700 mt-0.5 block text-xs sm:text-sm font-mono">
                       ₹{v.totalPaid.toLocaleString("en-IN")}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-400 block font-medium">Pending Udhar</span>
-                    <span className={`font-black mt-0.5 block text-sm ${v.pendingDue > 0 ? "text-purple-700" : "text-gray-400"}`}>
+                    <span className="text-slate-400 block text-[11px] font-medium">Outstanding</span>
+                    <span className={`font-bold mt-0.5 block text-xs sm:text-sm font-mono ${v.pendingDue > 0 ? "text-amber-800 font-black" : "text-slate-400"}`}>
                       ₹{v.pendingDue.toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -1505,16 +1522,16 @@ export default function InventoryDashboard() {
                         setPayAmount(String(v.pendingDue));
                         setIsPayVendorModalOpen(true);
                       }}
-                      className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95"
+                      className="flex-1 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-lg transition shadow-2xs active:scale-95"
                     >
-                      💳 Settle Payment
+                      Settle Balance
                     </button>
                   )}
                   <button
                     onClick={() => handleShareVendorStatement(v)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-2.5 bg-[#25D366] hover:bg-[#1ebd5b] text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-2xs active:scale-95"
                   >
-                    <MessageCircle size={15} /> Send Ledger on WA
+                    <MessageCircle size={14} /> Send Statement
                   </button>
                 </div>
               </div>
@@ -1651,12 +1668,12 @@ export default function InventoryDashboard() {
       {/* TAB 5: RECIPE BOM MAPPING */}
       {activeTab === "recipes" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-amber-50/60 border border-amber-200 p-4 rounded-2xl flex items-start gap-3">
-            <Sparkles className="text-amber-600 mt-0.5 shrink-0" size={20} />
+          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl flex items-start gap-3">
+            <Sparkles className="text-amber-500 mt-0.5 shrink-0" size={18} />
             <div>
-              <h3 className="font-bold text-amber-950 text-sm">Automated Kitchen BOM (Bill of Materials)</h3>
-              <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
-                Jab bhi Cashier par koi dish settle hoti hai, system automatically backend se exact ingredients deduct karta hai. Isse kitchen theft aur unaccounted raw material loss 0% ho jata hai.
+              <h3 className="font-bold text-slate-900 text-sm">Automated Kitchen BOM (Bill of Materials)</h3>
+              <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
+                Standard recipes are linked directly to POS orders and KDS tickets. When an order is settled, the engine automatically depletes proportional raw material weights, tracking food cost and eliminating inventory shrinkage.
               </p>
             </div>
           </div>
@@ -1900,8 +1917,8 @@ export default function InventoryDashboard() {
                     onChange={e => setNewInvoiceForm({ ...newInvoiceForm, paymentStatus: e.target.value as any })}
                     className="w-full border border-gray-200 rounded-xl p-2.5 text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                   >
-                    <option value="PAID">PAID (Clear)</option>
-                    <option value="PENDING_CREDIT">CREDIT (Udhar / Pending)</option>
+                    <option value="PAID">PAID (Settled)</option>
+                    <option value="PENDING_CREDIT">CREDIT (Pending Payable)</option>
                   </select>
                 </div>
                 <div>
@@ -1939,9 +1956,9 @@ export default function InventoryDashboard() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm shadow-md"
+                  className="flex-1 py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-sm shadow-md"
                 >
-                  Save Inward Bill
+                  Record GRN Invoice
                 </button>
               </div>
             </form>
@@ -1955,7 +1972,7 @@ export default function InventoryDashboard() {
           <div className="bg-white rounded-3xl w-full max-w-sm p-6 space-y-5 shadow-2xl">
             <div className="flex items-center justify-between border-b pb-3">
               <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                <CreditCard className="text-purple-600" /> Settle Vendor Udhar
+                <CreditCard className="text-slate-700" /> Settle Vendor Balance
               </h2>
               <button onClick={() => setIsPayVendorModalOpen(false)} className="text-gray-400 hover:text-gray-600 font-bold text-lg">✕</button>
             </div>

@@ -637,7 +637,7 @@ export function recordStockInward(payload: {
   };
   store.purchases.unshift(newPurchase);
 
-  // Update Vendor Khata
+  // Update Vendor Ledger Account
   let vendor = store.vendors.find(v => v.name.toLowerCase() === vName.toLowerCase());
   if (vendor) {
     vendor.totalPurchased += totalCost;
@@ -703,7 +703,7 @@ export function recordStockWastage(payload: {
   return { updatedItem: target, costLoss, log: newLog };
 }
 
-// 3. Settle Vendor Payment (Khata Due Payment)
+// 3. Settle Vendor Payment (Accounts Payable Settlement)
 export function recordVendorPayment(vendorId: string, amount: number, paymentMethod: "CASH" | "UPI" | "BANK_TRANSFER" = "UPI") {
   const store = getInventoryStore();
   const vendor = store.vendors.find(v => v.id === vendorId);

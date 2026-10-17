@@ -38,6 +38,7 @@ export async function GET(req: Request) {
         totalValuation: Number(totalValuation.toFixed(2)),
         totalInwardMonth: Number(totalInwardMonth.toFixed(2)),
         totalPendingUdhar: Number(totalPendingUdhar.toFixed(2)),
+        totalAccountsPayable: Number(totalPendingUdhar.toFixed(2)),
         lowStockCount: lowStockItems.length,
         lowStockItems,
         totalWastageLoss: Number(totalWastageLoss.toFixed(2))
