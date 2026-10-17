@@ -233,3 +233,21 @@ When invoking WhatsApp via `window.open('https://wa.me/...', '_blank')` on mobil
 * Standardizes jsPDF receipt output to 80mm standard POS width with dynamically computed height based on line items (`Math.max(125, Math.ceil(header + items*6.5 + totals + footer))`), eliminating the 70% blank void of standard A4 PDFs on smartphones.
 * Generates clear, structured border boxes around totals, line items, and GST breakdowns.
 
+---
+
+## 10. Enterprise Petpooja Standard Inventory Architecture
+
+### Overview & Eliminating Slang
+Refactored the entire Inventory and Procurement Suite from informal/childish Hinglish tags to the industry-standard **Petpooja ERP** layout and terminology:
+* Eliminated colloquial labels: `TOTAL INWARD (AAYA)` → `Purchases / GRN (Month)`, `VENDOR UDHAR (DUE)` → `Accounts Payable`, `Vendor Udhar Ledger` → `Vendor Payables Ledger`.
+* Removed candy/pastel-colored cartoon borders in favor of high-density slate neutral borders (`border-slate-200/80`), monochromatic action badges, and crisp monospace number typography.
+
+### Core Architecture Components
+1. **Raw Materials Master**: Central database of restaurant food supplies, measuring units (`kg`, `L`, `Pcs`), par levels, unit purchase rates, and live storage valuation.
+2. **Goods Received Notes (GRN)**: Formal receiving dock ledger matching vendor challans, actual received weights, invoice amounts, and cash vs. credit payment terms.
+3. **Accounts Payable & Supplier Ledger**: Cumulative billing and disbursement tracking with single-click WhatsApp account statements.
+4. **Recipe BOM (Bill of Materials)**: Proportional ingredient mapping per menu dish, automatically depleting raw materials upon POS billing and KDS punch.
+5. **Physical Stock Audit & Variance Reconciliation**: Daily closing sheet computing `Opening + GRN Inward - Recipe Consumption - Wastage = Expected Closing`, highlighting shrinkage and financial loss (`₹ Loss`).
+6. **Wastage & Spoilage Log**: Dedicated accounting of burnt, spoiled, or dropped kitchen food loss.
+
+
