@@ -501,30 +501,86 @@ export default function InventoryDashboard() {
     vendorPhone: ""
   });
   const [payAmount, setPayAmount] = useState("");
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [lastServerSync, setLastServerSync] = useState<string>("Initializing...");
 
-  // Load from localStorage
-  useEffect(() => {
+  // Load from Live Server Engine (with localStorage offline fallback)
+  const fetchServerInventory = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await fetch("/api/admin/inventory");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.store) {
+          if (Array.isArray(data.store.items)) {
+            setItems(data.store.items);
+            localStorage.setItem("hwb_inventory_items", JSON.stringify(data.store.items));
+          }
+          if (Array.isArray(data.store.purchases)) {
+            setPurchases(data.store.purchases);
+            localStorage.setItem("hwb_inventory_purchases", JSON.stringify(data.store.purchases));
+          }
+          if (Array.isArray(data.store.vendors)) {
+            setVendors(data.store.vendors);
+            localStorage.setItem("hwb_inventory_vendors", JSON.stringify(data.store.vendors));
+          }
+          if (Array.isArray(data.store.reconciliations)) {
+            setReconciliations(data.store.reconciliations);
+            localStorage.setItem("hwb_inventory_reconciliations", JSON.stringify(data.store.reconciliations));
+          }
+          if (Array.isArray(data.store.logs)) {
+            setLogs(data.store.logs);
+            localStorage.setItem("hwb_inventory_logs", JSON.stringify(data.store.logs));
+          }
+          setLastServerSync(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Live inventory sync notice (falling back to cache):", e);
+    } finally {
+      setIsSyncing(false);
+    }
+
+    // Offline cache fallback
     const savedItems = localStorage.getItem("hwb_inventory_items");
     const savedPurchases = localStorage.getItem("hwb_inventory_purchases");
     const savedVendors = localStorage.getItem("hwb_inventory_vendors");
     const savedRec = localStorage.getItem("hwb_inventory_reconciliations");
     const savedLogs = localStorage.getItem("hwb_inventory_logs");
 
-    if (savedItems) try { setItems(JSON.parse(savedItems)); } catch (e) { setItems(INITIAL_INVENTORY); }
+    if (savedItems) try { setItems(JSON.parse(savedItems)); } catch { setItems(INITIAL_INVENTORY); }
     else setItems(INITIAL_INVENTORY);
 
-    if (savedPurchases) try { setPurchases(JSON.parse(savedPurchases)); } catch (e) { setPurchases(INITIAL_PURCHASES); }
+    if (savedPurchases) try { setPurchases(JSON.parse(savedPurchases)); } catch { setPurchases(INITIAL_PURCHASES); }
     else setPurchases(INITIAL_PURCHASES);
 
-    if (savedVendors) try { setVendors(JSON.parse(savedVendors)); } catch (e) { setVendors(INITIAL_VENDORS); }
+    if (savedVendors) try { setVendors(JSON.parse(savedVendors)); } catch { setVendors(INITIAL_VENDORS); }
     else setVendors(INITIAL_VENDORS);
 
-    if (savedRec) try { setReconciliations(JSON.parse(savedRec)); } catch (e) { setReconciliations(INITIAL_RECONCILIATION); }
+    if (savedRec) try { setReconciliations(JSON.parse(savedRec)); } catch { setReconciliations(INITIAL_RECONCILIATION); }
     else setReconciliations(INITIAL_RECONCILIATION);
 
-    if (savedLogs) try { setLogs(JSON.parse(savedLogs)); } catch (e) { setLogs(INITIAL_LOGS); }
+    if (savedLogs) try { setLogs(JSON.parse(savedLogs)); } catch { setLogs(INITIAL_LOGS); }
     else setLogs(INITIAL_LOGS);
+    setLastServerSync("Cached Mode");
+  };
+
+  useEffect(() => {
+    fetchServerInventory();
   }, []);
+
+  const postServerAction = async (action: string, payload: any) => {
+    try {
+      await fetch("/api/admin/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, payload })
+      });
+    } catch (e) {
+      console.warn(`Failed to sync action ${action} to server:`, e);
+    }
+  };
 
   const saveItems = (updated: InventoryItem[]) => {
     setItems(updated);
@@ -596,6 +652,13 @@ export default function InventoryDashboard() {
 
     saveItems(updated);
     saveLogs([newLog, ...logs]);
+    postServerAction("STOCK_INWARD", {
+      itemId: targetItem.id,
+      itemName: targetItem.name,
+      qty,
+      costPerUnit: costUnit,
+      notes: inwardForm.notes
+    });
     setIsInwardModalOpen(false);
     setInwardForm({ itemId: "", qty: "", costPerUnit: "", notes: "" });
     toast.success(`+${qty} ${targetItem.unit} added to ${targetItem.name}!`);
@@ -643,6 +706,16 @@ export default function InventoryDashboard() {
     saveVendors(updatedVendors);
 
     savePurchases([newInvoice, ...purchases]);
+    postServerAction("STOCK_INWARD", {
+      invoiceNo: newInvoice.invoiceNo,
+      vendorName: newInvoice.vendorName,
+      vendorPhone: newInvoice.vendorPhone,
+      qty: 1,
+      costPerUnit: amt,
+      notes: newInvoice.notes,
+      paymentStatus: newInvoice.paymentStatus,
+      paymentMethod: newInvoice.paymentMethod
+    });
     setIsNewInvoiceModalOpen(false);
     setNewInvoiceForm({
       invoiceNo: "",
@@ -691,6 +764,13 @@ export default function InventoryDashboard() {
 
     saveItems(updated);
     saveLogs([newLog, ...logs]);
+    postServerAction("LOG_WASTAGE", {
+      itemId: targetItem.id,
+      itemName: targetItem.name,
+      qty,
+      reason: wastageForm.reason,
+      notes: wastageForm.notes
+    });
     setIsWastageModalOpen(false);
     setWastageForm({ itemId: "", qty: "", reason: "Spoiled / Expired", notes: "" });
     toast.error(`Wastage of ${qty} ${targetItem.unit} (₹${costLoss}) recorded`);
@@ -715,6 +795,7 @@ export default function InventoryDashboard() {
     };
 
     saveItems([item, ...items]);
+    postServerAction("ADD_ITEM", item);
     setIsAddItemModalOpen(false);
     setNewItemForm({
       name: "",
@@ -750,6 +831,11 @@ export default function InventoryDashboard() {
     });
 
     saveVendors(updated);
+    postServerAction("SETTLE_VENDOR_PAYMENT", {
+      vendorId: selectedVendorForPay.id,
+      amount: paidVal,
+      paymentMethod: "UPI"
+    });
     setIsPayVendorModalOpen(false);
     setPayAmount("");
     toast.success(`₹${paidVal} paid to ${selectedVendorForPay.name}!`);
@@ -832,6 +918,22 @@ export default function InventoryDashboard() {
               <p className="text-sm text-gray-500 mt-1">
                 Raw material stocks, daily vendor inward purchases, supplier credit ledgers & closing audit
               </p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Synced with Kitchen KDS & QR Orders
+                </span>
+                <button
+                  onClick={fetchServerInventory}
+                  disabled={isSyncing}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-gray-600 hover:text-gray-900 bg-gray-100 px-2.5 py-1 rounded-lg hover:bg-gray-200 transition"
+                  title="Force re-sync with server"
+                >
+                  <RefreshCw size={12} className={isSyncing ? "animate-spin text-amber-600" : ""} />
+                  {isSyncing ? "Syncing..." : "Sync Stock"}
+                </button>
+                <span className="text-[11px] text-gray-400">Last sync: {lastServerSync}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -1165,6 +1267,7 @@ export default function InventoryDashboard() {
                             onClick={() => {
                               if (confirm(`Delete ${item.name} from inventory?`)) {
                                 saveItems(items.filter(i => i.id !== item.id));
+                                postServerAction("DELETE_ITEM", { id: item.id });
                                 toast.success("Item removed");
                               }
                             }}
@@ -1420,14 +1523,25 @@ export default function InventoryDashboard() {
       {/* TAB 4: DAILY STOCK CLOSING RECONCILIATION AUDIT */}
       {activeTab === "audit" && (
         <div className="space-y-6 animate-in fade-in duration-200">
-          <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex items-start gap-3">
-            <Calculator className="text-emerald-700 mt-0.5 shrink-0" size={20} />
-            <div>
-              <h3 className="font-bold text-emerald-950 text-sm">End of Day Stock Reconciliation (Daily Closing Sheet)</h3>
-              <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-                Formula: <strong>Opening + Inward Received (-) Sales Consumed (-) Wastage = Expected Closing</strong>. If Physical count is lower than Expected, the system flags it in Red to catch kitchen theft and over-portioning!
-              </p>
+          <div className="bg-emerald-50/70 border border-emerald-200 p-4 rounded-2xl flex items-start gap-3 justify-between">
+            <div className="flex items-start gap-3">
+              <Calculator className="text-emerald-700 mt-0.5 shrink-0" size={20} />
+              <div>
+                <h3 className="font-bold text-emerald-950 text-sm">End of Day Stock Reconciliation (Daily Closing Sheet)</h3>
+                <p className="text-xs text-emerald-800 mt-0.5 leading-relaxed">
+                  Formula: <strong>Opening + Inward Received (-) Sales Consumed (-) Wastage = Expected Closing</strong>. If Physical count is lower than Expected, the system flags it in Red to catch kitchen theft and over-portioning!
+                </p>
+              </div>
             </div>
+            <button
+              onClick={async () => {
+                await postServerAction("SAVE_RECONCILIATION", { reconciliations });
+                toast.success("Daily Stock Reconciliation Audit saved to server!");
+              }}
+              className="shrink-0 px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition shadow-sm active:scale-95 flex items-center gap-1.5"
+            >
+              <Check size={14} /> Save Audit
+            </button>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">

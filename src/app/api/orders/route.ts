@@ -4,6 +4,7 @@ import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
 import { insertLocalOrder } from '@/lib/ordersStore';
+import { depleteStockForOrderItems } from '@/lib/inventoryStore';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -116,7 +117,10 @@ export async function POST(req: Request) {
       if (isNaN(qty) || qty <= 0 || qty > 100) continue;
 
       // Match against DB prices to prevent tampering, with fallback for custom staff items
-      const menuDbItem = menuItemsList.find((m) => String(m.id) === String(item.id));
+      const menuDbItem = menuItemsList.find((m) => 
+        String(m.id) === String(item.id) || 
+        (item.name && String(m.name || '').toLowerCase().trim() === String(item.name).toLowerCase().trim())
+      );
       if (menuDbItem) {
         totalAmount += Number(menuDbItem.price) * qty;
         validatedItems.push({
@@ -174,6 +178,13 @@ export async function POST(req: Request) {
         total_amount: totalAmount,
         order_number: orderNumber,
       });
+    }
+
+    // 7. Auto-Deplete Raw Ingredients from Kitchen Inventory via Recipe BOM
+    try {
+      depleteStockForOrderItems(orderNumber, validatedItems);
+    } catch (invErr: any) {
+      console.warn('Inventory auto-depletion notice:', invErr.message);
     }
 
     return NextResponse.json({
