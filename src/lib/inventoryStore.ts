@@ -858,11 +858,11 @@ export function generateWhatsAppPurchaseOrder(vendorPhone: string, vendorName: s
   const targetPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
   const itemsText = itemsList.map((i, idx) => `${idx + 1}. ${i.name} - ${i.neededQty} ${i.unit}`).join('%0A');
   
-  const text = `*HOTEL WHITE BLISS - URGENT PURCHASE ORDER*%0A%0A` +
+  const text = `*HOTEL MARQUIS - URGENT PURCHASE ORDER*%0A%0A` +
     `Namaste ${encodeURIComponent(vendorName)},%0A` +
-    `Please supply the following ingredients urgently to Hotel White Bliss, Nashik:%0A%0A` +
+    `Please supply the following ingredients urgently to Hotel Marquis, Nashik:%0A%0A` +
     `${itemsText}%0A%0A` +
-    `_Sent via Hotel White Bliss Inventory Management Desk_`;
+    `_Sent via Hotel Marquis Inventory Management Desk_`;
 
   return `https://wa.me/${targetPhone}?text=${text}`;
 }

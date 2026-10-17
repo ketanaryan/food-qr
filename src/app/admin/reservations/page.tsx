@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import toast from "react-hot-toast"
+import { openWhatsApp, formatReservationWhatsAppMessage } from "@/lib/whatsapp"
 
 export default function ReservationsPage() {
   const [reservations, setReservations] = useState<any[]>([])
@@ -49,13 +50,7 @@ export default function ReservationsPage() {
       details = items[0] || {};
     } catch(e) {}
 
-    // Send WhatsApp confirmation
-    if (details.phone) {
-      const cleanPhone = details.phone.replace(/\D/g, '');
-      const text = `🎉 *RESERVATION CONFIRMED!* 🎉\n------------------------\nHello ${details.name},\nYour table at *HOTEL WHITE BLISS* is confirmed!\n\n📅 Date: ${details.date}\n⏰ Time: ${details.time}\n👥 Guests: ${details.guests}\n------------------------\nWe look forward to hosting you! 🙏`;
-      window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
-    }
-
+    // First persist confirmation to backend
     await fetch('/api/orders/update', {
       method: 'POST',
       headers: { 
@@ -63,6 +58,17 @@ export default function ReservationsPage() {
       },
       body: JSON.stringify({ orderIds: [res.id], status: 'confirmed_reservation' })
     });
+
+    // Send WhatsApp confirmation without blank tab
+    if (details.phone) {
+      const text = formatReservationWhatsAppMessage({
+        guestName: details.name,
+        date: details.date,
+        time: details.time,
+        guests: details.guests
+      });
+      openWhatsApp(details.phone, text);
+    }
   }
 
   const handleReject = async (id: number) => {

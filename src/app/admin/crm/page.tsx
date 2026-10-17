@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Users, Phone, Calendar, Download, Search, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import { consolidateOrders } from "@/lib/orderConsolidation";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 interface Customer {
   phone: string;
@@ -134,7 +135,7 @@ export default function GuestCRMPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `Hotel_White_Bliss_Customer_Directory_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute("download", `Hotel_Marquis_Customer_Directory_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -142,8 +143,8 @@ export default function GuestCRMPage() {
   };
 
   const sendWhatsAppOffer = (customer: Customer) => {
-    const text = `🎉 *Special Greetings from Hotel White Bliss!* 🎉\n------------------------\nHello ${customer.name},\nWe love having you as our guest! As a token of appreciation, we'd like to offer you an exclusive *10% OFF* on your next dining experience with us.\n\n🍽️ Come enjoy your favorite dishes!\n📍 Hotel White Bliss, Pathardi Phata, Nashik\n📞 Table Booking: 7499934257\n------------------------\nWe look forward to hosting you again soon! 🙏`;
-    window.open(`https://wa.me/91${customer.phone}?text=${encodeURIComponent(text)}`, "_blank");
+    const text = `🎉 *Special Greetings from Hotel Marquis!* 🎉\n━━━━━━━━━━━━━━━━━━━━\nHello *${customer.name}*,\nWe love having you as our guest! As a token of appreciation, we'd like to offer you an exclusive *10% OFF* on your next dining experience with us.\n\n🍽️ Come enjoy your favorite dishes!\n📍 Hotel Marquis, Pathardi Phata, Nashik\n📞 Table Booking: +91 7499934257\n━━━━━━━━━━━━━━━━━━━━\nWe look forward to hosting you again soon! 🙏`;
+    openWhatsApp(customer.phone, text);
   };
 
   const totalRevenue = customers.reduce((acc, c) => acc + c.totalSpent, 0);

@@ -12,6 +12,7 @@ import {
   ChefHat, ArrowUp, ArrowDown, ChevronDown
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 export interface StaffMember {
   id: string;
@@ -1023,7 +1024,7 @@ export default function AttendoPage() {
 
   const handleWhatsAppSalarySlip = (member: StaffMember, payroll: any) => {
     const cleanPhone = member.phone.replace(/\D/g, "");
-    const msg = `*HOTEL WHITE BLISS — SALARY SLIP*\n` +
+    const msg = `*HOTEL MARQUIS — SALARY SLIP*\n` +
       `--------------------------------\n` +
       `*Employee:* ${member.name} (${member.role})\n` +
       `*Period:* Till Day 15, ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
@@ -1041,9 +1042,9 @@ export default function AttendoPage() {
       `*(Projected Full Month Net: ₹${payroll.netSalary.toLocaleString("en-IN")} for ${payroll.payableDays}/30 Days)*\n` +
       `*Status:* ${isPayrollLocked ? 'APPROVED & PROCESSED' : 'CALCULATED'}\n` +
       `--------------------------------\n` +
-      `Hotel White Bliss Management.`;
+      `Hotel Marquis Management.`;
 
-    window.open(`https://wa.me/91${cleanPhone || "7499934257"}?text=${encodeURIComponent(msg)}`, "_blank");
+    openWhatsApp(cleanPhone || "7499934257", msg);
     toast.success(`Salary slip opened for ${member.name}.`);
     logAction("Payslip Generated", `WhatsApp slip sent to ${member.name}`, "PAYROLL");
   };
@@ -1152,7 +1153,7 @@ export default function AttendoPage() {
                   Staff & Daily Attendance
                 </h1>
                 <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  Hotel White Bliss
+                  Hotel Marquis
                 </span>
                 {isPayrollLocked && (
                   <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1">

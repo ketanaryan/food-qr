@@ -8,6 +8,7 @@ import {
   FileText, Users, Calculator, CreditCard, ChevronRight, Check
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { openWhatsApp } from "@/lib/whatsapp";
 
 export interface InventoryItem {
   id: string;
@@ -78,7 +79,7 @@ export interface RecipeBOM {
   ingredients: { name: string; qty: number; unit: string }[];
 }
 
-// Initial realistic default inventory for Hotel White Bliss
+// Initial realistic default inventory for Hotel Marquis
 const INITIAL_INVENTORY: InventoryItem[] = [
   {
     id: "inv-1",
@@ -845,19 +846,19 @@ export default function InventoryDashboard() {
   // WhatsApp Vendor Statement Share
   const handleShareVendorStatement = (v: VendorAccount) => {
     const cleanPhone = v.phone.replace(/\D/g, "");
-    const msg = `🧾 *VENDOR LEDGER STATEMENT - HOTEL WHITE BLISS*\n` +
-      `--------------------------------\n` +
+    const msg = `🧾 *VENDOR LEDGER STATEMENT - HOTEL MARQUIS*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Vendor:* ${v.name}\n` +
       `*Category:* ${v.category}\n` +
-      `--------------------------------\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Total Purchased (This Month):* ₹${v.totalPurchased.toLocaleString("en-IN")}\n` +
       `*Total Paid:* ₹${v.totalPaid.toLocaleString("en-IN")}\n` +
       `*Outstanding Balance (Udhar):* ₹${v.pendingDue.toLocaleString("en-IN")}\n` +
       `*Last Payment:* ${v.lastPaymentDate}\n` +
-      `--------------------------------\n` +
-      `Dhanyawad! Hotel White Bliss Management. 🙏`;
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `Dhanyawad! Hotel Marquis Management. 🙏`;
 
-    window.open(`https://wa.me/91${cleanPhone || "7499934257"}?text=${encodeURIComponent(msg)}`, "_blank");
+    openWhatsApp(cleanPhone || "7499934257", msg);
     toast.success(`Opening WhatsApp statement for ${v.name}`);
   };
 
@@ -866,17 +867,17 @@ export default function InventoryDashboard() {
     const requiredRefill = Math.max(item.minAlertStock * 2, 5);
     const phone = item.vendorPhone.replace(/\D/g, "");
     
-    const message = `📦 *PURCHASE ORDER - HOTEL WHITE BLISS*\n` +
-      `--------------------------------\n` +
+    const message = `📦 *PURCHASE ORDER - HOTEL MARQUIS*\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Item:* ${item.name} (${item.category})\n` +
       `*Required Quantity:* ${requiredRefill} ${item.unit}\n` +
       `*Current Stock Status:* ${item.currentStock} ${item.unit} (Running Low ⚠️)\n` +
-      `--------------------------------\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
       `Kripya jaldi se dispatch kara dijiye.\n` +
-      `Delivery Address: Hotel White Bliss, Main Counter.\n` +
+      `Delivery Address: Hotel Marquis, Main Counter.\n` +
       `Dhanyawad! 🙏`;
 
-    window.open(`https://wa.me/91${phone || "7499934257"}?text=${encodeURIComponent(message)}`, "_blank");
+    openWhatsApp(phone || "7499934257", message);
     toast.success(`Opening WhatsApp PO for ${item.vendorName}`, { icon: "📲" });
   };
 
@@ -893,7 +894,7 @@ export default function InventoryDashboard() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Hotel_White_Bliss_Inventory_Audit_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Hotel_Marquis_Inventory_Audit_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

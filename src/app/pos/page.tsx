@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
 import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers, getSectionNameForTable } from "@/lib/tableConfig";
+import { openWhatsApp, formatBillWhatsAppMessage } from "@/lib/whatsapp";
 
 const DEFAULT_CAPTAINS = [
   "Cashier Counter",
@@ -716,7 +717,7 @@ export default function PetpoojaPOSPage() {
             </button>
           </div>
           <div class="text-center">
-            <div class="header-title">Hotel White Bliss</div>
+            <div class="header-title">Hotel Marquis</div>
             <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
             <div class="header-sub">Contact: 7499934257</div>
@@ -761,7 +762,7 @@ export default function PetpoojaPOSPage() {
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">${payMethod === 'SPLIT' ? 'SCAN TO PAY UPI BALANCE' : 'SCAN TO PAY VIA UPI'}</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" height="130" style="margin: 0 auto; display: block;" alt="UPI QR"
             />
             <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${upiPayAmt}</div>
@@ -771,7 +772,7 @@ export default function PetpoojaPOSPage() {
           ` : ''}
           <div class="text-center">
             <div class="footer-text">Thank you! Please visit again!</div>
-            <div style="font-size: 9.5px; color: #666;">powered by BlissPOS Pro (Petpooja Edition)</div>
+            <div style="font-size: 9.5px; color: #666;">powered by Marquis POS (Petpooja Edition)</div>
           </div>
           <script>
             function handleBackOrClose() {
@@ -854,7 +855,7 @@ export default function PetpoojaPOSPage() {
             </button>
           </div>
           <div class="center bold" style="font-size:18px;">*** KITCHEN ORDER TICKET ***</div>
-          <div class="center" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
+          <div class="center" style="font-size:14px; margin-top:2px;">HOTEL MARQUIS</div>
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;">
             <span>TABLE: ${escapeHtml(tableNumber)}</span>
@@ -873,7 +874,7 @@ export default function PetpoojaPOSPage() {
           </div>
           ` : ''}
           <div class="divider"></div>
-          <div class="center" style="font-size:10px;">BlissPOS • Kitchen Dispatch</div>
+          <div class="center" style="font-size:10px;">Marquis POS • Kitchen Dispatch</div>
           <script>
             function handleBackOrClose() {
               try {
@@ -923,7 +924,6 @@ export default function PetpoojaPOSPage() {
     if (cleanPhone.length < 10) return toast.error("Enter valid 10-digit mobile number");
 
     const orderIds = groupOrders.map((o: any) => o.id).join('-');
-    const cleanUrl = `${window.location.origin}/bill/${orderIds}`;
 
     const splitObj = waModal.paymentMethod === 'SPLIT' 
       ? { cash: splitCashAmt, upi: Math.max(0, grandTotal - splitCashAmt) } 
@@ -933,9 +933,16 @@ export default function PetpoojaPOSPage() {
       ? `PAID VIA SPLIT (Cash ₹${splitObj.cash} + UPI ₹${splitObj.upi})`
       : `PAID VIA ${waModal.paymentMethod}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\nTable ${tableNumber} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: ${paymentText}\n------------------------\n📄 *View & Download Tax Invoice PDF:*\n${cleanUrl}\n------------------------\n⭐ *Review us on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
+    const text = formatBillWhatsAppMessage({
+      tableName: tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i) ? tableNumber : `Table ${tableNumber}`,
+      orderIds,
+      grandTotal,
+      paymentText,
+      subtotal,
+      tax: gst
+    });
 
-    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    // Mark paid & close modal before handoff so state is clean
     markPaid(
       tableNumber, 
       groupOrders.map((o: any) => o.id), 
@@ -946,6 +953,9 @@ export default function PetpoojaPOSPage() {
     );
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
+
+    // Open WhatsApp without blank tab
+    openWhatsApp(cleanPhone, text);
   };
 
   const handleSkipWa = () => {
@@ -989,12 +999,12 @@ export default function PetpoojaPOSPage() {
         {/* Brand & Status */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center font-black text-white text-sm sm:text-base shadow shrink-0">
-            WB
+            HM
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h1 className="font-playfair font-bold text-sm sm:text-base tracking-wide text-white truncate">
-                Hotel White Bliss
+                Hotel Marquis
               </h1>
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-[#A18D6D]/30 text-[#e8d5b5] border border-[#A18D6D]/40 px-1.5 sm:px-2 py-0.5 rounded">
                 POS
@@ -2660,7 +2670,7 @@ export default function PetpoojaPOSPage() {
                 <div className="bg-purple-50 border border-purple-200 p-3 rounded-2xl flex flex-col items-center text-center">
                   <span className="text-xs font-bold text-purple-900 mb-1">Customer Counter Scan QR</span>
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
                     alt="UPI QR Code"
                     className="w-36 h-36 my-1 border p-1 rounded-xl shadow-xs bg-white"
                   />

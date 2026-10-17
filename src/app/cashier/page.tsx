@@ -7,6 +7,7 @@ import NavBar from "@/components/common/NavBar"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers } from "@/lib/tableConfig"
+import { openWhatsApp, formatBillWhatsAppMessage } from "@/lib/whatsapp"
 
 function escapeHtml(str: any): string {
   return String(str ?? '')
@@ -383,7 +384,7 @@ export default function CashierDashboard() {
           </div>
           <!-- Brand Header -->
           <div class="text-center">
-            <div class="header-title">Hotel White Bliss</div>
+            <div class="header-title">Hotel Marquis</div>
             <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
             <div class="header-sub">Contact: 7499934257</div>
@@ -480,7 +481,7 @@ export default function CashierDashboard() {
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">SCAN TO PAY VIA UPI</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${grandTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${grandTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" 
               height="130" 
               style="margin: 0 auto; display: block;" 
@@ -495,7 +496,7 @@ export default function CashierDashboard() {
           <!-- Footer -->
           <div class="text-center">
             <div class="footer-text">Thank you! Please visit again!</div>
-            <div class="powered-by">powered by BlissPOS</div>
+            <div class="powered-by">powered by Marquis POS</div>
           </div>
 
           <script>
@@ -691,7 +692,7 @@ export default function CashierDashboard() {
       </head>
       <body>
         <div class="text-center">
-          <div class="title">HOTEL WHITE BLISS</div>
+          <div class="title">HOTEL MARQUIS</div>
           <div>Near Pathardi Phata, Nashik</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
@@ -761,7 +762,7 @@ export default function CashierDashboard() {
 
         <div class="divider"></div>
         <div class="text-center" style="font-size: 8.5px; color: #555; margin-top: 6px;">
-          Powered by BlissPOS • Petpooja-Grade Z-Report
+          Powered by Marquis POS • Petpooja-Grade Z-Report
         </div>
 
         <script>
@@ -798,12 +799,16 @@ export default function CashierDashboard() {
       ? `PAID VIA SPLIT (Cash ₹${splitObj.cash} + UPI ₹${splitObj.upi})`
       : `PAID VIA ${waModal.paymentMethod}`;
 
-    const text = `🧾 *HOTEL WHITE BLISS* 🧾\n------------------------\n${tableNameDisplay} | Date: ${new Date().toLocaleDateString()}\n------------------------\n*GRAND TOTAL: ₹${grandTotal}*\nPayment Status: ${paymentText}\n------------------------\n📄 *View & Download your Proper PDF Bill here:*\n${cleanUrl}\n------------------------\n⭐ *Rate your experience on Google:*\nhttps://www.google.com/search?q=Hotel+White+Bliss+Nashik\n------------------------\nThank you for dining with us! 🙏`;
+    const text = formatBillWhatsAppMessage({
+      tableName: tableNameDisplay,
+      orderIds,
+      grandTotal,
+      paymentText,
+      subtotal,
+      tax: gst
+    });
     
-    // Direct synchronous user action bypassing blockers
-    window.open(`https://wa.me/91${cleanPhone}?text=${encodeURIComponent(text)}`, '_blank');
-    
-    // Mark as Paid
+    // Mark as Paid & dismiss modal first
     markPaid(
       tableNumber, 
       groupOrders.map((o:any)=>o.id), 
@@ -815,6 +820,9 @@ export default function CashierDashboard() {
     
     setWaModal({ isOpen: false, data: null, paymentMethod: null });
     setWaPhone('');
+
+    // Launch WhatsApp safely without blank popup
+    openWhatsApp(cleanPhone, text);
   }
 
   const handleSkipWa = () => {
@@ -1418,7 +1426,7 @@ export default function CashierDashboard() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Hotel White Bliss • Shift Date: <span className="font-bold text-gray-800">{dayCloseData?.date || new Date().toISOString().slice(0, 10)}</span>
+                    Hotel Marquis • Shift Date: <span className="font-bold text-gray-800">{dayCloseData?.date || new Date().toISOString().slice(0, 10)}</span>
                   </p>
                 </div>
               </div>
@@ -1637,7 +1645,7 @@ export default function CashierDashboard() {
                                   onChange={(e) => {
                                     const coins = Math.max(0, parseInt(e.target.value) || 0);
                                     setDenominations(prev => {
-                                      const updated = { ...prev, coins };
+                                      const updated: Record<string, number> = { ...prev, coins };
                                       const total = 
                                         (Number(updated['500']) || 0) * 500 +
                                         (Number(updated['200']) || 0) * 200 +
