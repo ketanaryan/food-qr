@@ -85,13 +85,11 @@ export default function MenuBuilder() {
       is_available: formData.is_available ?? true,
     };
 
-    const authHeader = `Basic ${btoa("admin:aryan123")}`;
-
     try {
       if (editingId === "new") {
         const res = await fetch("/api/admin/menu", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": authHeader },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "insert", data: payload })
         });
         if (!res.ok) throw new Error();
@@ -99,7 +97,7 @@ export default function MenuBuilder() {
       } else {
         const res = await fetch("/api/admin/menu", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": authHeader },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ action: "update", id: editingId, data: payload })
         });
         if (!res.ok) throw new Error();
@@ -120,11 +118,10 @@ export default function MenuBuilder() {
     // Optimistic update
     setItems(prev => prev.map(i => i.id === item.id ? { ...i, is_available: newStatus } : i));
 
-    const authHeader = `Basic ${btoa("admin:aryan123")}`;
     try {
       const res = await fetch("/api/admin/menu", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": authHeader },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "update", id: item.id, data: { is_available: newStatus } })
       });
       if (!res.ok) throw new Error();
@@ -137,10 +134,9 @@ export default function MenuBuilder() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
-    const authHeader = `Basic ${btoa("admin:aryan123")}`;
     const res = await fetch("/api/admin/menu", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": authHeader },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "delete", id })
     });
     if (!res.ok) toast.error("Failed to delete item");

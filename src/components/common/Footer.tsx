@@ -1,10 +1,14 @@
 "use client"
 import Link from "next/link"
 import React from "react"
+import { usePathname } from "next/navigation"
 import { Icon } from "@iconify/react"
 import Tooltip from "./Tooltip"
 
 function Footer() {
+    const pathname = usePathname()
+    const isCustomerTable = pathname?.startsWith('/table')
+
     const scrollToSection = (id: string) => {
         const el = document.getElementById(id)
         el?.scrollIntoView({ behavior: "smooth" })
@@ -60,18 +64,34 @@ function Footer() {
                     </ul>
                 </div>
 
-                {/* Staff */}
+                {/* Staff or Dining Experience */}
                 <div>
-                    <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
-                        Staff Only
-                    </h3>
-                    <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <a href="/staff" className="block hover:text-[#A18D6D] cursor-pointer font-bold text-[#1E1B16]">Staff Hub / Launchpad</a>
-                        <a href="/pos" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-70 hover:opacity-100">POS Billing Desk</a>
-                        <a href="/captain" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Captain Portal</a>
-                        <a href="/kitchen" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Display (KDS)</a>
-                        <a href="/admin/dashboard" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Admin Portal</a>
-                    </ul>
+                    {isCustomerTable ? (
+                        <>
+                            <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
+                                Guest Amenities
+                            </h3>
+                            <ul className="space-y-2 text-sm text-[#5e5240]">
+                                <li className="flex items-center gap-1.5 font-medium"><span>⚡</span> Fast Table-Side Service</li>
+                                <li className="flex items-center gap-1.5 font-medium"><span>📱</span> 1-Tap UPI Digital Billing</li>
+                                <li className="flex items-center gap-1.5 font-medium"><span>🥗</span> Pure Veg & Non-Veg Kitchens</li>
+                                <li className="flex items-center gap-1.5 font-medium"><span>📶</span> High-Speed Guest Wi-Fi</li>
+                            </ul>
+                        </>
+                    ) : (
+                        <>
+                            <h3 className="text-sm font-semibold text-[#3f3629] uppercase tracking-wider mb-4">
+                                Staff Only
+                            </h3>
+                            <ul className="space-y-2 text-sm text-[#5e5240]">
+                                <a href="/staff" className="block hover:text-[#A18D6D] cursor-pointer font-bold text-[#1E1B16]">Staff Hub / Launchpad</a>
+                                <a href="/pos" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-70 hover:opacity-100">POS Billing Desk</a>
+                                <a href="/captain" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Captain Portal</a>
+                                <a href="/kitchen" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Kitchen Display (KDS)</a>
+                                <a href="/admin/dashboard" className="block hover:text-[#A18D6D] cursor-pointer font-semibold opacity-50 hover:opacity-100">Admin Portal</a>
+                            </ul>
+                        </>
+                    )}
                 </div>
             </div>
 

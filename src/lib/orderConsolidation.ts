@@ -15,6 +15,8 @@ export interface ConsolidatedBill {
   split_cash?: number;
   split_upi?: number;
   customer_phone?: string;
+  customer_name?: string;
+  customer_email?: string;
   items: Array<{
     id: string;
     name: string;
@@ -51,6 +53,22 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       const key = `SESSION_${billSessionId}`;
       if (!groups[key]) groups[key] = [];
       groups[key].push({ ...order, parsedItems: itemsArray, settlementInfo });
+
+      // Merge any prior legacy group for the same table within 60 minutes
+      const tableKey = `LEGACY_${order.table_number}`;
+      const orderTime = new Date(order.created_at).getTime();
+      for (const existingKey of Object.keys(groups)) {
+        if (existingKey.startsWith(tableKey)) {
+          const isClose = groups[existingKey].some((go: any) => {
+            const goTime = new Date(go.created_at).getTime();
+            return Math.abs(orderTime - goTime) <= 60 * 60 * 1000;
+          });
+          if (isClose) {
+            groups[key].push(...groups[existingKey]);
+            delete groups[existingKey];
+          }
+        }
+      }
     } else if (order.status !== 'completed') {
       // 2. Active running table (unsettled)
       const key = `ACTIVE_${order.table_number}`;
@@ -63,7 +81,7 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       let matchedGroupKey: string | null = null;
 
       for (const existingKey of Object.keys(groups)) {
-        if (existingKey.startsWith(tableKey)) {
+        if (existingKey.startsWith(tableKey) || (String(groups[existingKey][0]?.table_number) === String(order.table_number) && existingKey.startsWith('SESSION_'))) {
           const groupOrders = groups[existingKey];
           const orderTime = new Date(order.created_at).getTime();
           // Check if orderTime is within 60 mins of any order in this group
@@ -101,6 +119,8 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
     // Find settlement info or payment method
     let paymentMethod: ConsolidatedBill['payment_method'] = 'UNKNOWN';
     let customerPhone: string | undefined = undefined;
+    let customerName: string | undefined = undefined;
+    let customerEmail: string | undefined = undefined;
     let settledAt: string = lastOrder.created_at;
 
     let storedSubtotal: number | undefined = undefined;
@@ -127,6 +147,12 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       const payObj = ord.parsedItems?.find((i: any) => i && i.id === 'PAYMENT_METHOD');
       if (payObj && payObj.method) {
         paymentMethod = payObj.method;
+      }
+      const resObj = ord.parsedItems?.find((i: any) => i && i.id === 'RESERVATION_DETAILS');
+      if (resObj) {
+        if (resObj.phone) customerPhone = resObj.phone;
+        if (resObj.name) customerName = resObj.name;
+        if (resObj.email) customerEmail = resObj.email;
       }
       const custObj = ord.parsedItems?.find((i: any) => i && i.id === 'CUSTOMER_INFO');
       if (custObj && custObj.phone) {
@@ -179,6 +205,8 @@ export function consolidateOrders(rawOrders: any[]): ConsolidatedBill[] {
       split_cash: storedSplitCash,
       split_upi: storedSplitUpi,
       customer_phone: customerPhone,
+      customer_name: customerName,
+      customer_email: customerEmail,
       items: Object.values(foodItemsMap)
     });
   });

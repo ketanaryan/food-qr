@@ -22,6 +22,17 @@ const DEFAULT_CAPTAINS = [
   "Suresh (Captain)"
 ];
 
+const TOP_RUNNERS = [
+  { name: "Mineral Water", keyword: "water", price: 20, cat: "Beverages" },
+  { name: "Butter Roti", keyword: "butter roti", price: 30, cat: "Breads" },
+  { name: "Butter Naan", keyword: "butter naan", price: 50, cat: "Breads" },
+  { name: "Dal Tadka", keyword: "dal tadka", price: 180, cat: "Main Course" },
+  { name: "Paneer Butter Masala", keyword: "paneer butter", price: 260, cat: "Main Course" },
+  { name: "Jeera Rice", keyword: "jeera rice", price: 150, cat: "Rice" },
+  { name: "Masala Papad", keyword: "papad", price: 40, cat: "Starters" },
+  { name: "Gulab Jamun", keyword: "jamun", price: 60, cat: "Dessert" },
+];
+
 export default function CaptainPortal() {
   const [orders, setOrders] = useState<any[]>([]);
   const [sections, setSections] = useState<TableSection[]>(DEFAULT_TABLE_SECTIONS);
@@ -32,6 +43,7 @@ export default function CaptainPortal() {
   const [menuItems, setMenuItems] = useState<any[]>(DEFAULT_MENU_ITEMS);
   const [statusFilter, setStatusFilter] = useState<"ALL" | "FREE" | "OCCUPIED" | "BILLING">("ALL");
   const [loading, setLoading] = useState(true);
+  const [callingTables, setCallingTables] = useState<string[]>([]);
 
   // Punching Cart state: { [itemId]: { item, qty } }
   const [cart, setCart] = useState<{ [id: string]: { item: any; qty: number } }>({});
@@ -95,8 +107,27 @@ export default function CaptainPortal() {
       })
       .subscribe();
 
+    const alertChannel = supabase
+      .channel("cashier-alerts")
+      .on("broadcast", { event: "waiter_called" }, (payload) => {
+        const tableNum = String(payload.payload?.table || '');
+        if (tableNum) {
+          setCallingTables(prev => prev.includes(tableNum) ? prev : [...prev, tableNum]);
+          if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            try { navigator.vibrate([150, 80, 150]); } catch(e) {}
+          }
+          toast(`Table ${tableNum} requested a Captain!`, {
+            icon: '🙋‍♂️',
+            duration: 6000,
+            style: { background: '#1E1B16', color: '#fff', fontWeight: 'bold' }
+          });
+        }
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(alertChannel);
     };
   }, []);
 
@@ -205,6 +236,9 @@ export default function CaptainPortal() {
 
   // Cart Helpers
   const addToCart = (item: any) => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(15);
+    }
     setCart(prev => ({
       ...prev,
       [item.id]: {
@@ -215,6 +249,9 @@ export default function CaptainPortal() {
   };
 
   const removeFromCart = (itemId: string) => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(15);
+    }
     setCart(prev => {
       const existing = prev[itemId];
       if (!existing) return prev;
@@ -336,6 +373,11 @@ export default function CaptainPortal() {
     setIsSettling(true);
     try {
       const orderIds = group.orders.map((o: any) => o.id);
+      const subtotal = Math.round(group.total || 0);
+      const gst = Math.round(subtotal * 0.05);
+      const serviceCharge = Math.round(subtotal * 0.05);
+      const grandTotal = subtotal + gst + serviceCharge;
+
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: {
@@ -345,13 +387,17 @@ export default function CaptainPortal() {
           orderIds,
           status: 'completed',
           paymentMethod,
-          customerPhone: customerPhone.trim() || undefined
+          customerPhone: customerPhone.trim() || undefined,
+          subtotal,
+          gst,
+          serviceCharge,
+          grandTotal
         })
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Failed to settle table');
 
-      toast.success(`Table ${tableNum} Settled via ${paymentMethod} (₹${group.total})! Table is now Available.`, {
+      toast.success(`Table ${tableNum} Settled via ${paymentMethod} (₹${grandTotal})! Table is now Available.`, {
         icon: "✅",
         duration: 4500
       });
@@ -530,12 +576,44 @@ export default function CaptainPortal() {
             </button>
           </div>
 
+          {/* Urgent Waiter Call Banner */}
+          {callingTables.length > 0 && (
+            <div className="bg-amber-400 border border-amber-500 text-amber-950 p-3 sm:p-4 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-3 animate-pulse">
+              <div className="flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-950 animate-bounce shrink-0" />
+                <span className="font-extrabold text-xs sm:text-sm">Guest Calling Captain:</span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {callingTables.map(t => (
+                    <span key={t} className="bg-amber-950 text-amber-200 px-2 py-0.5 rounded-lg text-xs font-bold font-mono">
+                      Table {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {callingTables.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      setCallingTables(prev => prev.filter(x => x !== t));
+                      toast.success(`Attending Table ${t}!`, { icon: '🏃‍♂️' });
+                    }}
+                    className="bg-amber-950 hover:bg-black text-amber-100 px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 shadow-2xs"
+                  >
+                    ✓ Attend Table {t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Tables Floor Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
             {filteredTables.map(t => {
               const isFree = t.status === "FREE";
               const isOccupied = t.status === "OCCUPIED";
               const isBilling = t.status === "BILLING";
+              const isCalling = callingTables.includes(t.tableNumber);
 
               return (
                 <button
@@ -544,9 +622,14 @@ export default function CaptainPortal() {
                     setSelectedTable(t.tableNumber);
                     setCart({});
                     setCookingNotes("");
+                    if (isCalling) {
+                      setCallingTables(prev => prev.filter(x => x !== t.tableNumber));
+                    }
                   }}
                   className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all active:scale-95 shadow-sm min-h-[110px] ${
-                    isBilling
+                    isCalling
+                      ? "bg-red-50 border-red-400 ring-2 ring-red-500 animate-bounce"
+                      : isBilling
                       ? "bg-amber-50 border-amber-300 ring-2 ring-amber-400 animate-pulse"
                       : isOccupied
                       ? "bg-blue-50 border-blue-200 hover:border-blue-400"
@@ -580,17 +663,27 @@ export default function CaptainPortal() {
                         <span className="font-semibold font-mono text-blue-900 text-sm">₹{t.total}</span>
                         <span className="text-[10px] text-blue-600 block">{t.itemCount} Items</span>
                       </div>
-                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded">
-                        Dining
+                      <span className="text-[10px] font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Clock size={11} />
+                        {(() => {
+                          if (!t.startTime) return "Dining";
+                          const diff = Math.max(0, Math.floor((Date.now() - new Date(t.startTime).getTime()) / 60000));
+                          if (diff < 60) return `${diff}m`;
+                          return `${Math.floor(diff / 60)}h ${diff % 60}m`;
+                        })()}
                       </span>
                     </div>
                   )}
 
                   {isBilling && (
                     <div className="mt-2 pt-2 border-t border-amber-200 flex items-center justify-between text-xs">
-                      <span className="font-semibold font-mono text-amber-900 text-sm">₹{t.total}</span>
-                      <span className="text-[10px] font-semibold text-amber-900 bg-amber-100 px-2 py-0.5 rounded">
-                        Bill Requested
+                      <div>
+                        <span className="font-semibold font-mono text-amber-900 text-sm">₹{t.total}</span>
+                        <span className="text-[10px] text-amber-700 block">{t.itemCount} Items</span>
+                      </div>
+                      <span className="text-[10px] font-semibold text-amber-900 bg-amber-100 px-2 py-0.5 rounded flex items-center gap-1">
+                        <Clock size={11} />
+                        Bill Req
                       </span>
                     </div>
                   )}
@@ -720,6 +813,39 @@ export default function CaptainPortal() {
                 />
               </div>
 
+              {/* Quick 8 Top Favorites / High-Runners Strip */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <span className="flex items-center gap-1 text-amber-700">⚡ Top Runners (1-Tap KOT)</span>
+                  <span className="text-[10px] text-gray-400">1-Tap Fast Add</span>
+                </div>
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
+                  {TOP_RUNNERS.map(runner => (
+                    <button
+                      key={runner.name}
+                      type="button"
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+                          navigator.vibrate(15);
+                        }
+                        const match = menuItems.find(m => m.name.toLowerCase().includes(runner.keyword.toLowerCase()));
+                        if (match) {
+                          addToCart(match);
+                          toast.success(`+1 ${match.name}`, { duration: 1000, icon: '⚡' });
+                        } else {
+                          addToCart({ id: `quick_${runner.keyword}`, name: runner.name, price: runner.price, category: runner.cat });
+                          toast.success(`+1 ${runner.name}`, { duration: 1000, icon: '⚡' });
+                        }
+                      }}
+                      className="shrink-0 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold transition active:scale-95 flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <span>{runner.name}</span>
+                      <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded-md font-mono text-amber-950">₹{runner.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Category Pills */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1">
                 {categories.map(cat => (
@@ -784,9 +910,30 @@ export default function CaptainPortal() {
                             >
                               <Minus size={14} />
                             </button>
-                            <span className="font-extrabold text-sm w-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const val = window.prompt(`Enter bulk quantity for ${item.name}:`, String(qtyInCart));
+                                if (val !== null) {
+                                  const parsed = parseInt(val.trim(), 10);
+                                  if (!isNaN(parsed) && parsed >= 0) {
+                                    setCart(prev => {
+                                      const copy = { ...prev };
+                                      if (parsed === 0) {
+                                        delete copy[item.id];
+                                      } else {
+                                        copy[item.id] = { item, qty: parsed };
+                                      }
+                                      return copy;
+                                    });
+                                  }
+                                }
+                              }}
+                              className="font-extrabold text-sm min-w-5 text-center cursor-pointer hover:bg-white/20 rounded px-1"
+                              title="Click to enter exact bulk quantity"
+                            >
                               {qtyInCart}
-                            </span>
+                            </button>
                             <button
                               onClick={() => addToCart(item)}
                               className="w-7 h-7 flex items-center justify-center hover:bg-white/20 rounded-lg active:scale-90"
@@ -940,18 +1087,27 @@ export default function CaptainPortal() {
             </div>
 
             {/* Bill Summary Banner */}
-            <div className="bg-[#F8F6F0] border border-[#E6E0D2] p-3.5 rounded-2xl flex items-center justify-between">
-              <div>
-                <span className="text-xs text-gray-600 font-bold uppercase tracking-wider">Total Payable</span>
-                <div className="text-2xl font-black text-gray-900 font-mono mt-0.5">
-                  ₹{selectedGroup.total}
+            {(() => {
+              const bSub = Math.round(selectedGroup.total || 0);
+              const bGst = Math.round(bSub * 0.05);
+              const bSc = Math.round(bSub * 0.05);
+              const bTotal = bSub + bGst + bSc;
+              return (
+                <div className="bg-[#F8F6F0] border border-[#E6E0D2] p-3.5 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <span className="text-xs text-gray-600 font-bold uppercase tracking-wider">Total Payable (incl. taxes)</span>
+                    <div className="text-2xl font-black text-gray-900 font-mono mt-0.5">
+                      ₹{bTotal}
+                    </div>
+                  </div>
+                  <div className="text-right text-[11px] text-gray-500">
+                    <div>Food Subtotal: ₹{bSub}</div>
+                    <div>GST (5%): ₹{bGst} • SC (5%): ₹{bSc}</div>
+                    <div className="text-emerald-700 font-bold mt-0.5">Ready for Settlement</div>
+                  </div>
                 </div>
-              </div>
-              <div className="text-right text-[11px] text-gray-500">
-                <div>GST (5% CGST+SGST) Inc.</div>
-                <div className="text-emerald-700 font-bold mt-0.5">Ready for Settlement</div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Items Breakdown Checklist */}
             <div className="space-y-2">
@@ -979,70 +1135,167 @@ export default function CaptainPortal() {
               </div>
             </div>
 
-            {/* Cashier Alert Action Section */}
-            <div className="space-y-3 pt-1">
-              {selectedGroup.requestedBill ? (
-                <div className="border border-amber-300 bg-amber-50 rounded-2xl p-4 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <Bell size={18} className="animate-bounce" />
+            {/* Settlement Actions Section */}
+            {billSettlementTab === 'upi_qr' ? (
+              /* DYNAMIC UPI QR SCAN SUB-VIEW */
+              (() => {
+                const bSub = Math.round(selectedGroup.total || 0);
+                const bGst = Math.round(bSub * 0.05);
+                const bSc = Math.round(bSub * 0.05);
+                const bTotal = bSub + bGst + bSc;
+                return (
+                  <div className="space-y-3.5 text-center">
+                    <div className="p-4 bg-white border-2 border-dashed border-blue-300 rounded-2xl flex flex-col items-center">
+                      <span className="text-xs font-black text-blue-900 mb-1">
+                        Scan UPI QR with Any Mobile App:
+                      </span>
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${bTotal}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
+                        alt="UPI QR Code"
+                        className="w-44 h-44 my-2 border p-1 rounded-xl shadow-xs"
+                      />
+                      <div className="font-mono font-black text-xl text-gray-900">
+                        ₹{bTotal}
+                      </div>
+                      <div className="text-[10px] text-gray-500 mt-1">
+                        Google Pay • PhonePe • Paytm • BHIM • UPI
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-black text-amber-950">
-                        Cashier Desk Alerted
-                      </h4>
-                      <p className="text-xs text-amber-900/80 leading-relaxed">
-                        The billing counter has been notified. The cashier is printing the official GST invoice slip. Please collect the printed bill booklet from the counter and present it to the guest.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleAlertCashier(selectedTable!)}
-                    className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
-                  >
-                    <Bell size={14} />
-                    <span>Re-send Alert Chime to Cashier</span>
-                  </button>
-                </div>
-              ) : (
-                <div className="border border-gray-200 bg-white rounded-2xl p-4 space-y-3 shadow-xs">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5">
-                      <Receipt size={18} />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="text-sm font-black text-gray-900">
-                        Request Printed Bill Slip
-                      </h4>
-                      <p className="text-xs text-gray-600 leading-relaxed">
-                        Notify the cashier counter to generate and print the official thermal bill slip for Table {selectedTable}.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => handleAlertCashier(selectedTable!)}
-                    className="w-full py-3 px-3 bg-zinc-900 hover:bg-black active:scale-[0.99] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 transition"
-                  >
-                    <Bell size={15} />
-                    <span>Send Bill Request to Cashier</span>
-                  </button>
-                </div>
-              )}
 
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-2xl text-[11px] text-gray-500 leading-relaxed flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
-                <span>
-                  Bill payment settlement & table clearance are handled by the Cashier at the POS billing counter.
-                </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setBillSettlementTab('options')}
+                        className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+                      >
+                        ← Back
+                      </button>
+                      <button
+                        onClick={() => handleDirectSettle(selectedTable!, 'UPI')}
+                        disabled={isSettling}
+                        className="flex-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                      >
+                        <CheckCircle2 size={15} />
+                        <span>Confirm UPI Paid & Free Table</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : (
+              <div className="space-y-3 pt-1">
+                {/* OPTION 1: CASHIER DESK COORDINATION (Standard Fine-Dine) */}
+                {selectedGroup.requestedBill ? (
+                  <div className="border border-amber-300 bg-amber-50 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <Bell size={18} className="animate-bounce" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-black text-amber-950">
+                          Cashier Desk Alerted
+                        </h4>
+                        <p className="text-xs text-amber-900/80 leading-relaxed">
+                          The billing counter has been notified. The cashier is printing the official GST invoice slip. Please collect the printed bill booklet from the counter and present it to the guest.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleAlertCashier(selectedTable!)}
+                      className="w-full py-2.5 px-3 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
+                    >
+                      <Bell size={14} />
+                      <span>Re-send Alert Chime to Cashier</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 bg-white rounded-2xl p-4 space-y-3 shadow-xs">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <Receipt size={18} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-black text-gray-900">
+                          Option 1: Request Printed Bill Slip
+                        </h4>
+                        <p className="text-xs text-gray-600 leading-relaxed">
+                          Notify the cashier counter to generate and print the official thermal bill slip for Table {selectedTable}.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleAlertCashier(selectedTable!)}
+                      className="w-full py-3 px-3 bg-zinc-900 hover:bg-black active:scale-[0.99] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-2 transition"
+                    >
+                      <Bell size={15} />
+                      <span>Send Bill Request to Cashier</span>
+                    </button>
+                  </div>
+                )}
+
+                {/* OPTION 2: DIRECT TABLE SETTLEMENT (Rush-Hour / Pay-at-Table Flow) */}
+                {(() => {
+                  const bSub = Math.round(selectedGroup.total || 0);
+                  const bGst = Math.round(bSub * 0.05);
+                  const bSc = Math.round(bSub * 0.05);
+                  const bTotal = bSub + bGst + bSc;
+                  return (
+                    <div className="border border-blue-200 bg-blue-50/40 rounded-2xl p-3.5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
+                          <DollarSign size={15} />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-black text-blue-950">Option 2: Direct Settle at Table</h4>
+                          <p className="text-[10px] text-blue-800">
+                            Collect payment directly at the table (Cash or UPI) to clear the table immediately.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Customer Phone for WhatsApp bill & CRM */}
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-700 mb-1">
+                          Customer Phone (Optional - for WhatsApp Bill & CRM):
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="e.g. 9876543210"
+                          value={customerPhone}
+                          onChange={e => setCustomerPhone(e.target.value)}
+                          className="w-full text-xs px-3 py-2 bg-white border border-gray-200 rounded-xl focus:ring-1 focus:ring-blue-500 outline-none font-mono"
+                        />
+                      </div>
+
+                      {/* Direct Payment Buttons */}
+                      <div className="grid grid-cols-2 gap-2 pt-1">
+                        <button
+                          onClick={() => handleDirectSettle(selectedTable!, 'CASH')}
+                          disabled={isSettling}
+                          className="py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition disabled:opacity-50"
+                        >
+                          <DollarSign size={14} />
+                          <span>💵 Cash (₹{bTotal})</span>
+                        </button>
+                        <button
+                          onClick={() => setBillSettlementTab('upi_qr')}
+                          className="py-2.5 px-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition"
+                        >
+                          <QrCode size={14} />
+                          <span>📱 Scan UPI QR</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <button
+                  onClick={() => setIsBillModalOpen(false)}
+                  className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
+                >
+                  Close Window
+                </button>
               </div>
-
-              <button
-                onClick={() => setIsBillModalOpen(false)}
-                className="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition"
-              >
-                Close Window
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}

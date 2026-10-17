@@ -88,22 +88,24 @@ function MenuItem({ item }: { item: IMenu }) {
           {qty === 0 ? (
             <button
               onClick={() => handleUpdate(1)}
-              className="shrink-0 rounded-full border border-[#A18D6D] px-4 py-1.5 text-xs font-bold tracking-wider text-[#A18D6D] hover:bg-[#A18D6D] hover:text-white transition-colors"
+              className="shrink-0 rounded-full border border-[#A18D6D] px-5 py-2 text-xs font-bold tracking-wider text-[#A18D6D] hover:bg-[#A18D6D] hover:text-white transition active:scale-95 shadow-2xs"
             >
               ADD
             </button>
           ) : (
-            <div className="shrink-0 flex items-center gap-2 rounded-full border border-[#A18D6D] bg-[#F8F5F0] px-2 py-1 text-[#1E1B16] shadow-xs">
+            <div className="shrink-0 flex items-center gap-1 rounded-full border border-[#A18D6D] bg-[#F8F5F0] px-1 py-0.5 text-[#1E1B16] shadow-2xs">
               <button
                 onClick={() => handleUpdate(qty-1)}
-                className="text-base font-bold w-5 h-5 flex items-center justify-center hover:text-[#A18D6D] active:scale-90"
+                className="text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 active:scale-90 text-[#1E1B16]"
+                aria-label="Decrease quantity"
               >
                 −
               </button>
-              <span className="text-xs font-bold w-3.5 text-center font-mono">{qty}</span>
+              <span className="text-xs font-bold w-4 text-center font-mono">{qty}</span>
               <button
                 onClick={() => handleUpdate(qty+1)}
-                className="text-base font-bold w-5 h-5 flex items-center justify-center hover:text-[#A18D6D] active:scale-90"
+                className="text-lg font-bold w-8 h-8 flex items-center justify-center rounded-full hover:bg-black/5 active:scale-90 text-[#1E1B16]"
+                aria-label="Increase quantity"
               >
                 +
               </button>

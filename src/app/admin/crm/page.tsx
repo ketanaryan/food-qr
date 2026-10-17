@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Users, Phone, Calendar, Download, Search, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
+import { consolidateOrders } from "@/lib/orderConsolidation";
 
 interface Customer {
   phone: string;
@@ -45,49 +46,28 @@ export default function GuestCRMPage() {
         lastVisit: string;
       }>();
 
-      (orders || []).forEach((order: any) => {
-        let items: any[] = [];
-        try {
-          items = typeof order.items === "string" ? JSON.parse(order.items) : order.items;
-        } catch (e) {}
-        if (!Array.isArray(items)) items = [];
+      const consolidatedBills = consolidateOrders(orders || []);
 
-        // Check for RESERVATION_DETAILS
-        const resDetail = items.find((i: any) => i.id === "RESERVATION_DETAILS");
-        // Check for CUSTOMER_INFO
-        const custInfo = items.find((i: any) => i.id === "CUSTOMER_INFO");
-
-        let phone = "";
-        let name = "";
-        let email = "";
-
-        if (resDetail && resDetail.phone) {
-          phone = resDetail.phone.replace(/\D/g, "");
-          name = resDetail.name || "";
-          email = resDetail.email || "";
-        } else if (custInfo && custInfo.phone) {
-          phone = custInfo.phone.replace(/\D/g, "");
-        }
+      consolidatedBills.forEach((bill) => {
+        const phone = bill.customer_phone ? String(bill.customer_phone).replace(/\D/g, "") : "";
+        const name = bill.customer_name || "";
+        const email = bill.customer_email || "";
 
         if (phone && phone.length >= 10) {
-          // Normalize to last 10 digits
           const cleanPhone = phone.slice(-10);
-          
-          // Read exact grand total from settlement info if available
-          const sInfo = items.find((i: any) => i && i.id === "SETTLEMENT_INFO");
-          const subtotal = Number(order.total_amount) || 0;
-          const grandTotal = (sInfo && typeof sInfo.grand_total === "number")
-            ? sInfo.grand_total
-            : Math.round(subtotal * 1.10);
+          const grandTotal = Number(bill.grand_total) || 0;
+          const visitTime = bill.settled_at || bill.created_at;
 
           const existing = customerMap.get(cleanPhone);
           if (existing) {
             existing.visits += 1;
             existing.spent += grandTotal;
-            if (!existing.name && name) existing.name = name;
+            if ((!existing.name || existing.name === "Valued Guest") && name) {
+              existing.name = name;
+            }
             if (!existing.email && email) existing.email = email;
-            if (new Date(order.created_at) > new Date(existing.lastVisit)) {
-              existing.lastVisit = order.created_at;
+            if (new Date(visitTime) > new Date(existing.lastVisit)) {
+              existing.lastVisit = visitTime;
             }
           } else {
             customerMap.set(cleanPhone, {
@@ -96,7 +76,7 @@ export default function GuestCRMPage() {
               email: email || "",
               visits: 1,
               spent: grandTotal,
-              lastVisit: order.created_at,
+              lastVisit: visitTime,
             });
           }
         }

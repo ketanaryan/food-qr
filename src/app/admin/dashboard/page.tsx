@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { TrendingUp, Users, DollarSign, Activity, Clock, Receipt } from "lucide-react";
+import { TrendingUp, Users, DollarSign, Activity, Clock, Receipt, Download } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { consolidateOrders, ConsolidatedBill } from "@/lib/orderConsolidation";
 
@@ -84,7 +84,7 @@ export default function Dashboard() {
         todayServiceCharge: scAmt,
         todayTaxAndCharges: gstAmt + scAmt,
         totalOrders: todaysBills.length,
-        topItem: top,
+        topItem: maxQty > 0 ? `${top} (${maxQty} sold)` : "-",
         avgOrderValue: todaysBills.length > 0 ? Math.round(sales / todaysBills.length) : 0
       });
 
@@ -118,13 +118,48 @@ export default function Dashboard() {
     setLoading(false);
   };
 
+  const exportTodayCsv = () => {
+    if (recentOrders.length === 0) return;
+    const headers = ["Invoice No", "Table", "Gross Subtotal", "Discount", "Net Food", "CGST", "SGST", "Service Charge", "Grand Total", "Payment Method", "Timestamp"];
+    const rows = recentOrders.map(b => [
+      b.invoice_no,
+      `Table ${b.table_number}`,
+      b.subtotal,
+      b.discount || 0,
+      b.net_food_sales,
+      (b.gst / 2).toFixed(2),
+      (b.gst / 2).toFixed(2),
+      b.service_charge || 0,
+      b.grand_total,
+      b.payment_method || 'CASH',
+      `"${new Date(b.settled_at || b.created_at).toLocaleString('en-IN')}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `HWB_Sales_Summary_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <div className="min-h-screen bg-gray-50 p-6 lg:p-10 font-sans">
         <div className="max-w-6xl mx-auto">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-            <p className="text-gray-500">Live sales and performance metrics.</p>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
+              <p className="text-gray-500">Live sales and performance metrics • Hotel White Bliss</p>
+            </div>
+            <button
+              onClick={exportTodayCsv}
+              className="inline-flex items-center gap-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-800 px-4 py-2.5 rounded-xl text-xs font-bold shadow-2xs transition active:scale-95"
+            >
+              <Download size={14} className="text-[#A18D6D]" />
+              Export Summary (CSV)
+            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">

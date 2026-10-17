@@ -93,12 +93,14 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         let parsedItems = [];
         try { parsedItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items; } catch(e) {}
         
-        return parsedItems.filter((i:any) => i.id !== 'NOTE').map((item: any) => [
-          item.name,
-          item.qty.toString(),
-          `Rs. ${item.price}`,
-          `Rs. ${item.price * item.qty}`
-        ]);
+        return parsedItems
+          .filter((i: any) => i && i.name && i.id !== 'NOTE' && i.id !== 'SETTLEMENT_INFO' && i.id !== 'PAYMENT_METHOD' && i.id !== 'CUSTOMER_INFO')
+          .map((item: any) => [
+            String(item.name || ''),
+            String(item.qty ?? 1),
+            `Rs. ${item.price ?? 0}`,
+            `Rs. ${(Number(item.price) || 0) * (Number(item.qty) || 1)}`
+          ]);
       });
 
       autoTable(doc, {

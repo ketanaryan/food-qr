@@ -43,9 +43,11 @@ function CheckOutItem({ item }: { item: CartItem }) {
             <h3 className="text-sm font-medium text-gray-900 line-clamp-2">
               {item.title}
             </h3>
-            <p className="mt-1 text-xs text-gray-500">
-              1 pc • {item.quantity} g
-            </p>
+            {item.quantity && item.quantity > 0 ? (
+              <p className="mt-1 text-xs text-gray-500">
+                1 pc • {item.quantity} g
+              </p>
+            ) : null}
           </div>
           <button 
             onClick={() => removeItem(String(item._id))}

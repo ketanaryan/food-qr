@@ -5,6 +5,7 @@ import Link from "next/link"
 import { CheckCircle, Clock, Utensils, ReceiptText, ArrowLeft, Star } from "lucide-react"
 import toast from "react-hot-toast"
 import { useSearchParams } from "next/navigation"
+import { QRCode } from "react-qrcode-logo"
 
 export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   const [orders, setOrders] = useState<any[]>([])
@@ -113,12 +114,33 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
 
   // Calculations for bill
   const activeOrders = orders.filter(o => o.status !== 'rejected');
-  const subtotal = activeOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
-  const gst = Math.round(subtotal * 0.05);
-  const serviceCharge = Math.round(subtotal * 0.05);
-  const grandTotal = subtotal + gst + serviceCharge;
 
-  // Flatten items for receipt breakdown
+  // Check if cashier or captain has recorded SETTLEMENT_INFO
+  let sInfo: any = null;
+  activeOrders.forEach(order => {
+    let items: any[] = [];
+    try {
+      items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []);
+    } catch {
+      items = [];
+    }
+    const found = items.find((i: any) => i && i.id === 'SETTLEMENT_INFO');
+    if (found) sInfo = found;
+  });
+
+  const rawSubtotal = activeOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0);
+  const subtotal = (sInfo && typeof sInfo.subtotal === 'number') ? sInfo.subtotal : rawSubtotal;
+  const discount = (sInfo && typeof sInfo.discount === 'number') ? sInfo.discount : 0;
+  const netFood = Math.max(0, subtotal - discount);
+  const gst = (sInfo && typeof sInfo.gst === 'number') ? sInfo.gst : Math.round(netFood * 0.05);
+  const serviceCharge = (sInfo && typeof sInfo.service_charge === 'number') 
+    ? sInfo.service_charge 
+    : (sInfo && sInfo.has_service_charge === false ? 0 : Math.round(netFood * 0.05));
+  const grandTotal = (sInfo && typeof sInfo.grand_total === 'number') 
+    ? sInfo.grand_total 
+    : Math.max(0, netFood + gst + serviceCharge);
+
+  // Flatten items for receipt breakdown, excluding system metadata
   const allReceiptItems: { name: string; qty: number; price: number; isNote?: boolean }[] = [];
   activeOrders.forEach(order => {
     let items: any[] = [];
@@ -128,6 +150,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
       items = [];
     }
     items.forEach((it: any) => {
+      if (!it || it.id === 'SETTLEMENT_INFO' || it.id === 'PAYMENT_METHOD' || it.id === 'CUSTOMER_INFO') return;
       if (it.id === 'NOTE') {
         allReceiptItems.push({ name: it.name, qty: 1, price: 0, isNote: true });
       } else {
@@ -217,13 +240,14 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           </div>
 
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-white rounded-2xl border-2 border-[#e8dfd3] shadow-sm">
-              <img 
-                src={qrUrl} 
-                alt="UPI QR Code" 
-                width={190} 
-                height={190}
-                className="w-[190px] h-[190px] rounded-lg"
+            <div className="p-3 bg-white rounded-2xl border-2 border-[#e8dfd3] shadow-sm flex items-center justify-center">
+              <QRCode 
+                value={upiUrl}
+                size={180}
+                bgColor="#FFFFFF"
+                fgColor="#1E1B16"
+                qrStyle="squares"
+                eyeRadius={6}
               />
             </div>
           </div>
@@ -286,14 +310,27 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
               <span>Subtotal</span>
               <span>₹{subtotal}</span>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between text-emerald-600 font-medium">
+                <span>Discount</span>
+                <span>-₹{discount}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span>GST (5%)</span>
               <span>₹{gst}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Service Charge (5%)</span>
-              <span>₹{serviceCharge}</span>
-            </div>
+            {serviceCharge > 0 ? (
+              <div className="flex justify-between">
+                <span>Service Charge (5%)</span>
+                <span>₹{serviceCharge}</span>
+              </div>
+            ) : (
+              <div className="flex justify-between text-zinc-400">
+                <span>Service Charge</span>
+                <span>Waived (₹0)</span>
+              </div>
+            )}
             <div className="flex justify-between text-sm font-bold text-[#1E1B16] pt-2 border-t border-gray-100">
               <span>Grand Total</span>
               <span className="text-base text-emerald-700">₹{grandTotal}</span>
@@ -366,10 +403,10 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
               </div>
               
               <div className="space-y-2 mb-3">
-                {items.map((it: any, idx: number) => (
+                {items.filter((it: any) => it && !['SETTLEMENT_INFO', 'PAYMENT_METHOD', 'CUSTOMER_INFO'].includes(it.id)).map((it: any, idx: number) => (
                   <div key={idx} className={`flex justify-between text-xs ${it.id === 'NOTE' ? 'text-amber-600 italic' : 'text-zinc-800'}`}>
                     <span className="font-medium">{it.name} {it.id !== 'NOTE' && <span className="text-gray-400">x{it.qty}</span>}</span>
-                    {it.id !== 'NOTE' && <span className="font-semibold">₹{it.price * it.qty}</span>}
+                    {it.id !== 'NOTE' && <span className="font-semibold">₹{(it.price || 0) * (it.qty || 1)}</span>}
                   </div>
                 ))}
               </div>

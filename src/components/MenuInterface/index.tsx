@@ -133,11 +133,20 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
     const list: string[] = [];
     dietFilteredMenu.forEach(item => {
       if (item.section && !list.includes(item.section)) {
+        if (vegFilter === "VEG" && (
+          item.section.toLowerCase().includes("non veg") ||
+          item.section.toLowerCase().includes("chicken") ||
+          item.section.toLowerCase().includes("mutton") ||
+          item.section.toLowerCase().includes("fish") ||
+          item.section.toLowerCase().includes("sea")
+        )) {
+          return;
+        }
         list.push(item.section);
       }
     });
     return list;
-  }, [dietFilteredMenu]);
+  }, [dietFilteredMenu, vegFilter]);
 
   // Section item counts for current diet
   const categoryCounts = useMemo(() => {
@@ -164,8 +173,23 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
   const filteredMenu = useMemo(() => {
     return menu.filter(item => {
       // 1. Veg filter
-      if (vegFilter === "VEG" && item.isVeg === false) return false;
-      if (vegFilter === "NON_VEG" && item.isVeg !== false) return false;
+      if (vegFilter === "VEG") {
+        if (item.isVeg === false) return false;
+        const secLower = (item.section || '').toLowerCase();
+        if (
+          secLower.includes('non veg') ||
+          secLower.includes('chicken') ||
+          secLower.includes('mutton') ||
+          secLower.includes('fish') ||
+          secLower.includes('sea') ||
+          secLower.includes('meat')
+        ) {
+          return false;
+        }
+      }
+      if (vegFilter === "NON_VEG") {
+        if (item.isVeg !== false) return false;
+      }
 
       // 2. Category filter
       if (selectedCategory !== "ALL" && item.section !== selectedCategory) return false;
@@ -269,9 +293,15 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
 
             {/* Hero Title & Quick Search Pill */}
             <div className="relative z-10 w-full px-4 sm:px-8 max-w-3xl flex flex-col items-center text-center">
-              <span className="text-xs uppercase tracking-widest text-[#A18D6D] bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-[#A18D6D]/30 mb-2 font-medium">
-                Hotel White Bliss
-              </span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs uppercase tracking-widest text-[#A18D6D] bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-[#A18D6D]/30 font-medium">
+                  Hotel White Bliss
+                </span>
+                <span className="text-xs font-bold text-amber-200 bg-amber-950/70 backdrop-blur-md px-3 py-1 rounded-full border border-amber-400/40 flex items-center gap-1 shadow-xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Table #{merchantId}
+                </span>
+              </div>
               <h1 className="text-3xl sm:text-5xl font-playfair font-bold text-white tracking-wide drop-shadow-md">
                 Culinary Experience
               </h1>
