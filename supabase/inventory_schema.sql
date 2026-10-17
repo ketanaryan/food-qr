@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS public.inventory_items (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN ('Dairy', 'Grocery', 'Poultry & Meat', 'Vegetables', 'Beverages', 'Packaging', 'Spices')),
+    category TEXT NOT NULL CHECK (category IN ('Dairy', 'Grocery', 'Poultry & Meat', 'Vegetables', 'Beverages', 'Packaging', 'Spices', 'Bakery')),
     current_stock NUMERIC(10, 2) NOT NULL DEFAULT 0.00 CHECK (current_stock >= 0),
     unit TEXT NOT NULL CHECK (unit IN ('kg', 'L', 'Pcs', 'Packets', 'Grams')),
     min_alert_stock NUMERIC(10, 2) NOT NULL DEFAULT 2.00,
@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS public.inventory_reconciliations (
     expected_closing NUMERIC(10, 2) NOT NULL,
     physical_closing NUMERIC(10, 2) NOT NULL,
     variance NUMERIC(10, 2) NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('MATCHED', 'LEAKAGE_THEFT', 'SURPLUS')),
+    status TEXT NOT NULL CHECK (status IN ('MATCHED', 'LEAKAGE_THEFT', 'SURPLUS', 'HIGH_VARIANCE_THEFT_ALERT')),
+    cost_loss NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
