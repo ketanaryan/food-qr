@@ -5,7 +5,8 @@ import {
   verifyOwnerCredentialsAsync, 
   saveDynamicOwnerCredentials, 
   createOwnerToken,
-  getExpectedOwnerCredentials
+  getExpectedOwnerCredentials,
+  fetchDynamicOwnerCredentials
 } from '@/lib/ownerAuth';
 
 export async function POST(req: NextRequest) {

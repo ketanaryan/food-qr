@@ -14,6 +14,6 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
     ],
   },
-};
+} as any;
 
 export default nextConfig;
