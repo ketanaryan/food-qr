@@ -171,4 +171,15 @@ All variables documented in [`.env.example`](file:///c:/Users/KETAN/Documents/an
 3. **No Direct `dangerouslySetInnerHTML`:** Keep React native JSX escaping to prevent Stored or Reflected XSS.
 4. **Server-Side Price Validation:** Do not trust price sent in request body from `/api/orders`. Always recalculate total against database `menu` table.
 5. **Multi-KOT Consolidation:** Do not count KOTs as separate visits in CRM. Always use `consolidateOrders` from `src/lib/orderConsolidation.ts`.
-6. **Local Persistence Fallback:** Tables, captains, and day-close reports use hybrid storage (try Supabase first; if table or service key is absent, fallback gracefully to `data/*.json`). Never remove the fallback logic.
+6. **Local Persistence Fallback:** Tables, captains, orders, and day-close reports use hybrid storage via `src/lib/ordersStore.ts` (try Supabase first; if table, network, or service key is absent, fallback gracefully to resilient local cache). Never remove the fallback logic.
+
+---
+
+## 8. Git Commit Log
+
+* `78de373`: `feat(orders): resilient hybrid order persistence and multi-party rush concurrency support`
+* `a13818c`: `docs: add Master Architecture & Feature Ledger (PROJECT_LEDGER.md)`
+* `c0616e6`: `security(auth): Edge-native Web Crypto API, HMAC-SHA256 sessions, PBKDF2 hashing & rate limiting`
+* `b984555`: `security(db): PostgreSQL Row-Level Security lockdown policies and Vercel env template`
+* `24b62cf`: `feat(orders): Multi-KOT bill consolidation and guest dining UX enhancements`
+* `76044f1`: `feat(billing): End-of-Day Cash Drawer Reconciliation (Z-Report / Day Close)`
