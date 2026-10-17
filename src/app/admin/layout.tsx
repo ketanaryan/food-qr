@@ -187,11 +187,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
       <>
         <head>
-          <title>Bliss Owner App</title>
+          <title>Marquis Owner App</title>
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-          <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
-          <meta name="application-name" content="Bliss Owner" />
+          <meta name="apple-mobile-web-app-title" content="Marquis Owner" />
+          <meta name="application-name" content="Marquis Owner" />
           <meta name="theme-color" content="#14120E" />
           <link rel="manifest" href="/manifest-owner.json" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
@@ -210,7 +210,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <span>Restricted Owner App</span>
               </div>
               <h1 className="text-xl sm:text-2xl font-bold font-serif text-white mt-2">
-                Hotel White Bliss
+                Hotel Marquis
               </h1>
               <p className="text-xs text-gray-400 mt-0.5">
                 Backoffice Executive Management Portal
@@ -335,11 +335,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <head>
-        <title>Bliss Owner App</title>
+        <title>Marquis Owner App</title>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Bliss Owner" />
-        <meta name="application-name" content="Bliss Owner" />
+        <meta name="apple-mobile-web-app-title" content="Marquis Owner" />
+        <meta name="application-name" content="Marquis Owner" />
         <meta name="theme-color" content="#14120E" />
         <link rel="manifest" href="/manifest-owner.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />

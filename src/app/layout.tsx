@@ -22,27 +22,27 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://food-qr-gilt.vercel.app'),
-  title: "Hotel White Bliss | Luxury Fine Dining & Restaurant",
-  description: "Experience luxury fine dining and authentic delicacies at Hotel White Bliss, Pathardi Phata, Nashik. Scan QR, order food, and make table reservations.",
+  title: "Hotel Marquis | Luxury Fine Dining & Restaurant",
+  description: "Experience luxury fine dining and authentic delicacies at Hotel Marquis, Pathardi Phata, Nashik. Scan QR, order food, and make table reservations.",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'White Bliss',
+    title: 'Hotel Marquis',
   },
   icons: {
     icon: '/icons/icon-192.png',
     apple: '/icons/apple-touch-icon.png',
   },
   openGraph: {
-    title: "Hotel White Bliss | Luxury Fine Dining & Restaurant",
-    description: "Experience authentic culinary excellence at Hotel White Bliss, Nashik.",
+    title: "Hotel Marquis | Luxury Fine Dining & Restaurant",
+    description: "Experience authentic culinary excellence at Hotel Marquis, Nashik.",
     images: [
       {
         url: "/hotel-white-bliss.jpg",
         width: 1200,
         height: 630,
-        alt: "Hotel White Bliss",
+        alt: "Hotel Marquis",
       },
     ],
   },

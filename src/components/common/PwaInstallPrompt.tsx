@@ -57,7 +57,7 @@ export default function PwaInstallPrompt() {
       setIsStandalone(true);
       setShowPrompt(false);
       setInstalledSuccess(true);
-      console.log("[PWA] Hotel White Bliss App was installed successfully!");
+      console.log("[PWA] Hotel Marquis App was installed successfully!");
     });
 
     // Check if dismissed before on iOS
@@ -104,12 +104,12 @@ export default function PwaInstallPrompt() {
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-700 p-0.5 shadow-md flex-shrink-0">
                 <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center font-serif font-bold text-amber-400 text-sm tracking-wider">
-                  WB
+                  HM
                 </div>
               </div>
               <div>
                 <h4 className="font-semibold text-zinc-100 text-sm tracking-tight flex items-center gap-1.5">
-                  Hotel White Bliss App
+                  Hotel Marquis App
                 </h4>
                 <p className="text-[11px] text-zinc-400 leading-tight mt-0.5">
                   Install native app for instant orders & floor management

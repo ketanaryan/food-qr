@@ -33,7 +33,7 @@ export async function middleware(req: NextRequest) {
     if (!isAuthorized) {
       return applySecurityHeaders(
         NextResponse.json(
-          { error: 'Unauthorized: Hotel White Bliss administrative credentials required.' },
+          { error: 'Unauthorized: Hotel Marquis administrative credentials required.' },
           { status: 401 }
         )
       );

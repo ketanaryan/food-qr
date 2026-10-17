@@ -131,7 +131,7 @@ export default function KitchenDashboard() {
             </button>
           </div>
           <div class="center bold" style="font-size:18px; letter-spacing: 1px;">*** KITCHEN TICKET (KOT) ***</div>
-          <div class="center bold" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
+          <div class="center bold" style="font-size:14px; margin-top:2px;">HOTEL MARQUIS</div>
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between; font-weight:900; font-size:16px;">
             <span>${escapeHtml(tableName)}</span>
@@ -150,7 +150,7 @@ export default function KitchenDashboard() {
           </div>
           ` : ''}
           <div class="divider"></div>
-          <div class="center" style="font-size:11px; font-weight:bold;">Bliss KDS • Kitchen Dispatch</div>
+          <div class="center" style="font-size:11px; font-weight:bold;">Marquis KDS • Kitchen Dispatch</div>
           <script>
             function handleBackOrClose() {
               try {
@@ -418,7 +418,7 @@ export default function KitchenDashboard() {
                 LIVE
               </span>
             </div>
-            <p className="text-xs text-amber-200/70 font-medium">Hotel White Bliss • Chef Station</p>
+            <p className="text-xs text-amber-200/70 font-medium">Hotel Marquis • Chef Station</p>
           </div>
         </div>
 

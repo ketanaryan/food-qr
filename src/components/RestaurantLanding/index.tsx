@@ -107,18 +107,18 @@ export default function RestaurantLanding() {
           <div className="w-full md:w-1/2 relative h-[400px] md:h-[500px] rounded-sm overflow-hidden shadow-xl">
             <Image 
               src="/hotel-white-bliss.jpg" 
-              alt="Hotel White Bliss Entrance" 
+              alt="Hotel Marquis Entrance" 
               fill 
               className="object-cover"
             />
           </div>
           <div className="w-full md:w-1/2 flex flex-col items-start">
             <h2 className="text-3xl md:text-4xl font-playfair text-[#1E1B16] uppercase tracking-widest mb-6">
-              Welcome to White Bliss
+              Welcome to Hotel Marquis
             </h2>
             <div className="w-12 h-[2px] bg-[#A18D6D] mb-8"></div>
             <p className="text-gray-600 leading-relaxed mb-6 font-light">
-              Located in the heart of the city, Hotel White Bliss offers an unparalleled dining experience. Our chefs craft globally inspired dishes using locally sourced ingredients, serving them in an environment designed for both intimacy and celebration.
+              Located in the heart of the city, Hotel Marquis offers an unparalleled dining experience. Our chefs craft globally inspired dishes using locally sourced ingredients, serving them in an environment designed for both intimacy and celebration.
             </p>
             <p className="text-gray-600 leading-relaxed mb-8 font-light">
               Whether you are stopping by for a quick coffee, a family dinner, or celebrating a special occasion, our doors are always open to provide you with moments you will cherish forever.
@@ -141,7 +141,7 @@ export default function RestaurantLanding() {
               Our Story Through Plates & Moments
             </h2>
             <p className="text-[#A18D6D] font-script text-2xl md:text-3xl font-playfair italic">
-              Hotel White Bliss
+              Hotel Marquis
             </p>
           </div>
 

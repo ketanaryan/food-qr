@@ -122,11 +122,11 @@ export default function Dashboard() {
     if (recentOrders.length === 0) return;
     const headers = ["Invoice No", "Table", "Gross Subtotal", "Discount", "Net Food", "CGST", "SGST", "Service Charge", "Grand Total", "Payment Method", "Timestamp"];
     const rows = recentOrders.map(b => [
-      b.invoice_no,
+      b.id,
       `Table ${b.table_number}`,
       b.subtotal,
       b.discount || 0,
-      b.net_food_sales,
+      b.subtotal - (b.discount || 0),
       (b.gst / 2).toFixed(2),
       (b.gst / 2).toFixed(2),
       b.service_charge || 0,
@@ -151,7 +151,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-              <p className="text-gray-500">Live sales and performance metrics • Hotel White Bliss</p>
+              <p className="text-gray-500">Live sales and performance metrics • Hotel Marquis</p>
             </div>
             <button
               onClick={exportTodayCsv}

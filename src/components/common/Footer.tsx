@@ -20,7 +20,7 @@ function Footer() {
                 {/* Brand */}
                 <div className="flex flex-col gap-4">
                     <Link href="/" className="font-playfair text-2xl font-bold tracking-tight text-[#1E1B16]">
-                        Hotel <span className="text-[#A18D6D]">White Bliss</span>
+                        Hotel <span className="text-[#A18D6D]">Marquis</span>
                     </Link>
 
                     <p className="text-[#5e5240] text-sm leading-relaxed">
@@ -57,7 +57,7 @@ function Footer() {
                         Visit Us
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li>Hotel White Bliss</li>
+                        <li>Hotel Marquis</li>
                         <li>Dnyaneshwar Nagar, Pathardi Phata</li>
                         <li>Nashik, Maharashtra 422009</li>
                         <li className="pt-2 font-medium">Open: 8:00 AM - 11:00 PM</li>
@@ -97,7 +97,7 @@ function Footer() {
 
             {/* Bottom bar */}
             <div className="border-t border-[#e8e1d6] py-4 px-6 flex justify-between items-center text-xs text-[#7a6f5b]">
-                <span>© {new Date().getFullYear()} Hotel White Bliss. All rights reserved.</span>
+                <span>© {new Date().getFullYear()} Hotel Marquis. All rights reserved.</span>
             </div>
         </footer>
     )

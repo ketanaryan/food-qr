@@ -260,7 +260,7 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
             <div className="absolute inset-0 z-0">
               <Image
                 src="/hotel-white-bliss.jpg"
-                alt="Hotel White Bliss"
+                alt="Hotel Marquis"
                 fill
                 priority
                 className="object-cover scale-105"
@@ -295,7 +295,7 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
             <div className="relative z-10 w-full px-4 sm:px-8 max-w-3xl flex flex-col items-center text-center">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs uppercase tracking-widest text-[#A18D6D] bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-[#A18D6D]/30 font-medium">
-                  Hotel White Bliss
+                  Hotel Marquis
                 </span>
                 <span className="text-xs font-bold text-amber-200 bg-amber-950/70 backdrop-blur-md px-3 py-1 rounded-full border border-amber-400/40 flex items-center gap-1 shadow-xs">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

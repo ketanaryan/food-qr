@@ -108,7 +108,7 @@ export default function SalesReport() {
       </head>
       <body>
         <div class="text-center">
-          <div class="title">HOTEL WHITE BLISS</div>
+          <div class="title">HOTEL MARQUIS</div>
           <div>Near Pathardi Phata, Nashik</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
@@ -253,7 +253,7 @@ export default function SalesReport() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Hotel_White_Bliss_GST_Sales_${startDate}_to_${endDate}.csv`);
+    link.setAttribute("download", `Hotel_Marquis_GST_Sales_${startDate}_to_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -468,7 +468,7 @@ export default function SalesReport() {
                             </td>
                             <td className="p-4 font-mono font-medium text-gray-700">
                               <div>₹{Math.max(0, o.subtotal - (o.discount || 0))}</div>
-                              {o.discount > 0 && <div className="text-[10px] text-emerald-600">Disc: -₹{o.discount}</div>}
+                              {Boolean(o.discount && o.discount > 0) && <div className="text-[10px] text-emerald-600">Disc: -₹{o.discount}</div>}
                             </td>
                             <td className="p-4 font-mono">
                               <div className="font-bold text-amber-700">₹{o.gst + (o.service_charge || 0)}</div>
