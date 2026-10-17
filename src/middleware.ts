@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 import { isStaffAuthorized, getStaffSessionToken } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const url = req.nextUrl.pathname;
 
   // Security Headers Helper
@@ -24,8 +24,8 @@ export function middleware(req: NextRequest) {
     return applySecurityHeaders(NextResponse.next());
   }
 
-  const isStaff = isStaffAuthorized(req);
-  const isOwner = isOwnerAuthorized(req);
+  const isStaff = await isStaffAuthorized(req);
+  const isOwner = await isOwnerAuthorized(req);
   const isAuthorized = isStaff || isOwner;
 
   // 1. Strict protection for Admin API endpoints
@@ -75,9 +75,10 @@ export function middleware(req: NextRequest) {
   if (isStaffPath) {
     if (isAuthorized) {
       const response = NextResponse.next();
-      response.cookies.set('staff_session', getStaffSessionToken(), {
+      const staffToken = await getStaffSessionToken();
+      response.cookies.set('staff_session', staffToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: process.env.NODE_ENV === 'production' && !req.nextUrl.hostname.includes('localhost') && !req.nextUrl.hostname.includes('127.0.0.1'),
         sameSite: 'lax',
         maxAge: 60 * 60 * 24 * 365, // 1 year persistence for staff APKs
         path: '/'

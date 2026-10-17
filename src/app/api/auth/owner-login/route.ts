@@ -73,30 +73,31 @@ export async function POST(req: NextRequest) {
     // Login Succeeded: Reset attempts
     resetLoginAttempts(ip);
 
-    const token = createOwnerToken(email);
+    const token = await createOwnerToken(email);
+    const staffToken = await getStaffSessionToken();
     const response = NextResponse.json({
       success: true,
       message: 'Owner authentication successful.',
       email: email.toLowerCase().trim()
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const isSecure = process.env.NODE_ENV === 'production' && !req.url.includes('localhost') && !req.url.includes('127.0.0.1');
     // 30 days if rememberMe, otherwise 12 hours
     const maxAgeSeconds = rememberMe ? 30 * 24 * 60 * 60 : 12 * 60 * 60;
 
     // Set HttpOnly owner session cookie
     response.cookies.set('owner_session', token, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: maxAgeSeconds,
       path: '/'
     });
 
     // Also set staff session cookie so owner can view staff data seamlessly
-    response.cookies.set('staff_session', getStaffSessionToken(), {
+    response.cookies.set('staff_session', staffToken, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: maxAgeSeconds,
       path: '/'

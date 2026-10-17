@@ -10,7 +10,7 @@ import {
 
 export async function POST(req: NextRequest) {
   // 1. Verify owner authorization
-  if (!isOwnerAuthorized(req)) {
+  if (!(await isOwnerAuthorized(req))) {
     return NextResponse.json(
       { error: 'Unauthorized: You must be logged in as Owner to change credentials.' },
       { status: 401 }
@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify current password against any of the valid owner passwords
-    const { allowedPasswords } = getExpectedOwnerCredentials();
-    const isCurrentPasswordCorrect = allowedPasswords.includes(currentPassword.trim());
+    // Verify current password against dynamic scrypt hash or allowed owner passwords
+    const dynamicCreds = await fetchDynamicOwnerCredentials();
+    const currentOwnerEmail = dynamicCreds?.email || 'owner@hotelwhitebliss.com';
+    const isCurrentPasswordCorrect = await verifyOwnerCredentialsAsync(currentOwnerEmail, currentPassword.trim());
 
     if (!isCurrentPasswordCorrect) {
       return NextResponse.json(
@@ -59,20 +60,20 @@ export async function POST(req: NextRequest) {
     // Save dynamic credentials
     await saveDynamicOwnerCredentials(cleanEmail, cleanNewPassword);
 
-    const token = createOwnerToken(cleanEmail);
+    const token = await createOwnerToken(cleanEmail);
     const response = NextResponse.json({
       success: true,
       message: 'Owner credentials successfully updated.',
       email: cleanEmail
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const isSecure = process.env.NODE_ENV === 'production' && !req.url.includes('localhost') && !req.url.includes('127.0.0.1');
     // 30 days session
     const maxAgeSeconds = 30 * 24 * 60 * 60;
 
     response.cookies.set('owner_session', token, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: maxAgeSeconds,
       path: '/'

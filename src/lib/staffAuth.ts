@@ -1,4 +1,5 @@
-import { isOwnerAuthorized } from '@/lib/ownerAuth';
+// Staff Authentication Utilities (Edge Runtime Native - Web Crypto API, Zero Node:crypto dependencies)
+import { isOwnerAuthorized, computeHmacSha256, timingSafeEqualStr } from '@/lib/ownerAuth';
 
 const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
 
@@ -8,34 +9,16 @@ export function getExpectedCredentials() {
   return { user, pwd };
 }
 
-// Edge-runtime compatible signature generator (no node:crypto dependency)
-function computeSignature(payload: string): string {
-  let hash = 5381;
-  for (let i = 0; i < payload.length; i++) {
-    hash = ((hash << 5) + hash) + payload.charCodeAt(i);
-    hash |= 0;
-  }
-  const part1 = Math.abs(hash).toString(36);
-  
-  let hash2 = 0;
-  for (let i = payload.length - 1; i >= 0; i--) {
-    hash2 = ((hash2 << 7) - hash2) + payload.charCodeAt(i);
-    hash2 |= 0;
-  }
-  const part2 = Math.abs(hash2).toString(36);
-
-  return `${part1}_${part2}`;
-}
-
-export function getStaffSessionToken(): string {
+export async function getStaffSessionToken(): Promise<string> {
   const { user, pwd } = getExpectedCredentials();
-  return `wb_staff_${computeSignature(`${user}:${pwd}:${SECRET_KEY}:verified_session`)}`;
+  const sig = await computeHmacSha256(`wb_staff_v3:${user}:${pwd}`, SECRET_KEY);
+  return `wb_staff_${sig}`;
 }
 
-export function isStaffAuthorized(req: Request | any): boolean {
+export async function isStaffAuthorized(req: Request | any): Promise<boolean> {
   try {
     // 0. Super-admin: Owner authorization automatically confers staff authorization
-    if (isOwnerAuthorized(req)) {
+    if (await isOwnerAuthorized(req)) {
       return true;
     }
 
@@ -52,7 +35,6 @@ export function isStaffAuthorized(req: Request | any): boolean {
     if (authHeader && authHeader.startsWith('Basic ')) {
       const b64 = authHeader.split(' ')[1];
       if (b64) {
-        // atob is globally available in both Edge Runtime and Node 18+
         const decoded = typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('utf8');
         const [u, p] = decoded.split(':');
         if (u === expectedUser && p === expectedPwd) {
@@ -61,7 +43,9 @@ export function isStaffAuthorized(req: Request | any): boolean {
       }
     }
 
-    // 3. Check Custom Staff Token Header
+    const expectedToken = await getStaffSessionToken();
+
+    // 2. Check Custom Staff Token Header
     let customToken = '';
     if (typeof req.headers?.get === 'function') {
       customToken = req.headers.get('x-staff-token') || '';
@@ -69,7 +53,7 @@ export function isStaffAuthorized(req: Request | any): boolean {
       customToken = req.headers['x-staff-token'];
     }
 
-    if (customToken && customToken === getStaffSessionToken()) {
+    if (customToken && timingSafeEqualStr(customToken, expectedToken)) {
       return true;
     }
 
@@ -91,12 +75,12 @@ export function isStaffAuthorized(req: Request | any): boolean {
       }
     }
 
-    if (cookieVal && cookieVal === getStaffSessionToken()) {
+    if (cookieVal && timingSafeEqualStr(cookieVal, expectedToken)) {
       return true;
     }
 
     return false;
-  } catch (err) {
+  } catch {
     return false;
   }
 }

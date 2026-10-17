@@ -45,7 +45,7 @@ export function generateTableToken(tableNumber: string) {
 }
 
 export async function GET(req: Request) {
-  if (!isStaffAuthorized(req) && !isOwnerAuthorized(req)) {
+  if (!(await isStaffAuthorized(req)) && !(await isOwnerAuthorized(req))) {
     return NextResponse.json(
       { success: false, message: 'Unauthorized: Staff or Owner credentials required to access table QR keys.' },
       { status: 401 }
@@ -105,7 +105,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    if (!isStaffAuthorized(req) && !isOwnerAuthorized(req)) {
+    if (!(await isStaffAuthorized(req)) && !(await isOwnerAuthorized(req))) {
       return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
     }
 

@@ -4,8 +4,8 @@ import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 
 export async function GET(req: NextRequest) {
-  const isOwner = isOwnerAuthorized(req);
-  const isStaff = isStaffAuthorized(req);
+  const isOwner = await isOwnerAuthorized(req);
+  const isStaff = await isStaffAuthorized(req);
 
   return NextResponse.json({
     authenticated: isOwner,

@@ -5,11 +5,30 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
-// Simple in-memory rate limiting map for reservations
+// In-memory rate limiting maps for reservations
 const reserveRateLimit = new Map<string, number>();
+const ipReserveRateLimit = new Map<string, { count: number; resetAt: number }>();
 
 export async function POST(req: Request) {
   try {
+    // 1. IP-Based Rate Limiting (Defense against automated reservation flooding)
+    const forwarded = req.headers.get('x-forwarded-for');
+    const clientIp = (forwarded ? forwarded.split(',')[0].trim() : req.headers.get('x-real-ip')) || '127.0.0.1';
+
+    const now = Date.now();
+    const ipLimit = ipReserveRateLimit.get(clientIp);
+    if (ipLimit && ipLimit.resetAt > now) {
+      if (ipLimit.count >= 5) { // Max 5 reservations per 10 minutes per IP
+        return NextResponse.json(
+          { success: false, message: 'Too many reservation requests. Please wait a few minutes before trying again.' },
+          { status: 429 }
+        );
+      }
+      ipLimit.count += 1;
+    } else {
+      ipReserveRateLimit.set(clientIp, { count: 1, resetAt: now + 10 * 60 * 1000 });
+    }
+
     const body = await req.json();
     const { name, phone, email, guests, date, time } = body;
 
@@ -25,8 +44,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Please provide a valid name, 10-digit phone number, date, and time.' }, { status: 400 });
     }
 
-    // Rate limiting: 1 reservation per phone number every 30 seconds
-    const now = Date.now();
+    // 2. Phone-Based Rate Limiting: 1 reservation per phone number every 30 seconds
     const lastRequest = reserveRateLimit.get(cleanPhone);
     if (lastRequest && now - lastRequest < 30000) {
       return NextResponse.json({ success: false, message: 'A reservation request was recently received. Please wait a moment.' }, { status: 429 });

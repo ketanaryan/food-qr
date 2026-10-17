@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(req: Request) {
   try {
-    if (!isStaffAuthorized(req) && !isOwnerAuthorized(req)) {
+    if (!(await isStaffAuthorized(req)) && !(await isOwnerAuthorized(req))) {
       return NextResponse.json({ success: false, message: 'Unauthorized staff access' }, { status: 401 });
     }
 

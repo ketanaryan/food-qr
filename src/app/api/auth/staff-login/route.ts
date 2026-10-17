@@ -35,19 +35,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const token = getStaffSessionToken();
+    const token = await getStaffSessionToken();
     const response = NextResponse.json({
       success: true,
       message: 'Staff access granted.'
     });
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const isSecure = process.env.NODE_ENV === 'production' && !req.url.includes('localhost') && !req.url.includes('127.0.0.1');
     // 365 days persistent cookie for staff handheld APKs and tablets
     const maxAgeSeconds = 365 * 24 * 60 * 60;
 
     response.cookies.set('staff_session', token, {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax',
       maxAge: maxAgeSeconds,
       path: '/'

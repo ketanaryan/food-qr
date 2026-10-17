@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Authorization Enforcement & IDOR Hardening
-    const isAuthorizedStaff = isStaffAuthorized(req) || isOwnerAuthorized(req);
+    const isAuthorizedStaff = (await isStaffAuthorized(req)) || (await isOwnerAuthorized(req));
     const isCustomerBillRequest = status === 'billing' && !newTableNumber && !paymentMethod;
 
     if (!isAuthorizedStaff) {
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
 
           const { error } = await supabaseAdmin
             .from('orders')
-            .update({ status: status || 'completed', items })
+            .update({ status: status || 'completed', items: JSON.stringify(items) })
             .eq('id', id);
 
           if (error) throw error;

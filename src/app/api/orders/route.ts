@@ -21,7 +21,7 @@ function sanitizeText(str: string): string {
 
 export async function POST(req: Request) {
   try {
-    const isStaff = isStaffAuthorized(req) || isOwnerAuthorized(req);
+    const isStaff = (await isStaffAuthorized(req)) || (await isOwnerAuthorized(req));
 
     // 1. IP Rate Limiting (Skipped for authenticated POS/Captain staff)
     if (!isStaff) {
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
         continue;
       }
 
-      const qty = parseInt(String(item.qty), 10);
+      const qty = parseInt(String(item.qty !== undefined ? item.qty : (item.quantity !== undefined ? item.quantity : 1)), 10);
       if (isNaN(qty) || qty <= 0 || qty > 100) continue;
 
       // Match against DB prices to prevent tampering, with fallback for custom staff items

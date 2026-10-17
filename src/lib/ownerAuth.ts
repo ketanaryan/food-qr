@@ -1,4 +1,4 @@
-// Owner Authentication Utilities (Edge and Node.js Compatible - Zero Node:fs/path dependencies)
+// Owner Authentication Utilities (Edge Runtime Native - Web Crypto API, Zero Node:crypto dependencies)
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
@@ -68,23 +68,99 @@ export function resetLoginAttempts(ip: string) {
   loginAttempts.delete(ip);
 }
 
-// Edge-runtime compatible signature generator
-function computeSignature(payload: string): string {
-  let hash = 5381;
-  for (let i = 0; i < payload.length; i++) {
-    hash = ((hash << 5) + hash) + payload.charCodeAt(i);
-    hash |= 0;
+// Constant-time string comparison (Edge-runtime resilient, zero Buffer dependency)
+export function timingSafeEqualStr(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
   }
-  const part1 = Math.abs(hash).toString(36);
+  return result === 0;
+}
 
-  let hash2 = 0;
-  for (let i = payload.length - 1; i >= 0; i--) {
-    hash2 = ((hash2 << 7) - hash2) + payload.charCodeAt(i);
-    hash2 |= 0;
+// Web Crypto API HMAC-SHA256 (Natively supported in Edge, Node 18+, and browsers)
+export async function computeHmacSha256(payload: string, secret: string = SECRET_KEY): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await globalThis.crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  const signature = await globalThis.crypto.subtle.sign('HMAC', key, enc.encode(payload));
+  return Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Web Crypto PBKDF2-SHA256 (NIST-approved password hashing with 100,000 iterations)
+export async function hashPassword(password: string): Promise<string> {
+  const enc = new TextEncoder();
+  const saltBytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(saltBytes);
+  const saltHex = Array.from(saltBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+
+  const keyMaterial = await globalThis.crypto.subtle.importKey(
+    'raw',
+    enc.encode(password.trim()),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveBits']
+  );
+
+  const derivedBits = await globalThis.crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      salt: enc.encode(saltHex),
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    256
+  );
+
+  const hashHex = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+  return `${saltHex}:${hashHex}`;
+}
+
+export async function verifyPassword(passwordInput: string, storedHashOrPlain: string): Promise<boolean> {
+  if (!passwordInput || !storedHashOrPlain) return false;
+  const cleanInput = passwordInput.trim();
+
+  // If stored as cryptographic salt:hash
+  if (storedHashOrPlain.includes(':')) {
+    const [saltHex, expectedHash] = storedHashOrPlain.split(':');
+    if (!saltHex || !expectedHash) return false;
+    try {
+      const enc = new TextEncoder();
+      const keyMaterial = await globalThis.crypto.subtle.importKey(
+        'raw',
+        enc.encode(cleanInput),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveBits']
+      );
+
+      const derivedBits = await globalThis.crypto.subtle.deriveBits(
+        {
+          name: 'PBKDF2',
+          salt: enc.encode(saltHex),
+          iterations: 100000,
+          hash: 'SHA-256'
+        },
+        keyMaterial,
+        256
+      );
+
+      const actualHash = Array.from(new Uint8Array(derivedBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+      return timingSafeEqualStr(actualHash, expectedHash);
+    } catch {
+      return false;
+    }
   }
-  const part2 = Math.abs(hash2).toString(36);
 
-  return `${part1}_${part2}`;
+  // Fallback plaintext check
+  return timingSafeEqualStr(cleanInput, storedHashOrPlain.trim());
 }
 
 export async function fetchDynamicOwnerCredentials(): Promise<{ email: string; password: string } | null> {
@@ -119,8 +195,11 @@ export async function saveDynamicOwnerCredentials(email: string, password: strin
   const cleanEmail = email.toLowerCase().trim();
   const cleanPassword = password.trim();
 
+  // Salt and hash using cryptographic PBKDF2-SHA256 before persisting
+  const saltedHash = await hashPassword(cleanPassword);
+
   // 1. Update memory
-  memoryOwnerCredentials = { email: cleanEmail, password: cleanPassword };
+  memoryOwnerCredentials = { email: cleanEmail, password: saltedHash };
 
   // 2. Update Supabase hotel_settings using privileged server admin client
   try {
@@ -128,7 +207,7 @@ export async function saveDynamicOwnerCredentials(email: string, password: strin
       .from('hotel_settings')
       .upsert({
         key: 'owner_auth',
-        value: { email: cleanEmail, password: cleanPassword },
+        value: { email: cleanEmail, password: saltedHash },
         updated_at: new Date().toISOString()
       }, { onConflict: 'key' });
 
@@ -172,35 +251,35 @@ export async function verifyOwnerCredentialsAsync(emailInput: string, passwordIn
   const cleanEmail = emailInput.toLowerCase().trim();
   const cleanPassword = passwordInput.trim();
 
-  // Check dynamic credentials from DB / memory
-  await fetchDynamicOwnerCredentials();
+  // 1. Check dynamic credentials from DB / memory
+  const dynamicCreds = await fetchDynamicOwnerCredentials();
+  if (dynamicCreds && dynamicCreds.email === cleanEmail) {
+    if (await verifyPassword(cleanPassword, dynamicCreds.password)) {
+      return true;
+    }
+  }
 
+  // 2. Check static/environment allowed credentials
   const { allowedEmails, allowedPasswords } = getExpectedOwnerCredentials();
   const emailValid = allowedEmails.includes(cleanEmail);
-  const passwordValid = allowedPasswords.includes(cleanPassword);
+  let passwordValid = false;
+  for (const p of allowedPasswords) {
+    if (await verifyPassword(cleanPassword, p) || cleanPassword === p) {
+      passwordValid = true;
+      break;
+    }
+  }
 
   return emailValid && passwordValid;
 }
 
-export function verifyOwnerCredentials(emailInput: string, passwordInput: string): boolean {
-  if (!emailInput || !passwordInput) return false;
-  const cleanEmail = emailInput.toLowerCase().trim();
-  const cleanPassword = passwordInput.trim();
-
-  const { allowedEmails, allowedPasswords } = getExpectedOwnerCredentials();
-  const emailValid = allowedEmails.includes(cleanEmail);
-  const passwordValid = allowedPasswords.includes(cleanPassword);
-
-  return emailValid && passwordValid;
-}
-
-export function createOwnerToken(email: string): string {
+export async function createOwnerToken(email: string): Promise<string> {
   const normalizedEmail = email.toLowerCase().trim();
-  const sig = computeSignature(`wb_owner_v1:${normalizedEmail}:${SECRET_KEY}`);
+  const sig = await computeHmacSha256(`wb_owner_v3:${normalizedEmail}`, SECRET_KEY);
   return `wbo_${sig}`;
 }
 
-export function isOwnerAuthorized(req: Request | any): boolean {
+export async function isOwnerAuthorized(req: Request | any): Promise<boolean> {
   try {
     let cookieVal = '';
 
@@ -222,16 +301,26 @@ export function isOwnerAuthorized(req: Request | any): boolean {
 
     if (!cookieVal) return false;
 
+    // Check dynamic credentials first (fetching if not in memory)
+    const dynamicCreds = await fetchDynamicOwnerCredentials();
+    if (dynamicCreds?.email) {
+      const dynamicToken = await createOwnerToken(dynamicCreds.email);
+      if (timingSafeEqualStr(cookieVal, dynamicToken)) {
+        return true;
+      }
+    }
+
     // Check against all allowed emails
     const { allowedEmails } = getExpectedOwnerCredentials();
     for (const email of allowedEmails) {
-      if (cookieVal === createOwnerToken(email)) {
+      const expectedToken = await createOwnerToken(email);
+      if (timingSafeEqualStr(cookieVal, expectedToken)) {
         return true;
       }
     }
 
     return false;
-  } catch (err) {
+  } catch {
     return false;
   }
 }
