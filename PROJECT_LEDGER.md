@@ -197,6 +197,8 @@ All variables documented in [`.env.example`](file:///c:/Users/KETAN/Documents/an
 
 ## 8. Git Commit Log
 
+* `bc65c65`: `feat(inventory): add Bakery category, interactive physical count audit, cost loss & fuzzy BOM matching`
+* `08020bb`: `docs(ledger): record Station 6 Enterprise Inventory Management suite, BOM depletion & vendor khata`
 * `ef933f4`: `feat(inventory): enterprise inventory management suite, live recipe order depletion & vendor procurement`
 * `76044f1`: `feat(billing): End-of-Day Cash Drawer Reconciliation (Z-Report / Day Close)`
 * `24b62cf`: `feat(orders): Multi-KOT bill consolidation and guest dining UX enhancements`
