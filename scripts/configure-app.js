@@ -6,17 +6,17 @@ const target = (process.argv[2] || 'pos').toLowerCase();
 
 const configs = {
   pos: {
-    appId: 'com.hotelwhitebliss.pos',
-    appName: 'Bliss POS',
+    appId: 'com.hotelmarquis.pos',
+    appName: 'Marquis POS',
     url: 'https://food-qr-gilt.vercel.app/pos',
-    scheme: 'com.hotelwhitebliss.pos',
+    scheme: 'com.hotelmarquis.pos',
     iconSrc: 'icon-pos-512.png'
   },
   captain: {
-    appId: 'com.hotelwhitebliss.captain',
-    appName: 'Bliss Captain',
+    appId: 'com.hotelmarquis.captain',
+    appName: 'Marquis Captain',
     url: 'https://food-qr-gilt.vercel.app/captain',
-    scheme: 'com.hotelwhitebliss.captain',
+    scheme: 'com.hotelmarquis.captain',
     iconSrc: 'icon-captain-512.png'
   }
 };

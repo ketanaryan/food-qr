@@ -1,6 +1,6 @@
 {
-  "appId": "com.hotelwhitebliss.pos",
-  "appName": "Bliss POS",
+  "appId": "com.hotelmarquis.pos",
+  "appName": "Marquis POS",
   "webDir": "public",
   "bundledWebRuntime": false,
   "server": {
