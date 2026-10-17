@@ -5,6 +5,7 @@ import path from 'path';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { consolidateOrders, ConsolidatedBill } from '@/lib/orderConsolidation';
+import { getLocalOrders } from '@/lib/ordersStore';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -102,9 +103,15 @@ export async function GET(req: Request) {
       .lte('created_at', endObj.toISOString())
       .order('created_at', { ascending: false });
 
-    if (ordersError) throw ordersError;
+    const combinedRawOrders = [...(rawOrders || [])];
+    const localRaw = getLocalOrders().filter(o => ['completed', 'billing'].includes(o.status));
+    for (const lo of localRaw) {
+      if (!combinedRawOrders.some(c => c.id === lo.id)) {
+        combinedRawOrders.push(lo as any);
+      }
+    }
 
-    const consolidatedBills = consolidateOrders(rawOrders || []);
+    const consolidatedBills = consolidateOrders(combinedRawOrders);
 
     // Filter bills belonging to this specific local day (by settled_at or created_at)
     const dayBills = consolidatedBills.filter(b => {

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
+import { getLocalOrders, updateLocalOrder } from '@/lib/ordersStore';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -93,19 +94,29 @@ export async function POST(req: Request) {
       }
 
       // IDOR Verification: Ensure all requested order IDs belong strictly to this customer's table
-      const { data: dbOrders, error: fetchErr } = await supabaseAdmin
+      const { data: dbOrders } = await supabaseAdmin
         .from('orders')
         .select('id, table_number, status')
         .in('id', cleanOrderIds);
 
-      if (fetchErr || !dbOrders || dbOrders.length !== cleanOrderIds.length) {
+      let verifiedOrders = dbOrders || [];
+      if (verifiedOrders.length < cleanOrderIds.length) {
+        const local = getLocalOrders().filter(o => cleanOrderIds.includes(o.id));
+        const combined = [...verifiedOrders];
+        for (const lo of local) {
+          if (!combined.some(c => c.id === lo.id)) combined.push(lo);
+        }
+        verifiedOrders = combined;
+      }
+
+      if (verifiedOrders.length !== cleanOrderIds.length) {
         return NextResponse.json(
           { success: false, message: 'Access denied: One or more orders could not be verified.' },
           { status: 403 }
         );
       }
 
-      for (const ord of dbOrders) {
+      for (const ord of verifiedOrders) {
         if (String(ord.table_number) !== cleanTable) {
           return NextResponse.json(
             { success: false, message: 'Security Alert: Cannot request bill for orders belonging to another table.' },
@@ -194,26 +205,35 @@ export async function POST(req: Request) {
             items.push({ id: 'CUSTOMER_INFO', phone: cleanPhone });
           }
 
-          const { error } = await supabaseAdmin
-            .from('orders')
-            .update({ status: status || 'completed', items: JSON.stringify(items) })
-            .eq('id', id);
+          try {
+            await supabaseAdmin
+              .from('orders')
+              .update({ status: status || 'completed', items: JSON.stringify(items) })
+              .eq('id', id);
+          } catch {}
 
-          if (error) throw error;
+          updateLocalOrder(id, {
+            status: status || 'completed',
+            items: JSON.stringify(items),
+            settled_at: new Date().toISOString(),
+            payment_method: cleanPaymentMethod || 'CASH',
+            customer_phone: cleanPhone || undefined
+          });
         }
       }
     } else {
       const updatePayload: Record<string, any> = {};
       if (status) updatePayload.status = status;
 
-      const { error } = await supabaseAdmin
-        .from('orders')
-        .update(updatePayload)
-        .in('id', cleanOrderIds);
+      try {
+        await supabaseAdmin
+          .from('orders')
+          .update(updatePayload)
+          .in('id', cleanOrderIds);
+      } catch {}
 
-      if (error) {
-        console.error('Update error:', error);
-        return NextResponse.json({ success: false, message: 'Failed to update orders' }, { status: 500 });
+      for (const id of cleanOrderIds) {
+        updateLocalOrder(id, updatePayload);
       }
     }
 

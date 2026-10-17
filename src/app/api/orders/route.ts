@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
+import { insertLocalOrder } from '@/lib/ordersStore';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -145,20 +146,42 @@ export async function POST(req: Request) {
 
     // 6. Secure Database Insert
     const orderNumber = Math.floor(1000 + Math.random() * 9000).toString();
-    const { error } = await supabaseAdmin.from('orders').insert({
-      table_number: cleanTableNumber,
-      status: 'received',
-      items: JSON.stringify(validatedItems),
-      total_amount: totalAmount,
-      order_number: orderNumber,
-    });
+    let createdOrder: any = null;
 
-    if (error) {
-      console.error('Supabase insert error:', error);
-      return NextResponse.json({ success: false, message: 'Failed to place order' }, { status: 500 });
+    try {
+      const { data, error } = await supabaseAdmin.from('orders').insert({
+        table_number: cleanTableNumber,
+        status: 'received',
+        items: JSON.stringify(validatedItems),
+        total_amount: totalAmount,
+        order_number: orderNumber,
+      }).select().single();
+
+      if (!error && data) {
+        createdOrder = data;
+      } else if (error) {
+        console.warn('Supabase orders insert notice (using local store fallback):', error.message);
+      }
+    } catch (e: any) {
+      console.warn('Supabase orders insert exception:', e.message);
     }
 
-    return NextResponse.json({ success: true, message: 'Order placed securely', orderNumber }, { status: 200 });
+    if (!createdOrder) {
+      createdOrder = insertLocalOrder({
+        table_number: cleanTableNumber,
+        status: 'received',
+        items: JSON.stringify(validatedItems),
+        total_amount: totalAmount,
+        order_number: orderNumber,
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order placed securely',
+      orderNumber,
+      order: createdOrder
+    }, { status: 200 });
   } catch (error) {
     console.error('Checkout API error:', error);
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
