@@ -276,5 +276,34 @@ Updated all public customer touchpoints, digital bills, WhatsApp templates, and 
 7. `src/app/admin/crm/page.tsx`: Promotional SMS/WhatsApp copy.
 8. `src/app/layout.tsx` & `src/app/bill/[ids]/layout.tsx`: OpenGraph & Twitter preview meta tags.
 
+---
 
+## 12. Petpooja Enterprise ERP Modules Integration
 
+Faithfully implemented all modules showcased in the official Petpooja Restaurant Inventory Management documentation:
+
+### Module 1: Raw Material Management & Low-Stock Drawer
+* **Visual Identity**: Added amber low-stock alert banner (*"! Running low on stock! Re-stock soon."*) with direct trigger to the **Quick Re-Stock Drawer**.
+* **Real-time Price Engine**: Calculates raw material order cost based on latest vendor rate (`Order Qty × Unit Cost Rate`) with editable overrides.
+* **Auto-Refill Drawer**: Fast re-order ticket pre-filled with material details, current vs minimum par stock, and 1-click WhatsApp PO dispatch.
+
+### Module 2: Purchase Order (PO) Management
+* **PO Ticket Generator**: Automatic generation of alphanumeric PO ticket numbers (e.g. `PO324G`, `PO456K`).
+* **Live Current Stock Indicator**: Displays real-time current stock pill badge when selecting raw materials for procurement.
+* **PO Status Workflow**: Tracks status across `Saved` (Draft), `Processed` (Sent to Vendor), and `Received` (Inward Completed).
+* **1-Click WhatsApp PO**: Formats and dispatches structured supplier purchase orders directly to vendor WhatsApp numbers with delivery address and line items.
+* **GRN Inward Conversion**: 1-click `[ Receive Stock ]` action converts approved POs directly into live stock inwards and updates raw material balances.
+
+### Module 3: Multi-Stage Recipe Management & Batch Cooking
+* **Semi-Finished Sub-Recipes**: Pre-preparation master for kitchen gravies and bases (e.g. Tomato Sauce / Base Gravy, White Cashew Gravy, Chop Masala Base).
+* **Accurate Unit Depletion**: Proportional conversion from grams/milliliters to kilograms/liters during batch cooking without rounding errors.
+* **Batch Multiplier `[ Convert ]` Drawer**: Quick batch cooking controls (1x, 2x, 5x, 10x) with real-time stock availability verification and raw ingredient auto-deduction.
+* **Multi-Stage Recipe Master**: Maps sub-recipes (semi-finished) and raw materials to final customer dishes (e.g. Margherita Pizza, Paneer Butter Masala, Shahi Veg Dum Biryani) with an active `Auto Convert` toggle.
+
+### Module 4: Central Kitchen Module & Internal Transfers
+* **Central Kitchen Supply Hub**: Multi-outlet routing grid between Central Kitchen / Main Store, Banquet Hall Pantry, Line Kitchen, and Mocktail Bar.
+* **Internal Transfer Slips**: Alphanumeric transfer request tracking (e.g. `P0324G`, `P0456K`) tracking origin, destination outlet, transferred material/gravy, and status (`Saved`, `Processed`, `Received`).
+* **Outlet PO Demands**: Enables satellite outlets (e.g., Banquet Hall, Poolside Lawn) to raise internal POs to Central Kitchen.
+
+### Clean Client/Server Architecture (`src/lib/inventoryTypes.ts`)
+* Separated pure TypeScript models and initial master datasets into `src/lib/inventoryTypes.ts` (100% free of Node.js `fs`/`path`), preventing Next.js Turbopack client-side bundling errors while maintaining persistent local file and Supabase synchronization on the server (`src/lib/inventoryStore.ts`).

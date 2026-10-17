@@ -5,7 +5,7 @@ import path from 'path';
 export interface InventoryItem {
   id: string;
   name: string;
-  category: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices" | "Bakery";
+  category: "Dairy" | "Grocery" | "Vegetables" | "Fruits" | "Beverages" | "Packaging" | "Spices" | "Bakery";
   currentStock: number;
   unit: "kg" | "L" | "Pcs" | "Packets" | "Grams";
   minAlertStock: number;
@@ -57,7 +57,7 @@ export interface DailyReconciliation {
 export interface StockLog {
   id: string;
   itemName: string;
-  type: "INWARD" | "WASTAGE" | "CONSUMPTION" | "ADJUSTMENT";
+  type: "INWARD" | "WASTAGE" | "CONSUMPTION" | "ADJUSTMENT" | "TRANSFER" | "CONVERSION";
   quantity: number;
   unit: string;
   notes: string;
@@ -71,6 +71,55 @@ export interface RecipeBOM {
   ingredients: { name: string; qty: number; unit: string }[];
 }
 
+export interface PurchaseOrder {
+  id: string;
+  poNumber: string; // e.g. "PO324G", "PO456K"
+  vendorName: string;
+  vendorPhone: string;
+  itemName: string;
+  qty: number;
+  unit: string;
+  currentStockAtOrder?: number;
+  estimatedPrice: number;
+  totalAmount: number;
+  status: "Saved" | "Processed" | "Received" | "Cancelled";
+  createdAt: string;
+  outlet: string;
+  notes?: string;
+}
+
+export interface SubRecipePrep {
+  id: string;
+  name: string; // e.g. "Tomato Sauce / Gravy", "White Cashew Gravy", "Chop Masala"
+  outputYield: number;
+  yieldUnit: string;
+  currentStock: number;
+  materials: { materialName: string; qty: number; unit: string }[];
+  lastConverted?: string;
+}
+
+export interface MultiStageRecipe {
+  id: string;
+  conversionName: string; // e.g. "Margherita Pizza", "Paneer Butter Masala"
+  category: string;
+  autoConvert: boolean;
+  subRecipes: { subRecipeName: string; qty: number; unit: string }[];
+  rawMaterials: { materialName: string; qty: number; unit: string }[];
+}
+
+export interface InternalTransfer {
+  id: string;
+  reqNo: string; // e.g. "P0324G", "P0456K"
+  fromOutlet: string;
+  toOutlet: string;
+  item: string;
+  qty: number;
+  unit: string;
+  status: "Saved" | "Processed" | "Received";
+  date: string;
+  notes?: string;
+}
+
 export interface InventoryStoreData {
   items: InventoryItem[];
   purchases: VendorPurchase[];
@@ -78,6 +127,10 @@ export interface InventoryStoreData {
   reconciliations: DailyReconciliation[];
   logs: StockLog[];
   recipes: RecipeBOM[];
+  purchaseOrders: PurchaseOrder[];
+  subRecipes: SubRecipePrep[];
+  multiStageRecipes: MultiStageRecipe[];
+  internalTransfers: InternalTransfer[];
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
@@ -111,15 +164,63 @@ const DEFAULT_INVENTORY_ITEMS: InventoryItem[] = [
   },
   {
     id: "inv-3",
-    name: "Fresh Chicken Breast",
-    category: "Poultry & Meat",
-    currentStock: 25.0,
+    name: "Rich Cashew Nut Kernels (Kaju)",
+    category: "Grocery",
+    currentStock: 15.0,
+    unit: "kg",
+    minAlertStock: 5.0,
+    costPerUnit: 850,
+    vendorName: "Mahalaxmi Traders",
+    vendorPhone: "9823456789",
+    lastUpdated: "Today, 07:45 AM"
+  },
+  {
+    id: "inv-capsicum",
+    name: "Green Bell Pepper (Capsicum)",
+    category: "Vegetables",
+    currentStock: 5.0,
     unit: "kg",
     minAlertStock: 8.0,
-    costPerUnit: 220,
-    vendorName: "Al-Madina Poultry",
+    costPerUnit: 65,
+    vendorName: "Parthiv Agency",
     vendorPhone: "9890123456",
-    lastUpdated: "Today, 07:45 AM"
+    lastUpdated: "Today, 08:00 AM"
+  },
+  {
+    id: "inv-mango",
+    name: "Fresh Alphonso Mango Pulp",
+    category: "Fruits",
+    currentStock: 10.0,
+    unit: "kg",
+    minAlertStock: 4.0,
+    costPerUnit: 220,
+    vendorName: "Nashik Mandi Direct",
+    vendorPhone: "9422778899",
+    lastUpdated: "Yesterday"
+  },
+  {
+    id: "inv-wheat",
+    name: "Whole Wheat Flour (Atta)",
+    category: "Grocery",
+    currentStock: 45.0,
+    unit: "kg",
+    minAlertStock: 15.0,
+    costPerUnit: 42,
+    vendorName: "Mahalaxmi Traders",
+    vendorPhone: "9823456789",
+    lastUpdated: "3 days ago"
+  },
+  {
+    id: "inv-pizza-base",
+    name: "Artisanal Pizza Base (8-inch)",
+    category: "Bakery",
+    currentStock: 24,
+    unit: "Pcs",
+    minAlertStock: 15,
+    costPerUnit: 22,
+    vendorName: "Golden Bakery",
+    vendorPhone: "9765432100",
+    lastUpdated: "Today, 09:00 AM"
   },
   {
     id: "inv-4",
@@ -246,12 +347,12 @@ const DEFAULT_PURCHASES: VendorPurchase[] = [
   },
   {
     id: "pur-2",
-    invoiceNo: "INV-ALM-89",
-    vendorName: "Al-Madina Poultry",
+    invoiceNo: "INV-PA-89",
+    vendorName: "Parthiv Agency",
     vendorPhone: "9890123456",
     date: "Today, 07:45 AM",
-    itemsSummary: "Fresh Chicken Breast (20kg)",
-    totalAmount: 4400,
+    itemsSummary: "Green Bell Pepper (Capsicum 20kg), Broccoli (5kg)",
+    totalAmount: 2600,
     paymentStatus: "PENDING_CREDIT",
     notes: "Credit bill - to be cleared on Friday"
   },
@@ -282,13 +383,23 @@ const DEFAULT_VENDORS: VendorAccount[] = [
   },
   {
     id: "v-2",
-    name: "Al-Madina Poultry",
-    category: "Fresh Chicken & Tandoori Cuts",
+    name: "Parthiv Agency",
+    category: "Fresh Capsicum, Broccoli & Herbs",
     phone: "9890123456",
-    totalPurchased: 26800,
-    totalPaid: 22400,
-    pendingDue: 4400,
+    totalPurchased: 18400,
+    totalPaid: 15800,
+    pendingDue: 2600,
     lastPaymentDate: "3 days ago"
+  },
+  {
+    id: "v-radhe",
+    name: "Radhe Dairy",
+    category: "Cottage Cheese, Malai Paneer & Cow Ghee",
+    phone: "9822114477",
+    totalPurchased: 19800,
+    totalPaid: 17127,
+    pendingDue: 2673,
+    lastPaymentDate: "Yesterday"
   },
   {
     id: "v-3",
@@ -335,46 +446,51 @@ const DEFAULT_RECIPES: RecipeBOM[] = [
     ]
   },
   {
-    menuItem: "Butter Chicken (Plate)",
+    menuItem: "Paneer Butter Masala",
     category: "Main Course",
     ingredients: [
-      { name: "Fresh Chicken Breast", qty: 0.25, unit: "kg" },
+      { name: "Amul Malai Paneer", qty: 0.20, unit: "kg" },
       { name: "Amul Table Butter", qty: 0.03, unit: "kg" },
-      { name: "Fresh Full Cream Milk", qty: 0.04, unit: "L" },
+      { name: "Fresh Full Cream Milk", qty: 0.05, unit: "L" },
       { name: "Farm Fresh Tomatoes", qty: 0.15, unit: "kg" }
     ]
   },
   {
-    menuItem: "Chicken Tikka",
-    category: "Tandoori Starters",
+    menuItem: "Dal Makhani (Slow Cooked)",
+    category: "Main Course",
     ingredients: [
-      { name: "Fresh Chicken Breast", qty: 0.22, unit: "kg" },
-      { name: "Refined Sunflower Cooking Oil", qty: 0.02, unit: "L" }
+      { name: "Amul Table Butter", qty: 0.04, unit: "kg" },
+      { name: "Fresh Full Cream Milk", qty: 0.08, unit: "L" },
+      { name: "Farm Fresh Tomatoes", qty: 0.10, unit: "kg" }
     ]
   },
   {
-    menuItem: "Chicken Malai Tikka",
-    category: "Tandoori Starters",
+    menuItem: "Kaju Masala Curry",
+    category: "Main Course",
     ingredients: [
-      { name: "Fresh Chicken Breast", qty: 0.22, unit: "kg" },
+      { name: "Rich Cashew Nut Kernels (Kaju)", qty: 0.12, unit: "kg" },
+      { name: "Amul Table Butter", qty: 0.03, unit: "kg" },
       { name: "Fresh Full Cream Milk", qty: 0.05, unit: "L" },
+      { name: "Farm Fresh Tomatoes", qty: 0.10, unit: "kg" }
+    ]
+  },
+  {
+    menuItem: "Veg Diwani Handi",
+    category: "Main Course",
+    ingredients: [
+      { name: "Green Bell Pepper (Capsicum)", qty: 0.08, unit: "kg" },
+      { name: "Farm Fresh Tomatoes", qty: 0.10, unit: "kg" },
+      { name: "Amul Malai Paneer", qty: 0.08, unit: "kg" },
       { name: "Amul Table Butter", qty: 0.02, unit: "kg" }
     ]
   },
   {
-    menuItem: "Chicken Seekh Kabab",
-    category: "Tandoori Starters",
+    menuItem: "Margherita Pizza (Artisanal)",
+    category: "Pizzas",
     ingredients: [
-      { name: "Fresh Chicken Breast", qty: 0.20, unit: "kg" },
-      { name: "Onions & Garlic Pods", qty: 0.05, unit: "kg" }
-    ]
-  },
-  {
-    menuItem: "Chicken Tandoori (Half)",
-    category: "Tandoori Starters",
-    ingredients: [
-      { name: "Fresh Chicken Breast", qty: 0.35, unit: "kg" },
-      { name: "Refined Sunflower Cooking Oil", qty: 0.03, unit: "L" }
+      { name: "Artisanal Pizza Base (8-inch)", qty: 1, unit: "Pcs" },
+      { name: "Mozzarella Pizza Cheese", qty: 0.15, unit: "kg" },
+      { name: "Farm Fresh Tomatoes", qty: 0.08, unit: "kg" }
     ]
   },
   {
@@ -386,27 +502,12 @@ const DEFAULT_RECIPES: RecipeBOM[] = [
     ]
   },
   {
-    menuItem: "Steam Rice",
-    category: "Basmati Ki Sajawat",
-    ingredients: [
-      { name: "India Gate Basmati Rice", qty: 0.18, unit: "kg" }
-    ]
-  },
-  {
     menuItem: "Garlic Naan (Butter)",
     category: "Roti Ki Khasiat",
     ingredients: [
       { name: "All-Purpose Flour (Maida)", qty: 0.10, unit: "kg" },
       { name: "Amul Table Butter", qty: 0.02, unit: "kg" },
       { name: "Onions & Garlic Pods", qty: 0.02, unit: "kg" }
-    ]
-  },
-  {
-    menuItem: "Butter Naan",
-    category: "Roti Ki Khasiat",
-    ingredients: [
-      { name: "All-Purpose Flour (Maida)", qty: 0.10, unit: "kg" },
-      { name: "Amul Table Butter", qty: 0.02, unit: "kg" }
     ]
   },
   {
@@ -422,26 +523,198 @@ const DEFAULT_RECIPES: RecipeBOM[] = [
     ingredients: [
       { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
     ]
+  }
+];
+
+// Petpooja Module 1: Purchase Orders (PO Tickets)
+export const DEFAULT_PURCHASE_ORDERS: PurchaseOrder[] = [
+  {
+    id: "po-1",
+    poNumber: "PO324G",
+    vendorName: "Parthiv Agency",
+    vendorPhone: "9890123456",
+    itemName: "Green Bell Pepper (Capsicum)",
+    qty: 12,
+    unit: "Kg",
+    currentStockAtOrder: 5.0,
+    estimatedPrice: 65,
+    totalAmount: 5124,
+    status: "Saved",
+    createdAt: "Today, 09:30 AM",
+    outlet: "Central Kitchen / Main Store",
+    notes: "Restock for weekend banquets rush"
   },
   {
-    menuItem: "Cold Coffee with Ice Cream",
-    category: "Beverages",
-    ingredients: [
-      { name: "Fresh Full Cream Milk", qty: 0.25, unit: "L" },
-      { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
+    id: "po-2",
+    poNumber: "PO456K",
+    vendorName: "Radhe Dairy",
+    vendorPhone: "9822114477",
+    itemName: "Cottage Cheese (Amul Malai Paneer)",
+    qty: 12,
+    unit: "Kg",
+    currentStockAtOrder: 1.4,
+    estimatedPrice: 280,
+    totalAmount: 2673,
+    status: "Processed",
+    createdAt: "Today, 08:15 AM",
+    outlet: "Central Kitchen / Main Store",
+    notes: "Urgent morning delivery"
+  },
+  {
+    id: "po-3",
+    poNumber: "PO108M",
+    vendorName: "Kalyan Dairy",
+    vendorPhone: "9822334455",
+    itemName: "Fresh Full Cream Milk",
+    qty: 30,
+    unit: "L",
+    currentStockAtOrder: 8.0,
+    estimatedPrice: 64,
+    totalAmount: 1920,
+    status: "Saved",
+    createdAt: "Yesterday, 06:00 PM",
+    outlet: "Banquet Hall Pantry",
+    notes: "Evening dairy replenishment"
+  }
+];
+
+// Petpooja Module 2: Sub-Recipes (Semi-Finished Pre-Preps)
+export const DEFAULT_SUB_RECIPES: SubRecipePrep[] = [
+  {
+    id: "sub-1",
+    name: "Tomato Sauce / Base Gravy",
+    outputYield: 500,
+    yieldUnit: "gms",
+    currentStock: 4500,
+    materials: [
+      { materialName: "Farm Fresh Tomatoes", qty: 475, unit: "gms" },
+      { materialName: "Onions & Garlic Pods", qty: 25, unit: "gms" },
+      { materialName: "Refined Sunflower Cooking Oil", qty: 14, unit: "gms" }
+    ],
+    lastConverted: "Today, 07:30 AM"
+  },
+  {
+    id: "sub-2",
+    name: "White Cashew Gravy (Shahi Base)",
+    outputYield: 600,
+    yieldUnit: "gms",
+    currentStock: 2800,
+    materials: [
+      { materialName: "Rich Cashew Nut Kernels (Kaju)", qty: 250, unit: "gms" },
+      { materialName: "Fresh Full Cream Milk", qty: 350, unit: "gms" },
+      { materialName: "Amul Table Butter", qty: 50, unit: "gms" }
+    ],
+    lastConverted: "Yesterday, 05:00 PM"
+  },
+  {
+    id: "sub-3",
+    name: "Chop Masala Base (Bhuna Onions)",
+    outputYield: 750,
+    yieldUnit: "gms",
+    currentStock: 3200,
+    materials: [
+      { materialName: "Onions & Garlic Pods", qty: 550, unit: "gms" },
+      { materialName: "Farm Fresh Tomatoes", qty: 200, unit: "gms" },
+      { materialName: "Refined Sunflower Cooking Oil", qty: 60, unit: "gms" }
+    ],
+    lastConverted: "Yesterday, 04:30 PM"
+  }
+];
+
+// Petpooja Module 3: Multi-Stage Recipes (Final Dishesh with Auto Convert)
+export const DEFAULT_MULTI_STAGE_RECIPES: MultiStageRecipe[] = [
+  {
+    id: "msr-1",
+    conversionName: "Margherita Pizza",
+    category: "Pizzas",
+    autoConvert: true,
+    subRecipes: [
+      { subRecipeName: "Tomato Sauce / Base Gravy", qty: 525, unit: "gms" }
+    ],
+    rawMaterials: [
+      { materialName: "Artisanal Pizza Base (8-inch)", qty: 255, unit: "gms" },
+      { materialName: "Mozzarella Pizza Cheese", qty: 350, unit: "gms" }
     ]
+  },
+  {
+    id: "msr-2",
+    conversionName: "Paneer Butter Masala",
+    category: "Main Course",
+    autoConvert: true,
+    subRecipes: [
+      { subRecipeName: "Tomato Sauce / Base Gravy", qty: 350, unit: "gms" },
+      { subRecipeName: "White Cashew Gravy (Shahi Base)", qty: 100, unit: "gms" }
+    ],
+    rawMaterials: [
+      { materialName: "Amul Malai Paneer", qty: 200, unit: "gms" },
+      { materialName: "Amul Table Butter", qty: 40, unit: "gms" }
+    ]
+  },
+  {
+    id: "msr-3",
+    conversionName: "Shahi Veg Dum Biryani",
+    category: "Biryani & Rice",
+    autoConvert: true,
+    subRecipes: [
+      { subRecipeName: "White Cashew Gravy (Shahi Base)", qty: 150, unit: "gms" }
+    ],
+    rawMaterials: [
+      { materialName: "India Gate Basmati Rice", qty: 250, unit: "gms" },
+      { materialName: "Green Bell Pepper (Capsicum)", qty: 80, unit: "gms" },
+      { materialName: "Amul Malai Paneer", qty: 80, unit: "gms" }
+    ]
+  }
+];
+
+// Petpooja Module 4: Central Kitchen & Internal Transfers
+export const DEFAULT_INTERNAL_TRANSFERS: InternalTransfer[] = [
+  {
+    id: "tr-1",
+    reqNo: "P0324G",
+    fromOutlet: "Central Kitchen / Main Store",
+    toOutlet: "Banquet Hall Pantry",
+    item: "Amul Malai Paneer",
+    qty: 10,
+    unit: "Kg",
+    status: "Saved",
+    date: "Today, 10:15 AM",
+    notes: "Banquet dinner buffet preparation"
+  },
+  {
+    id: "tr-2",
+    reqNo: "P0456K",
+    fromOutlet: "Central Kitchen / Main Store",
+    toOutlet: "Restaurant Line Kitchen",
+    item: "Farm Fresh Tomatoes",
+    qty: 6,
+    unit: "Kg",
+    status: "Processed",
+    date: "Today, 08:30 AM",
+    notes: "Daily lunchtime fresh produce transfer"
+  },
+  {
+    id: "tr-3",
+    reqNo: "P0512B",
+    fromOutlet: "Central Kitchen / Main Store",
+    toOutlet: "Mocktail & Beverage Bar",
+    item: "Fresh Full Cream Milk",
+    qty: 8,
+    unit: "L",
+    status: "Processed",
+    date: "Today, 09:00 AM",
+    notes: "Cold coffee and shakes bar station"
   }
 ];
 
 const DEFAULT_LOGS: StockLog[] = [
   {
     id: "log-1",
-    itemName: "Fresh Chicken Breast",
+    itemName: "Green Bell Pepper (Capsicum)",
     type: "INWARD",
-    quantity: 20,
+    quantity: 15,
     unit: "kg",
-    notes: "Morning delivery batch #401",
-    cost: 4400,
+    notes: "Morning delivery from Parthiv Agency",
+    cost: 975,
     timestamp: "Today, 07:45 AM"
   },
   {
@@ -450,7 +723,7 @@ const DEFAULT_LOGS: StockLog[] = [
     type: "WASTAGE",
     quantity: 0.5,
     unit: "kg",
-    notes: "Tandoor prep excess spoilage",
+    notes: "Tandoor prep excess trim spoilage",
     cost: 170,
     timestamp: "Yesterday, 11:30 PM"
   }
@@ -472,14 +745,14 @@ const DEFAULT_RECONCILIATION: DailyReconciliation[] = [
   },
   {
     id: "rec-2",
-    itemName: "Fresh Chicken Breast",
+    itemName: "Green Bell Pepper (Capsicum)",
     unit: "kg",
-    openingStock: 12.0,
-    inwardToday: 20.0,
-    consumedSales: 7.0,
-    wastage: 0.0,
-    expectedClosing: 25.0,
-    physicalClosing: 25.0,
+    openingStock: 8.0,
+    inwardToday: 5.0,
+    consumedSales: 7.8,
+    wastage: 0.2,
+    expectedClosing: 5.0,
+    physicalClosing: 5.0,
     variance: 0.0,
     status: "MATCHED"
   }
@@ -500,7 +773,11 @@ export function getInventoryStore(): InventoryStoreData {
       vendors: DEFAULT_VENDORS,
       reconciliations: DEFAULT_RECONCILIATION,
       logs: DEFAULT_LOGS,
-      recipes: DEFAULT_RECIPES
+      recipes: DEFAULT_RECIPES,
+      purchaseOrders: DEFAULT_PURCHASE_ORDERS,
+      subRecipes: DEFAULT_SUB_RECIPES,
+      multiStageRecipes: DEFAULT_MULTI_STAGE_RECIPES,
+      internalTransfers: DEFAULT_INTERNAL_TRANSFERS
     };
     fs.writeFileSync(INVENTORY_FILE, JSON.stringify(initialData, null, 2), 'utf-8');
     return initialData;
@@ -509,25 +786,43 @@ export function getInventoryStore(): InventoryStoreData {
   try {
     const raw = fs.readFileSync(INVENTORY_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
-    const recipes = Array.isArray(parsed.recipes) ? parsed.recipes : DEFAULT_RECIPES;
-    if (!recipes.some((r: any) => (r.menuItem || '').toLowerCase() === 'cold coffee with ice cream')) {
-      recipes.push({
-        menuItem: "Cold Coffee with Ice Cream",
-        category: "Beverages",
-        ingredients: [
-          { name: "Fresh Full Cream Milk", qty: 0.25, unit: "L" },
-          { name: "Earthen Clay Matka Kulfi Pots", qty: 1, unit: "Pcs" }
-        ]
-      });
+
+    // Filter out old non-veg items if present from legacy runs
+    let rawItems: InventoryItem[] = Array.isArray(parsed.items) ? parsed.items : DEFAULT_INVENTORY_ITEMS;
+    rawItems = rawItems.filter(i => !(i.name || '').toLowerCase().includes('chicken') && i.category !== ('Poultry & Meat' as any));
+    if (!rawItems.some(i => i.name.toLowerCase().includes('capsicum'))) {
+      rawItems.push(DEFAULT_INVENTORY_ITEMS.find(i => i.id === 'inv-capsicum')!);
+    }
+    if (!rawItems.some(i => i.name.toLowerCase().includes('cashew') || i.name.toLowerCase().includes('kaju'))) {
+      rawItems.push(DEFAULT_INVENTORY_ITEMS.find(i => i.id === 'inv-3')!);
+    }
+    if (!rawItems.some(i => i.name.toLowerCase().includes('mango'))) {
+      rawItems.push(DEFAULT_INVENTORY_ITEMS.find(i => i.id === 'inv-mango')!);
+    }
+    if (!rawItems.some(i => i.name.toLowerCase().includes('wheat'))) {
+      rawItems.push(DEFAULT_INVENTORY_ITEMS.find(i => i.id === 'inv-wheat')!);
+    }
+    if (!rawItems.some(i => i.name.toLowerCase().includes('pizza base'))) {
+      rawItems.push(DEFAULT_INVENTORY_ITEMS.find(i => i.id === 'inv-pizza-base')!);
     }
 
+    const recipes = Array.isArray(parsed.recipes) && parsed.recipes.length > 0 ? parsed.recipes : DEFAULT_RECIPES;
+    const purchaseOrders = Array.isArray(parsed.purchaseOrders) && parsed.purchaseOrders.length > 0 ? parsed.purchaseOrders : DEFAULT_PURCHASE_ORDERS;
+    const subRecipes = Array.isArray(parsed.subRecipes) && parsed.subRecipes.length > 0 ? parsed.subRecipes : DEFAULT_SUB_RECIPES;
+    const multiStageRecipes = Array.isArray(parsed.multiStageRecipes) && parsed.multiStageRecipes.length > 0 ? parsed.multiStageRecipes : DEFAULT_MULTI_STAGE_RECIPES;
+    const internalTransfers = Array.isArray(parsed.internalTransfers) && parsed.internalTransfers.length > 0 ? parsed.internalTransfers : DEFAULT_INTERNAL_TRANSFERS;
+
     return {
-      items: Array.isArray(parsed.items) ? parsed.items : DEFAULT_INVENTORY_ITEMS,
+      items: rawItems,
       purchases: Array.isArray(parsed.purchases) ? parsed.purchases : DEFAULT_PURCHASES,
       vendors: Array.isArray(parsed.vendors) ? parsed.vendors : DEFAULT_VENDORS,
       reconciliations: Array.isArray(parsed.reconciliations) ? parsed.reconciliations : DEFAULT_RECONCILIATION,
       logs: Array.isArray(parsed.logs) ? parsed.logs : DEFAULT_LOGS,
-      recipes
+      recipes,
+      purchaseOrders,
+      subRecipes,
+      multiStageRecipes,
+      internalTransfers
     };
   } catch (e) {
     console.error('Error reading inventory store file, restoring defaults:', e);
@@ -537,7 +832,11 @@ export function getInventoryStore(): InventoryStoreData {
       vendors: DEFAULT_VENDORS,
       reconciliations: DEFAULT_RECONCILIATION,
       logs: DEFAULT_LOGS,
-      recipes: DEFAULT_RECIPES
+      recipes: DEFAULT_RECIPES,
+      purchaseOrders: DEFAULT_PURCHASE_ORDERS,
+      subRecipes: DEFAULT_SUB_RECIPES,
+      multiStageRecipes: DEFAULT_MULTI_STAGE_RECIPES,
+      internalTransfers: DEFAULT_INTERNAL_TRANSFERS
     };
   }
 }
@@ -563,7 +862,7 @@ export function recordStockInward(payload: {
   paymentStatus?: "PAID" | "PENDING_CREDIT";
   paymentMethod?: "CASH" | "UPI" | "BANK_TRANSFER";
   notes?: string;
-  category?: "Dairy" | "Grocery" | "Poultry & Meat" | "Vegetables" | "Beverages" | "Packaging" | "Spices" | "Bakery";
+  category?: "Dairy" | "Grocery" | "Vegetables" | "Fruits" | "Beverages" | "Packaging" | "Spices" | "Bakery";
   unit?: "kg" | "L" | "Pcs" | "Packets" | "Grams";
 }) {
   const store = getInventoryStore();
@@ -580,19 +879,21 @@ export function recordStockInward(payload: {
   const vName = payload.vendorName || (target ? target.vendorName : "Direct Market");
   const vPhone = payload.vendorPhone || (target ? target.vendorPhone : "9822334455");
 
+  let targetItem: InventoryItem;
   if (target) {
     target.currentStock = Number((target.currentStock + qty).toFixed(2));
     target.costPerUnit = costUnit;
     if (payload.unit) target.unit = payload.unit;
     if (payload.category) target.category = payload.category;
     target.lastUpdated = "Just now";
+    targetItem = target;
   } else {
     const isMilk = (payload.itemName || "").toLowerCase().includes("milk");
     const isPaneer = (payload.itemName || "").toLowerCase().includes("paneer");
     const defaultCat = isMilk || isPaneer ? "Dairy" : "Grocery";
     const defaultUnit = isMilk ? "L" : "kg";
 
-    target = {
+    targetItem = {
       id: "inv-" + Date.now(),
       name: payload.itemName || "Raw Ingredient",
       category: payload.category || defaultCat,
@@ -604,16 +905,16 @@ export function recordStockInward(payload: {
       vendorPhone: vPhone,
       lastUpdated: "Just now"
     };
-    store.items.unshift(target);
+    store.items.unshift(targetItem);
   }
 
   // Create Stock Log
   const newLog: StockLog = {
     id: "log-" + Date.now(),
-    itemName: target.name,
+    itemName: targetItem.name,
     type: "INWARD",
     quantity: qty,
-    unit: target.unit,
+    unit: targetItem.unit,
     notes: payload.notes || `Stock inward from ${vName}`,
     cost: totalCost,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Today"
@@ -629,7 +930,7 @@ export function recordStockInward(payload: {
     vendorName: vName,
     vendorPhone: vPhone,
     date: new Date().toLocaleDateString('en-IN') + ", " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    itemsSummary: `${target.name} (${qty} ${target.unit})`,
+    itemsSummary: `${targetItem.name} (${qty} ${targetItem.unit})`,
     totalAmount: totalCost,
     paymentStatus: pStatus,
     paymentMethod: payload.paymentMethod || "UPI",
@@ -651,7 +952,7 @@ export function recordStockInward(payload: {
     store.vendors.push({
       id: "v-" + Date.now(),
       name: vName,
-      category: target.category,
+      category: targetItem.category,
       phone: vPhone,
       totalPurchased: totalCost,
       totalPaid: pStatus === "PAID" ? totalCost : 0,
@@ -661,7 +962,7 @@ export function recordStockInward(payload: {
   }
 
   saveInventoryStore(store);
-  return { updatedItem: target, purchase: newPurchase, log: newLog };
+  return { updatedItem: targetItem, purchase: newPurchase, log: newLog };
 }
 
 // 2. Log Kitchen Wastage / Damage
@@ -866,3 +1167,187 @@ export function generateWhatsAppPurchaseOrder(vendorPhone: string, vendorName: s
 
   return `https://wa.me/${targetPhone}?text=${text}`;
 }
+
+// 7. Petpooja Module: Raise Purchase Order (PO Ticket)
+export function recordPurchaseOrder(payload: {
+  vendorName: string;
+  vendorPhone?: string;
+  itemName: string;
+  qty: number;
+  unit?: string;
+  estimatedPrice?: number;
+  outlet?: string;
+  notes?: string;
+  autoSend?: boolean;
+}) {
+  const store = getInventoryStore();
+  const poNum = `PO${Math.floor(100 + Math.random() * 900)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+
+  // Check if item exists in raw inventory
+  const invItem = store.items.find(i => i.name.toLowerCase().includes(payload.itemName.toLowerCase()));
+  const currentStock = invItem ? invItem.currentStock : 0;
+  const unitRate = payload.estimatedPrice || (invItem ? invItem.costPerUnit : 100);
+  const totalAmount = Number((payload.qty * unitRate).toFixed(2));
+
+  const po: PurchaseOrder = {
+    id: "po-" + Date.now(),
+    poNumber: poNum,
+    vendorName: payload.vendorName || "Parthiv Agency",
+    vendorPhone: payload.vendorPhone || (invItem ? invItem.vendorPhone : "9890123456"),
+    itemName: payload.itemName,
+    qty: payload.qty,
+    unit: payload.unit || (invItem ? invItem.unit : "Kg"),
+    currentStockAtOrder: currentStock,
+    estimatedPrice: unitRate,
+    totalAmount,
+    status: payload.autoSend ? "Processed" : "Saved",
+    createdAt: "Today, " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    outlet: payload.outlet || "Central Kitchen / Main Store",
+    notes: payload.notes
+  };
+
+  store.purchaseOrders.unshift(po);
+  saveInventoryStore(store);
+  return po;
+}
+
+// 8. Petpooja Module: Update PO Status & Auto Inward if Received
+export function updatePurchaseOrderStatus(poId: string, status: "Saved" | "Processed" | "Received" | "Cancelled") {
+  const store = getInventoryStore();
+  const target = store.purchaseOrders.find(p => p.id === poId);
+  if (!target) throw new Error("Purchase order not found");
+
+  target.status = status;
+
+  if (status === "Received") {
+    recordStockInward({
+      itemName: target.itemName,
+      qty: target.qty,
+      costPerUnit: target.estimatedPrice,
+      vendorName: target.vendorName,
+      vendorPhone: target.vendorPhone,
+      invoiceNo: `INV-${target.poNumber}`,
+      notes: `Received from PO #${target.poNumber}`
+    });
+  }
+
+  saveInventoryStore(store);
+  return target;
+}
+
+// 9. Petpooja Module: Internal Transfer between Outlets / Sections
+export function recordInternalTransfer(payload: {
+  toOutlet: string;
+  fromOutlet?: string;
+  item: string;
+  qty: number;
+  unit: string;
+  notes?: string;
+}) {
+  const store = getInventoryStore();
+  const reqNo = `P0${Math.floor(100 + Math.random() * 900)}${String.fromCharCode(65 + Math.floor(Math.random() * 26))}`;
+
+  const transfer: InternalTransfer = {
+    id: "tr-" + Date.now(),
+    reqNo,
+    fromOutlet: payload.fromOutlet || "Central Kitchen / Main Store",
+    toOutlet: payload.toOutlet,
+    item: payload.item,
+    qty: payload.qty,
+    unit: payload.unit,
+    status: "Saved",
+    date: "Today, " + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    notes: payload.notes
+  };
+
+  store.internalTransfers.unshift(transfer);
+  saveInventoryStore(store);
+  return transfer;
+}
+
+export function updateInternalTransferStatus(transferId: string, status: "Saved" | "Processed" | "Received") {
+  const store = getInventoryStore();
+  const target = store.internalTransfers.find(t => t.id === transferId);
+  if (!target) throw new Error("Internal transfer not found");
+
+  target.status = status;
+
+  if (status === "Processed" || status === "Received") {
+    const newLog: StockLog = {
+      id: "log-" + Date.now(),
+      itemName: target.item,
+      type: "TRANSFER",
+      quantity: target.qty,
+      unit: target.unit,
+      notes: `Internal Transfer ${target.reqNo}: ${target.fromOutlet} ➔ ${target.toOutlet}`,
+      cost: 0,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Today"
+    };
+    store.logs.unshift(newLog);
+  }
+
+  saveInventoryStore(store);
+  return target;
+}
+
+// 10. Petpooja Module: Sub-Recipe Batch Conversion (Pre-prep Kitchen Cooking)
+export function convertSubRecipeBatch(subRecipeId: string, batchMultiplier: number = 1) {
+  const store = getInventoryStore();
+  const subRecipe = store.subRecipes.find(s => s.id === subRecipeId);
+  if (!subRecipe) throw new Error("Sub-recipe prep not found");
+
+  const deducted: Array<{ material: string; qty: number; unit: string }> = [];
+
+  for (const mat of subRecipe.materials) {
+    const needed = mat.qty * batchMultiplier;
+    const invItem = store.items.find(i => i.name.toLowerCase().includes(mat.materialName.toLowerCase()));
+    if (invItem) {
+      // Inward deduction: convert grams/ml to kg/L if needed
+      const deductionAmount = mat.unit.toLowerCase() === "gms" || mat.unit.toLowerCase() === "ml" 
+        ? needed / 1000 
+        : needed;
+      invItem.currentStock = Math.max(0, Number((invItem.currentStock - deductionAmount).toFixed(2)));
+      invItem.lastUpdated = "Batch Converted";
+      deducted.push({ material: invItem.name, qty: needed, unit: mat.unit });
+    }
+  }
+
+  const batchYield = (subRecipe.outputYield || 500) * batchMultiplier;
+  subRecipe.currentStock = Number(((subRecipe.currentStock || 0) + batchYield).toFixed(1));
+  subRecipe.lastConverted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Today";
+
+  const summary = deducted.map(d => `${d.material} (${d.qty} ${d.unit})`).join(', ');
+  const newLog: StockLog = {
+    id: "log-" + Date.now(),
+    itemName: `${subRecipe.name} (Prep Batch)`,
+    type: "CONVERSION",
+    quantity: batchYield,
+    unit: subRecipe.yieldUnit || "gms",
+    notes: `Prepped ${batchYield} ${subRecipe.yieldUnit} of ${subRecipe.name}. Deducted: ${summary}`,
+    cost: 0,
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + " Today"
+  };
+  store.logs.unshift(newLog);
+
+  saveInventoryStore(store);
+  return { subRecipe, batchYield, deducted };
+}
+
+// 11. Petpooja Module: Save or Update Multi-Stage Recipe
+export function saveMultiStageRecipe(recipe: MultiStageRecipe) {
+  const store = getInventoryStore();
+  const index = store.multiStageRecipes.findIndex(m => m.id === recipe.id || m.conversionName.toLowerCase() === recipe.conversionName.toLowerCase());
+
+  if (index !== -1) {
+    store.multiStageRecipes[index] = { ...store.multiStageRecipes[index], ...recipe };
+  } else {
+    store.multiStageRecipes.push({
+      ...recipe,
+      id: recipe.id || "msr-" + Date.now()
+    });
+  }
+
+  saveInventoryStore(store);
+  return store.multiStageRecipes;
+}
+

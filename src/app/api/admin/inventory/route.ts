@@ -9,8 +9,18 @@ import {
   recordVendorPayment, 
   recordDailyReconciliation, 
   depleteStockForOrderItems,
+  recordPurchaseOrder,
+  updatePurchaseOrderStatus,
+  recordInternalTransfer,
+  updateInternalTransferStatus,
+  convertSubRecipeBatch,
+  saveMultiStageRecipe,
   InventoryItem,
-  RecipeBOM
+  RecipeBOM,
+  PurchaseOrder,
+  SubRecipePrep,
+  MultiStageRecipe,
+  InternalTransfer
 } from '@/lib/inventoryStore';
 
 export async function GET(req: Request) {
@@ -139,6 +149,36 @@ export async function POST(req: Request) {
       case 'DEPLETE_ORDER': {
         const result = depleteStockForOrderItems(payload.orderNumber, payload.items);
         return NextResponse.json({ success: true, message: 'Stock depleted for order', result });
+      }
+
+      case 'RAISE_PURCHASE_ORDER': {
+        const po = recordPurchaseOrder(payload);
+        return NextResponse.json({ success: true, message: `PO #${po.poNumber} created for ${po.itemName}`, po });
+      }
+
+      case 'UPDATE_PO_STATUS': {
+        const po = updatePurchaseOrderStatus(payload.poId, payload.status);
+        return NextResponse.json({ success: true, message: `PO #${po.poNumber} marked as ${po.status}`, po });
+      }
+
+      case 'CREATE_INTERNAL_TRANSFER': {
+        const transfer = recordInternalTransfer(payload);
+        return NextResponse.json({ success: true, message: `Transfer #${transfer.reqNo} to ${transfer.toOutlet} requested`, transfer });
+      }
+
+      case 'UPDATE_TRANSFER_STATUS': {
+        const transfer = updateInternalTransferStatus(payload.transferId, payload.status);
+        return NextResponse.json({ success: true, message: `Transfer #${transfer.reqNo} marked as ${transfer.status}`, transfer });
+      }
+
+      case 'CONVERT_SUB_RECIPE_BATCH': {
+        const result = convertSubRecipeBatch(payload.subRecipeId, payload.batchMultiplier || 1);
+        return NextResponse.json({ success: true, message: `Prepped ${result.batchYield}g of ${result.subRecipe.name}`, result });
+      }
+
+      case 'SAVE_MULTI_STAGE_RECIPE': {
+        const recipes = saveMultiStageRecipe(payload.recipe);
+        return NextResponse.json({ success: true, message: 'Multi-stage recipe saved', recipes });
       }
 
       default:
