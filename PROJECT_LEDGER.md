@@ -93,6 +93,18 @@ Hotel White Bliss is an enterprise-grade digital dining, POS, KDS, and restauran
   7. **Reservation Desk (`/admin/reservations`):** Online reservation queue with one-click WhatsApp confirmation.
   8. **Staff Attendance & Payroll (`/admin/attendo`):** MTD days calculation, projection, and salary payroll estimates.
 
+### Station 6: Enterprise Inventory Management & Procurement Suite
+* **Routes:** `/admin/inventory`, `/api/admin/inventory`
+* **Features:**
+  1. **Raw Material & Ingredient Master:** Tracks categories (Dairy, Grocery, Meat/Poultry, Vegetables, Beverages, Packaging, Spices, Bakery). Live stock quantity, unit of measurement (kg, L, pcs, pkt), minimum safety stock threshold, reorder point, unit cost (₹), and preferred vendor.
+  2. **Stock Inward & Goods Receiving:** Real-time inward entry recording invoice/challan number, supplier name, quantity received, purchase price, total amount, and payment status (`PAID` or `CREDIT/UDHAR`).
+  3. **Vendor Khata & Accounts Payable:** Comprehensive supplier ledger tracking pending credit, total paid, and net balance. Includes partial payment settlement logging and 1-Click WhatsApp Khata Ledger Statement generation directly to vendors.
+  4. **Kitchen Wastage & Spoilage Logging:** Tracks wasted/spoiled ingredients with categorization (`SPOILED`, `EXPIRED`, `BURNT_PREP`, `SPILLAGE`), financial loss valuation (₹), and chef/staff accountability notes.
+  5. **Recipe Bill of Materials (BOM) & Real-Time Auto-Depletion Engine:** Links menu items (e.g., Paneer Tikka Masala, Jeera Rice, Cold Coffee) to multiple raw ingredients. Upon dining order placement via guest QR or captain/POS, `/api/orders` automatically triggers `depleteStockForOrderItems()`, reducing stock levels in real time and creating `CONSUMPTION` logs.
+  6. **Daily Stock Closing & Theft/Leakage Reconciliation Audit:** Compares Expected Stock (`Opening + Inward - Order Consumed - Wastage`) against Physical Count. Calculates quantity variance, financial variance loss (₹), and automatically flags discrepancies with severity (`MATCH`, `LOW_DISCREPANCY`, `HIGH_VARIANCE_THEFT_ALERT`).
+  7. **1-Click WhatsApp Purchase Order Generator:** Aggregates low-stock items into a structured WhatsApp procurement message with quantities, estimated cost, and direct `https://wa.me/?text=...` link for suppliers.
+  8. **Multi-Workstation Live Sync:** Backed by `/api/admin/inventory` with PostgreSQL schema (`supabase/inventory_schema.sql`) and resilient local persistence (`data/inventory-store.json`), featuring live sync status indicator badge in the admin navigation.
+
 ---
 
 ## 3. Cryptography & Authentication Architecture
@@ -124,6 +136,12 @@ The PostgreSQL database on Supabase operates under defense-in-depth Row Level Se
 | `orders` | DELETE | `service_role` only | `Deny direct anon deletes on orders` | Blocks deletion of order records |
 | `menu` | SELECT | `anon`, `authenticated` | `Allow public read menu` | Public browsing of menu items and prices |
 | `menu` | INSERT / UPDATE / DELETE | `service_role` only | `Deny anon mutations on menu` | Menu changes strictly restricted to authenticated admin routes |
+| `inventory_items` | ALL | `service_role` only | `Service role full access on inventory_items` | Manages raw ingredients master and stock quantities |
+| `inventory_purchases` | ALL | `service_role` only | `Service role full access on inventory_purchases` | Inward stock purchases and invoices |
+| `inventory_vendors` | ALL | `service_role` only | `Service role full access on inventory_vendors` | Vendor khata and accounts payable |
+| `inventory_logs` | ALL | `service_role` only | `Service role full access on inventory_logs` | Audit trail of inward, consumption, and wastage |
+| `inventory_recipes` | ALL | `service_role` only | `Service role full access on inventory_recipes` | Recipe Bill of Materials linking menu items to ingredients |
+| `inventory_reconciliations` | ALL | `service_role` only | `Service role full access on inventory_reconciliations` | Daily stock closing audits and physical variance records |
 
 ---
 
@@ -141,6 +159,7 @@ The PostgreSQL database on Supabase operates under defense-in-depth Row Level Se
 | `/api/reserve` | POST | None (IP rate limited) | Creates guest reservation with phone & IP rate limiting (max 5/hr per IP) |
 | `/api/admin/day-close` | GET | Staff OR Owner | Fetches live sales and cash reconciliation statistics for specified date |
 | `/api/admin/day-close` | POST | Staff OR Owner | Saves End-of-Day Z-Report with cash denominations and variance |
+| `/api/admin/inventory` | GET / POST | Staff OR Owner | Comprehensive inventory management (inward, wastage, vendor khata, reconciliation, recipe BOM, stock depletion) |
 | `/api/admin/menu` | POST | Staff OR Owner | Strict schema-whitelisted menu mutations (`insert`, `update`, `delete`) |
 | `/api/admin/tables` | GET / POST | Staff OR Owner | Manages floor sections and generates table cryptographic tokens |
 | `/api/admin/captains` | GET / POST | Staff OR Owner | Manages floor captain roster |
@@ -172,14 +191,16 @@ All variables documented in [`.env.example`](file:///c:/Users/KETAN/Documents/an
 4. **Server-Side Price Validation:** Do not trust price sent in request body from `/api/orders`. Always recalculate total against database `menu` table.
 5. **Multi-KOT Consolidation:** Do not count KOTs as separate visits in CRM. Always use `consolidateOrders` from `src/lib/orderConsolidation.ts`.
 6. **Local Persistence Fallback:** Tables, captains, orders, and day-close reports use hybrid storage via `src/lib/ordersStore.ts` (try Supabase first; if table, network, or service key is absent, fallback gracefully to resilient local cache). Never remove the fallback logic.
+7. **Recipe BOM & Order Stock Depletion:** All order insertions in `/api/orders` trigger `depleteStockForOrderItems()`. If raw ingredients reach zero or are depleted, order creation must still succeed (non-blocking fallback) while raising kitchen depletion alerts.
 
 ---
 
 ## 8. Git Commit Log
 
-* `78de373`: `feat(orders): resilient hybrid order persistence and multi-party rush concurrency support`
-* `a13818c`: `docs: add Master Architecture & Feature Ledger (PROJECT_LEDGER.md)`
-* `c0616e6`: `security(auth): Edge-native Web Crypto API, HMAC-SHA256 sessions, PBKDF2 hashing & rate limiting`
-* `b984555`: `security(db): PostgreSQL Row-Level Security lockdown policies and Vercel env template`
-* `24b62cf`: `feat(orders): Multi-KOT bill consolidation and guest dining UX enhancements`
+* `ef933f4`: `feat(inventory): enterprise inventory management suite, live recipe order depletion & vendor procurement`
 * `76044f1`: `feat(billing): End-of-Day Cash Drawer Reconciliation (Z-Report / Day Close)`
+* `24b62cf`: `feat(orders): Multi-KOT bill consolidation and guest dining UX enhancements`
+* `b984555`: `security(db): PostgreSQL Row-Level Security lockdown policies and Vercel env template`
+* `c0616e6`: `security(auth): Edge-native Web Crypto API, HMAC-SHA256 sessions, PBKDF2 hashing & rate limiting`
+* `a13818c`: `docs: add Master Architecture & Feature Ledger (PROJECT_LEDGER.md)`
+* `78de373`: `feat(orders): resilient hybrid order persistence and multi-party rush concurrency support`
