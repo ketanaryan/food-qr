@@ -443,7 +443,7 @@ export default function MenuBuilder() {
                                   src={item.image_url || '/menu/default-food.jpg'}
                                   alt={item.name}
                                   className="w-12 h-12 rounded-xl object-cover border border-gray-100 shadow-sm shrink-0"
-                                  onError={(e) => { (e.target as any).src = '/hotel-white-bliss.jpg'; }}
+                                  onError={(e) => { (e.target as any).src = '/hotel-marquis.jpg'; }}
                                 />
                                 <div>
                                   <p className="font-bold text-gray-900">{item.name}</p>
@@ -516,7 +516,7 @@ export default function MenuBuilder() {
                             src={item.image_url || '/menu/default-food.jpg'}
                             alt={item.name}
                             className="w-14 h-14 rounded-xl object-cover border border-gray-100 shadow-sm shrink-0"
-                            onError={(e) => { (e.target as any).src = '/hotel-white-bliss.jpg'; }}
+                            onError={(e) => { (e.target as any).src = '/hotel-marquis.jpg'; }}
                           />
                           <div className="min-w-0">
                             <h3 className="font-bold text-gray-900 text-sm truncate">{item.name}</h3>

@@ -104,30 +104,39 @@ export default function RestaurantLanding() {
       {/* ABOUT SECTION (Displaying their Hotel image) */}
       <section id="about" className="py-20 md:py-32 px-4 bg-[#F8F5F0]">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
-          <div className="w-full md:w-1/2 relative h-[400px] md:h-[500px] rounded-sm overflow-hidden shadow-xl">
+          <div className="w-full md:w-1/2 relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl border border-stone-200">
             <Image 
-              src="/hotel-white-bliss.jpg" 
-              alt="Hotel Marquis Entrance" 
+              src="/hotel-marquis.jpg" 
+              alt="Hotel Marquis Pure Veg Multicuisine Restaurant Entrance" 
               fill 
               className="object-cover"
+              priority
             />
           </div>
           <div className="w-full md:w-1/2 flex flex-col items-start">
-            <h2 className="text-3xl md:text-4xl font-playfair text-[#1E1B16] uppercase tracking-widest mb-6">
+            <span className="text-xs font-bold uppercase tracking-widest text-[#A18D6D] bg-[#A18D6D]/10 px-3 py-1 rounded-full mb-3">
+              Pure Veg • Multicuisine • Banquets
+            </span>
+            <h2 className="text-3xl md:text-4xl font-playfair text-[#1E1B16] uppercase tracking-widest mb-4">
               Welcome to Hotel Marquis
             </h2>
-            <div className="w-12 h-[2px] bg-[#A18D6D] mb-8"></div>
+            <div className="w-12 h-[2px] bg-[#A18D6D] mb-6"></div>
+            <p className="text-gray-600 leading-relaxed mb-4 font-light">
+              Located on <strong>Sula Vineyard Road, opp. Podar International School (off Gangapur Road, Nashik)</strong>, Hotel Marquis offers an unparalleled pure vegetarian dining and banquet experience.
+            </p>
             <p className="text-gray-600 leading-relaxed mb-6 font-light">
-              Located in the heart of the city, Hotel Marquis offers an unparalleled dining experience. Our chefs craft globally inspired dishes using locally sourced ingredients, serving them in an environment designed for both intimacy and celebration.
+              Our master chefs craft authentic North Indian, Chinese, Continental, and Tandoor delicacies with fresh local ingredients. Whether you are hosting a family feast, wedding banquet, or an intimate dinner, our doors are open to create unforgettable memories.
             </p>
-            <p className="text-gray-600 leading-relaxed mb-8 font-light">
-              Whether you are stopping by for a quick coffee, a family dinner, or celebrating a special occasion, our doors are always open to provide you with moments you will cherish forever.
-            </p>
+            <div className="flex flex-wrap items-center gap-4 mb-8 text-xs font-medium text-stone-600">
+              <span className="flex items-center gap-1.5">📍 Sula Vineyard Road, Nashik</span>
+              <span className="flex items-center gap-1.5">📞 0788 788 1769</span>
+              <span className="flex items-center gap-1.5">🕒 11:00 AM – 11:00 PM</span>
+            </div>
             <a 
-              href="#gallery"
-              className="inline-block border border-[#1E1B16] text-[#1E1B16] px-8 py-3 font-medium hover:bg-[#1E1B16] hover:text-white transition-colors duration-300 tracking-wide uppercase text-sm"
+              href="#reservation"
+              className="inline-block border border-[#1E1B16] text-[#1E1B16] px-8 py-3 font-medium hover:bg-[#1E1B16] hover:text-white transition-colors duration-300 tracking-wide uppercase text-sm rounded-sm"
             >
-              See Our Story
+              Reserve A Table
             </a>
           </div>
         </div>
@@ -190,7 +199,7 @@ export default function RestaurantLanding() {
                 ★★★★★
               </div>
               <p className="text-gray-600 font-light leading-relaxed mb-8 text-lg">
-                "Amazing ambience and food is yum... loved everything we ordered. The Butter Chicken was exceptional."
+                "Amazing ambience and food is yum... loved everything we ordered. The Paneer Tikka Masala and Dal Makhani were exceptional."
               </p>
               <h4 className="text-[#e28492] font-semibold tracking-wider uppercase text-sm">Priti Patel</h4>
             </div>

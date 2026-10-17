@@ -57,10 +57,12 @@ function Footer() {
                         Visit Us
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li>Hotel Marquis</li>
-                        <li>Dnyaneshwar Nagar, Pathardi Phata</li>
-                        <li>Nashik, Maharashtra 422009</li>
-                        <li className="pt-2 font-medium">Open: 8:00 AM - 11:00 PM</li>
+                        <li className="font-semibold text-stone-900">Hotel Marquis Pure Veg</li>
+                        <li>Sula Vineyard Road, opp. Podar International School</li>
+                        <li>off Gangapur Road, Govardhan</li>
+                        <li>Nashik, Maharashtra 422012</li>
+                        <li className="pt-1.5 font-bold text-stone-800">📞 0788 788 1769</li>
+                        <li className="font-medium text-stone-600">Open: 11:00 AM - 11:00 PM</li>
                     </ul>
                 </div>
 
@@ -74,7 +76,7 @@ function Footer() {
                             <ul className="space-y-2 text-sm text-[#5e5240]">
                                 <li className="flex items-center gap-1.5 font-medium"><span>⚡</span> Fast Table-Side Service</li>
                                 <li className="flex items-center gap-1.5 font-medium"><span>📱</span> 1-Tap UPI Digital Billing</li>
-                                <li className="flex items-center gap-1.5 font-medium"><span>🥗</span> Pure Veg & Non-Veg Kitchens</li>
+                                <li className="flex items-center gap-1.5 font-medium"><span>🥗</span> Pure Veg Multicuisine Kitchen & Banquets</li>
                                 <li className="flex items-center gap-1.5 font-medium"><span>📶</span> High-Speed Guest Wi-Fi</li>
                             </ul>
                         </>

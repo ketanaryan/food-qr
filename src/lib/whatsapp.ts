@@ -55,7 +55,7 @@ export function formatBillWhatsAppMessage(params: {
   return [
     `🧾 *HOTEL MARQUIS* 🧾`,
     `━━━━━━━━━━━━━━━━━━━━`,
-    `✨ *Fine Dining & Banquets*`,
+    `✨ *Pure Veg Multicuisine & Banquets*`,
     `🍽️ *${tableName}* | 📅 ${dateStr}, ${timeStr}`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `💳 *GRAND TOTAL: ₹${grandTotal}*`,
@@ -65,7 +65,7 @@ export function formatBillWhatsAppMessage(params: {
     `${cleanUrl}`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `⭐ *Rate Your Experience on Google:*`,
-    `https://www.google.com/search?q=Hotel+Marquis`,
+    `https://www.google.com/search?q=Marquis+Pure+Veg+Nashik`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `Thank you for dining with us! 🙏`
   ].join('\n');
@@ -88,8 +88,8 @@ export function formatReservationWhatsAppMessage(params: {
     `⏰ *Time:* ${time}`,
     `👥 *Guests:* ${guests}`,
     `━━━━━━━━━━━━━━━━━━━━`,
-    `📍 *Address:* Hotel Marquis, Nashik`,
-    `📞 *Helpdesk:* +91 7499934257`,
+    `📍 *Address:* Sula Vineyard Road, opp. Podar School, Nashik 422012`,
+    `📞 *Helpdesk:* 0788 788 1769`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `We look forward to hosting you! 🙏`
   ].join('\n');

@@ -109,7 +109,8 @@ export default function SalesReport() {
       <body>
         <div class="text-center">
           <div class="title">HOTEL MARQUIS</div>
-          <div>Near Pathardi Phata, Nashik</div>
+          <div style="font-weight: bold; color: #15803d; font-size: 10px;">PURE VEG MULTICUISINE & BANQUETS</div>
+          <div>Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
           <div class="badge">END-OF-DAY Z-REPORT</div>

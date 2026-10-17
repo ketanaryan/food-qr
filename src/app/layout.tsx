@@ -22,8 +22,8 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://food-qr-gilt.vercel.app'),
-  title: "Hotel Marquis | Luxury Fine Dining & Restaurant",
-  description: "Experience luxury fine dining and authentic delicacies at Hotel Marquis, Pathardi Phata, Nashik. Scan QR, order food, and make table reservations.",
+  title: "Hotel Marquis | Pure Veg Multicuisine Restaurant & Banquets",
+  description: "Experience luxury pure vegetarian dining and banquets at Hotel Marquis, Sula Vineyard Road, Nashik. Scan QR, order food, and make table reservations.",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -35,14 +35,14 @@ export const metadata: Metadata = {
     apple: '/icons/apple-touch-icon.png',
   },
   openGraph: {
-    title: "Hotel Marquis | Luxury Fine Dining & Restaurant",
-    description: "Experience authentic culinary excellence at Hotel Marquis, Nashik.",
+    title: "Hotel Marquis | Pure Veg Multicuisine Restaurant & Banquets",
+    description: "Experience authentic culinary excellence at Hotel Marquis, Sula Vineyard Road, Nashik.",
     images: [
       {
-        url: "/hotel-white-bliss.jpg",
+        url: "/hotel-marquis.jpg",
         width: 1200,
         height: 630,
-        alt: "Hotel Marquis",
+        alt: "Hotel Marquis Pure Veg",
       },
     ],
   },

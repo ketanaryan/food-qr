@@ -250,4 +250,31 @@ Refactored the entire Inventory and Procurement Suite from informal/childish Hin
 5. **Physical Stock Audit & Variance Reconciliation**: Daily closing sheet computing `Opening + GRN Inward - Recipe Consumption - Wastage = Expected Closing`, highlighting shrinkage and financial loss (`₹ Loss`).
 6. **Wastage & Spoilage Log**: Dedicated accounting of burnt, spoiled, or dropped kitchen food loss.
 
+---
+
+## 11. Hotel Marquis Official Brand Asset & Contact Details Migration
+
+### Visual Facade Replacement
+* Integrated the actual night facade photo of the restaurant entrance sign (*"MARQUIS PURE VEG MULTICUISINE RESTAURANT BANQUETS"*).
+* Saved as `public/hotel-marquis.jpg`, `public/hotel-marquis.png`, and mirrored into `public/hotel-white-bliss.jpg` to ensure seamless zero-broken-image backwards compatibility across cached components.
+
+### Verified Google Business Listing Integration
+Updated all public customer touchpoints, digital bills, WhatsApp templates, and POS thermal receipts with verified Google listing data:
+* **Restaurant Name:** Hotel Marquis
+* **Category:** Pure Veg Multicuisine Restaurant & Banquets
+* **Full Address:** Sula Vineyard Road, opp. Podar International School, off Gangapur Road, Shivaji Nagar, Satpur Colony, Govardhan, Nashik, Maharashtra 422012
+* **Telephone / Helpdesk:** `0788 788 1769`
+* **Operating Hours:** `11:00 AM – 11:00 PM`
+
+### Modified Touchpoints
+1. `src/components/RestaurantLanding/index.tsx`: Hero & About showcase Marquis facade, Pure Veg badge, and quick contact pills.
+2. `src/components/common/Footer.tsx`: Updated Visit Us section with full Sula Vineyard Road address, phone, and timings.
+3. `src/app/bill/[ids]/page.tsx`: 80mm PDF receipt and on-screen card header branded with Sula Vineyard Road and `0788 788 1769`.
+4. `src/app/pos/page.tsx` & `src/app/cashier/page.tsx`: Physical thermal 80mm print receipts and End-of-Day Z-Reports branded with Sula Vineyard Road.
+5. `src/app/admin/sales/page.tsx`: Z-Report audit print headers.
+6. `src/lib/whatsapp.ts`: WhatsApp digital bill and table reservation confirmation messages with address and `0788 788 1769`.
+7. `src/app/admin/crm/page.tsx`: Promotional SMS/WhatsApp copy.
+8. `src/app/layout.tsx` & `src/app/bill/[ids]/layout.tsx`: OpenGraph & Twitter preview meta tags.
+
+
 

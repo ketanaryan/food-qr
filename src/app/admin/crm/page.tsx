@@ -143,7 +143,7 @@ export default function GuestCRMPage() {
   };
 
   const sendWhatsAppOffer = (customer: Customer) => {
-    const text = `🎉 *Special Greetings from Hotel Marquis!* 🎉\n━━━━━━━━━━━━━━━━━━━━\nHello *${customer.name}*,\nWe love having you as our guest! As a token of appreciation, we'd like to offer you an exclusive *10% OFF* on your next dining experience with us.\n\n🍽️ Come enjoy your favorite dishes!\n📍 Hotel Marquis, Pathardi Phata, Nashik\n📞 Table Booking: +91 7499934257\n━━━━━━━━━━━━━━━━━━━━\nWe look forward to hosting you again soon! 🙏`;
+    const text = `🎉 *Special Greetings from Hotel Marquis Pure Veg!* 🎉\n━━━━━━━━━━━━━━━━━━━━\nHello *${customer.name}*,\nWe love having you as our guest! As a token of appreciation, we'd like to offer you an exclusive *10% OFF* on your next pure vegetarian dining experience with us.\n\n🍽️ Come enjoy your favorite dishes!\n📍 Hotel Marquis, Sula Vineyard Road, opp. Podar School, Nashik\n📞 Table Booking / Inquiry: 0788 788 1769\n━━━━━━━━━━━━━━━━━━━━\nWe look forward to hosting you again soon! 🙏`;
     openWhatsApp(customer.phone, text);
   };
 

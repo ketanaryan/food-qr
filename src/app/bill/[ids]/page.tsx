@@ -193,15 +193,16 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
 
     // Subtitle & Address
     doc.setFontSize(6.5);
-    doc.setFont("helvetica", "normal");
+    doc.setFont("helvetica", "bold");
     doc.setTextColor(115, 100, 80);
-    doc.text("LUXURY DINING & BANQUETS", 40, 15, { align: "center" });
+    doc.text("PURE VEG MULTICUISINE & BANQUETS", 40, 15, { align: "center" });
 
     doc.setFontSize(6);
+    doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text("Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009", 40, 19, { align: "center" });
+    doc.text("Sula Vineyard Road, opp. Podar School, Nashik 422012", 40, 19, { align: "center" });
     doc.text("GSTIN: 27AABCH1234F1Z5  |  FSSAI: 11521045000123", 40, 22.5, { align: "center" });
-    doc.text("Contact: +91 7499934257", 40, 26, { align: "center" });
+    doc.text("Contact: 0788 788 1769", 40, 26, { align: "center" });
 
     // Divider Line
     doc.setDrawColor(215, 205, 190);
@@ -495,17 +496,17 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
             HOTEL MARQUIS
           </h1>
           <p className="text-[11px] font-semibold text-[#A18D6D] tracking-widest uppercase mt-0.5">
-            Luxury Fine Dining & Banquets
+            Pure Veg Multicuisine Restaurant & Banquets
           </p>
           <p className="text-[11px] text-stone-400 mt-2 max-w-xs mx-auto leading-relaxed">
-            Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009
+            Sula Vineyard Road, opp. Podar International School, off Gangapur Road, Govardhan, Nashik 422012
           </p>
           <div className="text-[10px] text-stone-400 mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
             <span>GSTIN: 27AABCH1234F1Z5</span>
             <span>•</span>
             <span>FSSAI: 11521045000123</span>
           </div>
-          <div className="text-[10px] text-stone-400 mt-0.5">Contact: +91 7499934257</div>
+          <div className="text-[10px] text-stone-300 font-semibold mt-1">📞 Helpline: 0788 788 1769</div>
 
           <div className="mt-4 pt-3 border-t border-stone-800 flex items-center justify-between text-xs">
             <span className="bg-[#A18D6D]/20 text-[#A18D6D] px-2.5 py-1 rounded-md font-semibold tracking-wide border border-[#A18D6D]/30">

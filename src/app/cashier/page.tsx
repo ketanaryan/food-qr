@@ -385,9 +385,10 @@ export default function CashierDashboard() {
           <!-- Brand Header -->
           <div class="text-center">
             <div class="header-title">Hotel Marquis</div>
-            <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik, Maharashtra 422009</div>
+            <div class="header-sub" style="font-weight: bold; color: #15803d;">Pure Veg Multicuisine Restaurant & Banquets</div>
+            <div class="header-sub">Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
-            <div class="header-sub">Contact: 7499934257</div>
+            <div class="header-sub">Contact: 0788 788 1769</div>
           </div>
 
           <div class="divider"></div>
@@ -693,7 +694,8 @@ export default function CashierDashboard() {
       <body>
         <div class="text-center">
           <div class="title">HOTEL MARQUIS</div>
-          <div>Near Pathardi Phata, Nashik</div>
+          <div style="font-weight: bold; color: #15803d; font-size: 10px;">PURE VEG MULTICUISINE & BANQUETS</div>
+          <div>Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
           <div class="badge">END-OF-DAY Z-REPORT</div>

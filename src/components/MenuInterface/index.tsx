@@ -259,8 +259,8 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
           <div className="relative min-h-[50vh] sm:min-h-[70vh] flex items-end justify-center pb-20 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <Image
-                src="/hotel-white-bliss.jpg"
-                alt="Hotel Marquis"
+                src="/hotel-marquis.jpg"
+                alt="Hotel Marquis Pure Veg"
                 fill
                 priority
                 className="object-cover scale-105"

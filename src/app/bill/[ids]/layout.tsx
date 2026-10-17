@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     description: "Verified digital dining receipt & invoice. View items, taxes, and download official PDF.",
     images: [
       {
-        url: "/hotel-white-bliss.jpg",
+        url: "/hotel-marquis.jpg",
         width: 1200,
         height: 630,
         alt: "Hotel Marquis Bill",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "🧾 Official Dining Bill | Hotel Marquis",
     description: "Verified dining receipt & invoice from Hotel Marquis, Nashik.",
-    images: ["/hotel-white-bliss.jpg"],
+    images: ["/hotel-marquis.jpg"],
   },
 };
 
