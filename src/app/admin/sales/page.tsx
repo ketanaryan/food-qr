@@ -108,9 +108,9 @@ export default function SalesReport() {
       </head>
       <body>
         <div class="text-center">
-          <div class="title">HOTEL MARQUIS</div>
+          <div class="title">HOTEL WHITE BLISS</div>
           <div style="font-weight: bold; color: #15803d; font-size: 10px;">PURE VEG MULTICUISINE & BANQUETS</div>
-          <div>Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
+          <div>Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
           <div class="badge">END-OF-DAY Z-REPORT</div>
@@ -254,7 +254,7 @@ export default function SalesReport() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Hotel_Marquis_GST_Sales_${startDate}_to_${endDate}.csv`);
+    link.setAttribute("download", `Hotel_White Bliss_GST_Sales_${startDate}_to_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

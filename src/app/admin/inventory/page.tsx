@@ -90,7 +90,7 @@ export interface RecipeBOM {
   ingredients: { name: string; qty: number; unit: string }[];
 }
 
-// Initial realistic default inventory for Hotel Marquis
+// Initial realistic default inventory for Hotel White Bliss
 const INITIAL_INVENTORY: InventoryItem[] = [
   {
     id: "inv-1",
@@ -795,7 +795,7 @@ export default function InventoryDashboard() {
 
     if (sendWhatsApp) {
       const waMsg = [
-        `*HOTEL MARQUIS - PURCHASE ORDER #${newPO.poNumber}* 📦`,
+        `*HOTEL WHITE BLISS - PURCHASE ORDER #${newPO.poNumber}* 📦`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `Namaste *${newPO.vendorName}*,`,
         `Please supply the following urgent stock replenishment:`,
@@ -803,9 +803,9 @@ export default function InventoryDashboard() {
         `🛒 *Item:* ${newPO.itemName}`,
         `⚖️ *Order Qty:* ${newPO.qty} ${newPO.unit}`,
         `💰 *Estimated Value:* ₹${newPO.totalAmount}`,
-        `📍 *Delivery Location:* Hotel Marquis, Sula Vineyard Road, Nashik`,
+        `📍 *Delivery Location:* Hotel White Bliss, Pathardi Phata, Nashik`,
         `━━━━━━━━━━━━━━━━━━━━`,
-        `_Generated via Hotel Marquis Petpooja ERP Desk_`
+        `_Generated via Hotel White Bliss Petpooja ERP Desk_`
       ].join('\n');
       openWhatsApp(newPO.vendorPhone, waMsg);
     }
@@ -846,7 +846,7 @@ export default function InventoryDashboard() {
 
     if (sendWhatsApp) {
       const waMsg = [
-        `*HOTEL MARQUIS - PURCHASE ORDER #${newPO.poNumber}* 📦`,
+        `*HOTEL WHITE BLISS - PURCHASE ORDER #${newPO.poNumber}* 📦`,
         `━━━━━━━━━━━━━━━━━━━━`,
         `Namaste *${newPO.vendorName}*,`,
         `Please confirm supply for:`,
@@ -854,7 +854,7 @@ export default function InventoryDashboard() {
         `💰 *Estimated Total:* ₹${newPO.totalAmount}`,
         `🏢 *Outlet / Section:* ${newPO.outlet}`,
         `━━━━━━━━━━━━━━━━━━━━`,
-        `_Hotel Marquis Central Kitchen Procurement_`
+        `_Hotel White Bliss Central Kitchen Procurement_`
       ].join('\n');
       openWhatsApp(newPO.vendorPhone, waMsg);
     }
@@ -1198,7 +1198,7 @@ export default function InventoryDashboard() {
   // WhatsApp Vendor Statement Share
   const handleShareVendorStatement = (v: VendorAccount) => {
     const cleanPhone = v.phone.replace(/\D/g, "");
-    const msg = `🧾 *VENDOR ACCOUNT STATEMENT - HOTEL MARQUIS*\n` +
+    const msg = `🧾 *VENDOR ACCOUNT STATEMENT - HOTEL WHITE BLISS*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Vendor:* ${v.name}\n` +
       `*Category:* ${v.category}\n` +
@@ -1208,7 +1208,7 @@ export default function InventoryDashboard() {
       `*Outstanding Balance (Payables):* ₹${v.pendingDue.toLocaleString("en-IN")}\n` +
       `*Last Settlement:* ${v.lastPaymentDate}\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `Regards,\nHotel Marquis Management.`;
+      `Regards,\nHotel White Bliss Management.`;
 
     openWhatsApp(cleanPhone || "7499934257", msg);
     toast.success(`Opening WhatsApp statement for ${v.name}`);
@@ -1219,15 +1219,15 @@ export default function InventoryDashboard() {
     const requiredRefill = Math.max(item.minAlertStock * 2, 5);
     const phone = item.vendorPhone.replace(/\D/g, "");
     
-    const message = `📦 *PURCHASE ORDER - HOTEL MARQUIS*\n` +
+    const message = `📦 *PURCHASE ORDER - HOTEL WHITE BLISS*\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `*Item:* ${item.name} (${item.category})\n` +
       `*Required Quantity:* ${requiredRefill} ${item.unit}\n` +
       `*Current Stock Status:* ${item.currentStock} ${item.unit} (Below Par Level ⚠️)\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `Delivery Address: Hotel Marquis Main Kitchen.\n` +
+      `Delivery Address: Hotel White Bliss Main Kitchen.\n` +
       `Please acknowledge and deliver at earliest.\n\n` +
-      `Regards,\nHotel Marquis Purchase Desk`;
+      `Regards,\nHotel White Bliss Purchase Desk`;
 
     openWhatsApp(phone || "7499934257", message);
     toast.success(`Opening WhatsApp PO for ${item.vendorName}`, { icon: "📲" });
@@ -1246,7 +1246,7 @@ export default function InventoryDashboard() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Hotel_Marquis_Inventory_Audit_${new Date().toISOString().split("T")[0]}.csv`);
+    link.setAttribute("download", `Hotel_White Bliss_Inventory_Audit_${new Date().toISOString().split("T")[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1601,7 +1601,7 @@ export default function InventoryDashboard() {
                   onChange={e => setOutletFilter(e.target.value)}
                   className="text-xs font-bold bg-transparent text-gray-900 focus:outline-none"
                 >
-                  <option value="All Outlets / Sections">Marquis Main Store</option>
+                  <option value="All Outlets / Sections">White Bliss Main Store</option>
                   <option value="Central Kitchen / Main Store">Central Kitchen</option>
                   <option value="Restaurant Line Kitchen">Line Kitchen</option>
                   <option value="Banquet Hall Pantry">Banquet Pantry</option>
@@ -2058,7 +2058,7 @@ export default function InventoryDashboard() {
                                 )}
                                 <button
                                   onClick={() => {
-                                    const msg = `*HOTEL MARQUIS - PO #${po.poNumber}*\nNamaste ${po.vendorName}, please dispatch ${po.itemName} (${po.qty} ${po.unit}) Total: ₹${po.totalAmount}`;
+                                    const msg = `*HOTEL WHITE BLISS - PO #${po.poNumber}*\nNamaste ${po.vendorName}, please dispatch ${po.itemName} (${po.qty} ${po.unit}) Total: ₹${po.totalAmount}`;
                                     openWhatsApp(po.vendorPhone, msg);
                                   }}
                                   className="p-1.5 bg-[#25D366] text-white rounded-md hover:bg-[#1ebd5b] transition"
@@ -3307,7 +3307,7 @@ export default function InventoryDashboard() {
                   <h2 className="text-base font-bold text-slate-900">
                     Quick Re-Stock Raw Material
                   </h2>
-                  <p className="text-xs text-slate-500">Petpooja Low Stock Restock Drawer • Hotel Marquis</p>
+                  <p className="text-xs text-slate-500">Petpooja Low Stock Restock Drawer • Hotel White Bliss</p>
                 </div>
               </div>
               <button 
@@ -3405,7 +3405,7 @@ export default function InventoryDashboard() {
                 <input
                   type="text"
                   readOnly
-                  value="Central Kitchen / Main Store (Hotel Marquis)"
+                  value="Central Kitchen / Main Store (Hotel White Bliss)"
                   className="w-full bg-slate-100 border border-slate-200 rounded-lg p-2.5 text-xs text-slate-600 font-medium cursor-not-allowed"
                 />
               </div>

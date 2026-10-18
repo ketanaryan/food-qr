@@ -717,11 +717,11 @@ export default function PetpoojaPOSPage() {
             </button>
           </div>
           <div class="text-center">
-            <div class="header-title">Hotel Marquis</div>
+            <div class="header-title">Hotel White Bliss</div>
             <div class="header-sub" style="font-weight: bold; color: #15803d;">Pure Veg Multicuisine Restaurant & Banquets</div>
-            <div class="header-sub">Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
+            <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
-            <div class="header-sub">Contact: 0788 788 1769</div>
+            <div class="header-sub">Contact: +91 7499934257</div>
           </div>
           <div class="divider"></div>
           <div class="text-center bold" style="font-size: 12px; letter-spacing: 1.5px; margin: 2px 0;">TAX INVOICE</div>
@@ -763,7 +763,7 @@ export default function PetpoojaPOSPage() {
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">${payMethod === 'SPLIT' ? 'SCAN TO PAY UPI BALANCE' : 'SCAN TO PAY VIA UPI'}</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" height="130" style="margin: 0 auto; display: block;" alt="UPI QR"
             />
             <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${upiPayAmt}</div>
@@ -773,7 +773,7 @@ export default function PetpoojaPOSPage() {
           ` : ''}
           <div class="text-center">
             <div class="footer-text">Thank you! Please visit again!</div>
-            <div style="font-size: 9.5px; color: #666;">powered by Marquis POS (Petpooja Edition)</div>
+            <div style="font-size: 9.5px; color: #666;">powered by Bliss POS (Petpooja Edition)</div>
           </div>
           <script>
             function handleBackOrClose() {
@@ -856,7 +856,7 @@ export default function PetpoojaPOSPage() {
             </button>
           </div>
           <div class="center bold" style="font-size:18px;">*** KITCHEN ORDER TICKET ***</div>
-          <div class="center" style="font-size:14px; margin-top:2px;">HOTEL MARQUIS</div>
+          <div class="center" style="font-size:14px; margin-top:2px;">HOTEL WHITE BLISS</div>
           <div class="divider"></div>
           <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:13px;">
             <span>TABLE: ${escapeHtml(tableNumber)}</span>
@@ -875,7 +875,7 @@ export default function PetpoojaPOSPage() {
           </div>
           ` : ''}
           <div class="divider"></div>
-          <div class="center" style="font-size:10px;">Marquis POS • Kitchen Dispatch</div>
+          <div class="center" style="font-size:10px;">Bliss POS • Kitchen Dispatch</div>
           <script>
             function handleBackOrClose() {
               try {
@@ -1005,7 +1005,7 @@ export default function PetpoojaPOSPage() {
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h1 className="font-playfair font-bold text-sm sm:text-base tracking-wide text-white truncate">
-                Hotel Marquis
+                Hotel White Bliss
               </h1>
               <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider bg-[#A18D6D]/30 text-[#e8d5b5] border border-[#A18D6D]/40 px-1.5 sm:px-2 py-0.5 rounded">
                 POS
@@ -2671,7 +2671,7 @@ export default function PetpoojaPOSPage() {
                 <div className="bg-purple-50 border border-purple-200 p-3 rounded-2xl flex flex-col items-center text-center">
                   <span className="text-xs font-bold text-purple-900 mb-1">Customer Counter Scan QR</span>
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
                     alt="UPI QR Code"
                     className="w-36 h-36 my-1 border p-1 rounded-xl shadow-xs bg-white"
                   />

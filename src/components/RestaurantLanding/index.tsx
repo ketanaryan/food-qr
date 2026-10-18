@@ -106,8 +106,8 @@ export default function RestaurantLanding() {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
           <div className="w-full md:w-1/2 relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden shadow-2xl border border-stone-200">
             <Image 
-              src="/hotel-marquis.jpg" 
-              alt="Hotel Marquis Pure Veg Multicuisine Restaurant Entrance" 
+              src="/hotel-white-bliss.jpg" 
+              alt="Hotel White Bliss Multicuisine Restaurant Entrance" 
               fill 
               className="object-cover"
               priority
@@ -118,18 +118,18 @@ export default function RestaurantLanding() {
               Pure Veg • Multicuisine • Banquets
             </span>
             <h2 className="text-3xl md:text-4xl font-playfair text-[#1E1B16] uppercase tracking-widest mb-4">
-              Welcome to Hotel Marquis
+              Welcome to Hotel White Bliss
             </h2>
             <div className="w-12 h-[2px] bg-[#A18D6D] mb-6"></div>
             <p className="text-gray-600 leading-relaxed mb-4 font-light">
-              Located on <strong>Sula Vineyard Road, opp. Podar International School (off Gangapur Road, Nashik)</strong>, Hotel Marquis offers an unparalleled pure vegetarian dining and banquet experience.
+              Located on <strong>Dnyaneshwar Nagar, Pathardi Phata, Nashik</strong>, Hotel White Bliss offers an unparalleled pure vegetarian dining and banquet experience.
             </p>
             <p className="text-gray-600 leading-relaxed mb-6 font-light">
               Our master chefs craft authentic North Indian, Chinese, Continental, and Tandoor delicacies with fresh local ingredients. Whether you are hosting a family feast, wedding banquet, or an intimate dinner, our doors are open to create unforgettable memories.
             </p>
             <div className="flex flex-wrap items-center gap-4 mb-8 text-xs font-medium text-stone-600">
-              <span className="flex items-center gap-1.5">📍 Sula Vineyard Road, Nashik</span>
-              <span className="flex items-center gap-1.5">📞 0788 788 1769</span>
+              <span className="flex items-center gap-1.5">📍 Pathardi Phata, Nashik</span>
+              <span className="flex items-center gap-1.5">📞 +91 7499934257</span>
               <span className="flex items-center gap-1.5">🕒 11:00 AM – 11:00 PM</span>
             </div>
             <a 
@@ -150,7 +150,7 @@ export default function RestaurantLanding() {
               Our Story Through Plates & Moments
             </h2>
             <p className="text-[#A18D6D] font-script text-2xl md:text-3xl font-playfair italic">
-              Hotel Marquis
+              Hotel White Bliss
             </p>
           </div>
 

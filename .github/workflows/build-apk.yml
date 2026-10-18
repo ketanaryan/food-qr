@@ -32,35 +32,35 @@ jobs:
           distribution: 'zulu'
           java-version: '21'
 
-      - name: Build Marquis POS App
+      - name: Build Bliss POS App
         run: |
           node scripts/configure-app.js pos
           npx cap sync android
           cd android
           chmod +x ./gradlew
           ./gradlew assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk ../Marquis-POS.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../White Bliss-POS.apk
           cp app/build/outputs/apk/debug/app-debug.apk ../Bliss-POS.apk
           cd ..
 
-      - name: Build Marquis Captain App
+      - name: Build Bliss Captain App
         run: |
           node scripts/configure-app.js captain
           npx cap sync android
           cd android
           chmod +x ./gradlew
           ./gradlew assembleDebug
-          cp app/build/outputs/apk/debug/app-debug.apk ../Marquis-Captain.apk
+          cp app/build/outputs/apk/debug/app-debug.apk ../White Bliss-Captain.apk
           cp app/build/outputs/apk/debug/app-debug.apk ../Bliss-Captain.apk
           cd ..
 
       - name: Upload APK Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: hotel-marquis-apks
+          name: hotel-white-bliss-apks
           path: |
-            Marquis-POS.apk
-            Marquis-Captain.apk
+            White Bliss-POS.apk
+            White Bliss-Captain.apk
             Bliss-POS.apk
             Bliss-Captain.apk
 
@@ -69,22 +69,22 @@ jobs:
         if: github.ref == 'refs/heads/main'
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "Hotel Marquis v1.0.${{ github.run_number }} (POS & Captain)"
+          name: "Hotel White Bliss v1.0.${{ github.run_number }} (POS & Captain)"
           body: |
-            ### 🏨 Hotel Marquis — Dedicated Android APKs
+            ### 🏨 Hotel White Bliss — Dedicated Android APKs
             
-            1. **📱 Marquis Captain (Waiters & Stewards App)**
-               - File: `Marquis-Captain.apk`
+            1. **📱 Bliss Captain (Waiters & Stewards App)**
+               - File: `White Bliss-Captain.apk`
                - Opens directly to: `/captain`
                - Features: Table floor layout, live KOT punching, table shifting, cashier alerts, and table-side cash/UPI settlement.
             
-            2. **🖥️ Marquis POS (Cashier Counter App)**
-               - File: `Marquis-POS.apk`
+            2. **🖥️ Bliss POS (Cashier Counter App)**
+               - File: `White Bliss-POS.apk`
                - Opens directly to: `/pos`
                - Features: Central POS terminal, live kitchen monitor, cash tender calculator, dynamic counter UPI QR, split payments, 80mm GST printing, Day Register.
           files: |
-            Marquis-POS.apk
-            Marquis-Captain.apk
+            White Bliss-POS.apk
+            White Bliss-Captain.apk
             Bliss-POS.apk
             Bliss-Captain.apk
         env:

@@ -1,5 +1,5 @@
 /**
- * WhatsApp integration utility for Hotel Marquis POS & Digital System.
+ * WhatsApp integration utility for Hotel White Bliss POS & Digital System.
  * Fixes mobile blank white screen / orphaned Safari sheet issue when returning from WhatsApp.
  */
 
@@ -53,7 +53,7 @@ export function formatBillWhatsAppMessage(params: {
   const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 
   return [
-    `🧾 *HOTEL MARQUIS* 🧾`,
+    `🧾 *HOTEL WHITE BLISS* 🧾`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `✨ *Pure Veg Multicuisine & Banquets*`,
     `🍽️ *${tableName}* | 📅 ${dateStr}, ${timeStr}`,
@@ -65,7 +65,7 @@ export function formatBillWhatsAppMessage(params: {
     `${cleanUrl}`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `⭐ *Rate Your Experience on Google:*`,
-    `https://www.google.com/search?q=Marquis+Pure+Veg+Nashik`,
+    `https://www.google.com/search?q=White Bliss+Pure+Veg+Nashik`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `Thank you for dining with us! 🙏`
   ].join('\n');
@@ -82,14 +82,14 @@ export function formatReservationWhatsAppMessage(params: {
     `🎉 *RESERVATION CONFIRMED!* 🎉`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `Hello *${guestName || 'Valued Guest'}*,`,
-    `Your table booking at *HOTEL MARQUIS* is confirmed! ✨`,
+    `Your table booking at *HOTEL WHITE BLISS* is confirmed! ✨`,
     ``,
     `📅 *Date:* ${date}`,
     `⏰ *Time:* ${time}`,
     `👥 *Guests:* ${guests}`,
     `━━━━━━━━━━━━━━━━━━━━`,
-    `📍 *Address:* Sula Vineyard Road, opp. Podar School, Nashik 422012`,
-    `📞 *Helpdesk:* 0788 788 1769`,
+    `📍 *Address:* Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009`,
+    `📞 *Helpdesk:* +91 7499934257`,
     `━━━━━━━━━━━━━━━━━━━━`,
     `We look forward to hosting you! 🙏`
   ].join('\n');

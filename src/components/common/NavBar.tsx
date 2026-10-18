@@ -26,7 +26,7 @@ function NavBar() {
         <div className="flex h-20 items-center justify-between">
 
           <Link href="/" className="text-2xl font-playfair font-bold tracking-tight text-[#1E1B16]">
-            Hotel <span className="text-[#A18D6D]">Marquis</span>
+            Hotel <span className="text-[#A18D6D]">White Bliss</span>
           </Link>
 
           <nav className="hidden lg:flex items-center gap-10">

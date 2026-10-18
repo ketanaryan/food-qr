@@ -1,4 +1,4 @@
-// Pure TypeScript Definitions and Default Master Data for Hotel Marquis Inventory (Client & Server Safe)
+// Pure TypeScript Definitions and Default Master Data for Hotel White Bliss Inventory (Client & Server Safe)
 
 export interface InventoryItem {
   id: string;

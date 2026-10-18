@@ -14,8 +14,8 @@ export default function Index() {
             <div className="min-h-screen w-full flex flex-col justify-center">
                 <div className="fixed inset-0 -z-10 bg-black">
                     <Image
-                        src="/hotel-marquis.jpg"
-                        alt="Hotel Marquis Pure Veg Entrance"
+                        src="/hotel-white-bliss.jpg"
+                        alt="Hotel White Bliss Entrance"
                         fill
                         priority
                         className="object-cover object-center opacity-80"

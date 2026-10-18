@@ -151,7 +151,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Analytics Dashboard</h1>
-              <p className="text-gray-500">Live sales and performance metrics • Hotel Marquis</p>
+              <p className="text-gray-500">Live sales and performance metrics • Hotel White Bliss</p>
             </div>
             <button
               onClick={exportTodayCsv}

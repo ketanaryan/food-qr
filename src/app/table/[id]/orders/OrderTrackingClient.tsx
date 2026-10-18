@@ -87,7 +87,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           <CheckCircle size={40} />
         </div>
         <h1 className="text-2xl font-bold font-playfair text-[#1E1B16] mb-1">Payment Successful!</h1>
-        <p className="text-sm text-[#6F624E] mb-8 font-light">Thank you for dining with Hotel Marquis.</p>
+        <p className="text-sm text-[#6F624E] mb-8 font-light">Thank you for dining with Hotel White Bliss.</p>
 
         <div className="bg-white border border-[#e8dfd3] p-6 rounded-2xl w-full max-w-sm mb-6 shadow-sm">
           <h2 className="font-playfair font-bold text-[#1E1B16] mb-1.5 text-lg">How was your dining experience?</h2>
@@ -96,7 +96,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
              {'★'.repeat(5)}
           </div>
           <a 
-            href="https://www.google.com/search?q=Hotel+Marquis" 
+            href="https://www.google.com/search?q=Hotel+White Bliss" 
             target="_blank" 
             rel="noreferrer"
             className="block w-full bg-[#1E1B16] text-[#F8F5F0] font-bold py-3.5 rounded-xl shadow-md hover:bg-black transition text-xs uppercase tracking-widest"
@@ -160,7 +160,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   });
 
   const isBilling = orders.some(o => o.status === 'billing');
-  const upiUrl = `upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${grandTotal}&cu=INR&tn=Table%20${tableId}%20Bill`;
+  const upiUrl = `upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableId}%20Bill`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
 
   // 2. Loading State
@@ -223,7 +223,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
             Final Bill & Payment
           </h1>
           <p className="text-xs text-[#6F624E] mt-0.5 font-light">
-            Hotel Marquis • Please complete payment or inform your captain
+            Hotel White Bliss • Please complete payment or inform your captain
           </p>
         </div>
 
@@ -350,12 +350,12 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
             {'★'.repeat(5)}
           </div>
           <a 
-            href="https://www.google.com/search?q=Hotel+Marquis" 
+            href="https://www.google.com/search?q=Hotel+White Bliss" 
             target="_blank" 
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full bg-[#FAF7F2] border border-[#e8dfd3] hover:border-amber-400 text-[#1E1B16] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider shadow-2xs transition active:scale-95"
           >
-            Rate Hotel Marquis on Google
+            Rate Hotel White Bliss on Google
           </a>
         </div>
 

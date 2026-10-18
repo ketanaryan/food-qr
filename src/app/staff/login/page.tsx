@@ -62,7 +62,7 @@ function StaffLoginContent() {
               <span>Staff Workstation Access</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold font-serif text-white mt-1.5">
-              Hotel Marquis
+              Hotel White Bliss
             </h1>
             <p className="text-xs text-gray-400 mt-0.5">
               POS • Captain App • Kitchen KDS

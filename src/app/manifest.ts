@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Hotel Marquis — Digital Restaurant & POS',
-    short_name: 'Hotel Marquis',
-    description: 'Hotel Marquis 360° Digital Restaurant System — Captain Ordering, Cashier Billing, Kitchen KDS & Attendo Payroll',
+    name: 'Hotel White Bliss — Digital Restaurant & POS',
+    short_name: 'Hotel White Bliss',
+    description: 'Hotel White Bliss 360° Digital Restaurant System — Captain Ordering, Cashier Billing, Kitchen KDS & Attendo Payroll',
     start_url: '/',
     id: '/',
     scope: '/',

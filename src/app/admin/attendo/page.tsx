@@ -1024,7 +1024,7 @@ export default function AttendoPage() {
 
   const handleWhatsAppSalarySlip = (member: StaffMember, payroll: any) => {
     const cleanPhone = member.phone.replace(/\D/g, "");
-    const msg = `*HOTEL MARQUIS — SALARY SLIP*\n` +
+    const msg = `*HOTEL WHITE BLISS — SALARY SLIP*\n` +
       `--------------------------------\n` +
       `*Employee:* ${member.name} (${member.role})\n` +
       `*Period:* Till Day 15, ${new Date().toLocaleString("en-US", { month: "long", year: "numeric" })}\n` +
@@ -1042,7 +1042,7 @@ export default function AttendoPage() {
       `*(Projected Full Month Net: ₹${payroll.netSalary.toLocaleString("en-IN")} for ${payroll.payableDays}/30 Days)*\n` +
       `*Status:* ${isPayrollLocked ? 'APPROVED & PROCESSED' : 'CALCULATED'}\n` +
       `--------------------------------\n` +
-      `Hotel Marquis Management.`;
+      `Hotel White Bliss Management.`;
 
     openWhatsApp(cleanPhone || "7499934257", msg);
     toast.success(`Salary slip opened for ${member.name}.`);
@@ -1153,7 +1153,7 @@ export default function AttendoPage() {
                   Staff & Daily Attendance
                 </h1>
                 <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  Hotel Marquis
+                  Hotel White Bliss
                 </span>
                 {isPayrollLocked && (
                   <span className="text-[11px] font-semibold tracking-wide uppercase px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 flex items-center gap-1">

@@ -264,7 +264,7 @@ export default function TablesAndFloorsPage() {
       return;
     }
     const link = document.createElement("a");
-    link.download = `Hotel-Marquis-Table-${tableNum}-QR.png`;
+    link.download = `Hotel-White Bliss-Table-${tableNum}-QR.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
     toast.success(`Table #${tableNum} QR image saved!`, { icon: "💾" });
@@ -693,7 +693,7 @@ export default function TablesAndFloorsPage() {
                   {/* Luxury Gold Accents & Branding */}
                   <div className="w-full flex flex-col items-center">
                     <div className="text-[10px] font-bold tracking-[0.25em] text-[#A18D6D] uppercase mb-1">
-                      HOTEL MARQUIS
+                      HOTEL WHITE BLISS
                     </div>
                     <div className="w-12 h-0.5 bg-[#A18D6D]/40 mb-3" />
 

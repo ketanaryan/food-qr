@@ -64,7 +64,7 @@ export default function StaffHubPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <span className="font-playfair font-bold text-lg sm:text-xl text-[#1E1B16]">
-              Hotel <span className="text-[#A18D6D]">Marquis</span>
+              Hotel <span className="text-[#A18D6D]">White Bliss</span>
             </span>
             <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded bg-[#F5EFE6] text-[#6F624E] border border-[#e8dfd3]">
               Staff Hub
@@ -160,7 +160,7 @@ export default function StaffHubPage() {
             <div className="bg-[#FAF7F2] p-4 rounded-xl border border-[#ede3d5]">
               <div className="font-bold text-[#1E1B16] mb-1">1. Cashier Tablet</div>
               <p className="leading-relaxed">
-                Open <code className="bg-white px-1 py-0.5 rounded font-mono text-[11px]">/pos</code> in Chrome ➡️ Tap 3 dots (⋮) ➡️ Tap <strong>&quot;Add to Home screen&quot;</strong>. A <strong>&quot;Marquis POS&quot;</strong> app icon will appear on desktop!
+                Open <code className="bg-white px-1 py-0.5 rounded font-mono text-[11px]">/pos</code> in Chrome ➡️ Tap 3 dots (⋮) ➡️ Tap <strong>&quot;Add to Home screen&quot;</strong>. A <strong>&quot;Bliss POS&quot;</strong> app icon will appear on desktop!
               </p>
             </div>
 
@@ -184,7 +184,7 @@ export default function StaffHubPage() {
 
       {/* Footer */}
       <footer className="border-t border-[#e8dfd3] bg-white py-6 text-center text-xs text-[#6F624E]">
-        <p>© {new Date().getFullYear()} Hotel Marquis • Restaurant Management System</p>
+        <p>© {new Date().getFullYear()} Hotel White Bliss • Restaurant Management System</p>
       </footer>
 
     </div>

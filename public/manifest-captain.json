@@ -1,7 +1,7 @@
 {
-  "name": "Marquis Captain",
-  "short_name": "Marquis Captain",
-  "description": "Hotel Marquis Waiter & Captain Ordering App",
+  "name": "Bliss Captain",
+  "short_name": "Bliss Captain",
+  "description": "Hotel White Bliss Waiter & Captain Ordering App",
   "start_url": "/captain",
   "id": "/captain",
   "scope": "/captain",

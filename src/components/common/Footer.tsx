@@ -20,7 +20,7 @@ function Footer() {
                 {/* Brand */}
                 <div className="flex flex-col gap-4">
                     <Link href="/" className="font-playfair text-2xl font-bold tracking-tight text-[#1E1B16]">
-                        Hotel <span className="text-[#A18D6D]">Marquis</span>
+                        Hotel <span className="text-[#A18D6D]">White Bliss</span>
                     </Link>
 
                     <p className="text-[#5e5240] text-sm leading-relaxed">
@@ -57,11 +57,11 @@ function Footer() {
                         Visit Us
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
-                        <li className="font-semibold text-stone-900">Hotel Marquis Pure Veg</li>
+                        <li className="font-semibold text-stone-900">Hotel White Bliss</li>
                         <li>Sula Vineyard Road, opp. Podar International School</li>
                         <li>off Gangapur Road, Govardhan</li>
                         <li>Nashik, Maharashtra 422012</li>
-                        <li className="pt-1.5 font-bold text-stone-800">📞 0788 788 1769</li>
+                        <li className="pt-1.5 font-bold text-stone-800">📞 +91 7499934257</li>
                         <li className="font-medium text-stone-600">Open: 11:00 AM - 11:00 PM</li>
                     </ul>
                 </div>
@@ -99,7 +99,7 @@ function Footer() {
 
             {/* Bottom bar */}
             <div className="border-t border-[#e8e1d6] py-4 px-6 flex justify-between items-center text-xs text-[#7a6f5b]">
-                <span>© {new Date().getFullYear()} Hotel Marquis. All rights reserved.</span>
+                <span>© {new Date().getFullYear()} Hotel White Bliss. All rights reserved.</span>
             </div>
         </footer>
     )

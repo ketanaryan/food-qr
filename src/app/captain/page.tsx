@@ -470,7 +470,7 @@ export default function CaptainPortal() {
                 LIVE
               </span>
             </h1>
-            <p className="text-[11px] text-gray-400">Hotel Marquis • Waiter POS</p>
+            <p className="text-[11px] text-gray-400">Hotel White Bliss • Waiter POS</p>
           </div>
         </div>
 
@@ -1150,7 +1150,7 @@ export default function CaptainPortal() {
                         Scan UPI QR with Any Mobile App:
                       </span>
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${bTotal}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${bTotal}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
                         alt="UPI QR Code"
                         className="w-44 h-44 my-2 border p-1 rounded-xl shadow-xs"
                       />

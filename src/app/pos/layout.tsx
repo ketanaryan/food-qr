@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Marquis POS",
-  description: "Hotel Marquis - Cashier POS & Billing Terminal",
+  title: "Bliss POS",
+  description: "Hotel White Bliss - Cashier POS & Billing Terminal",
   manifest: "/manifest-pos.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Marquis POS",
+    title: "Bliss POS",
   },
   icons: {
     icon: "/icons/icon-pos-192.png",
@@ -23,9 +23,9 @@ export default function PosLayout({
   return (
     <>
       <head>
-        <title>Marquis POS</title>
-        <meta name="apple-mobile-web-app-title" content="Marquis POS" />
-        <meta name="application-name" content="Marquis POS" />
+        <title>Bliss POS</title>
+        <meta name="apple-mobile-web-app-title" content="Bliss POS" />
+        <meta name="application-name" content="Bliss POS" />
         <link rel="manifest" href="/manifest-pos.json" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon-pos.png" />
       </head>

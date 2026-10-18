@@ -22,27 +22,27 @@ const playfair = Playfair_Display({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://food-qr-gilt.vercel.app'),
-  title: "Hotel Marquis | Pure Veg Multicuisine Restaurant & Banquets",
-  description: "Experience luxury pure vegetarian dining and banquets at Hotel Marquis, Sula Vineyard Road, Nashik. Scan QR, order food, and make table reservations.",
+  title: "Hotel White Bliss | Pure Veg Multicuisine Restaurant & Banquets",
+  description: "Experience luxury pure vegetarian dining and banquets at Hotel White Bliss, Pathardi Phata, Nashik. Scan QR, order food, and make table reservations.",
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Hotel Marquis',
+    title: 'Hotel White Bliss',
   },
   icons: {
     icon: '/icons/icon-192.png',
     apple: '/icons/apple-touch-icon.png',
   },
   openGraph: {
-    title: "Hotel Marquis | Pure Veg Multicuisine Restaurant & Banquets",
-    description: "Experience authentic culinary excellence at Hotel Marquis, Sula Vineyard Road, Nashik.",
+    title: "Hotel White Bliss | Pure Veg Multicuisine Restaurant & Banquets",
+    description: "Experience authentic culinary excellence at Hotel White Bliss, Pathardi Phata, Nashik.",
     images: [
       {
-        url: "/hotel-marquis.jpg",
+        url: "/hotel-white-bliss.jpg",
         width: 1200,
         height: 630,
-        alt: "Hotel Marquis Pure Veg",
+        alt: "Hotel White Bliss",
       },
     ],
   },

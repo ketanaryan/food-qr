@@ -384,11 +384,11 @@ export default function CashierDashboard() {
           </div>
           <!-- Brand Header -->
           <div class="text-center">
-            <div class="header-title">Hotel Marquis</div>
+            <div class="header-title">Hotel White Bliss</div>
             <div class="header-sub" style="font-weight: bold; color: #15803d;">Pure Veg Multicuisine Restaurant & Banquets</div>
-            <div class="header-sub">Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
+            <div class="header-sub">Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009</div>
             <div class="header-sub">GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521045000123</div>
-            <div class="header-sub">Contact: 0788 788 1769</div>
+            <div class="header-sub">Contact: +91 7499934257</div>
           </div>
 
           <div class="divider"></div>
@@ -482,7 +482,7 @@ export default function CashierDashboard() {
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px; letter-spacing: 0.5px;">SCAN TO PAY VIA UPI</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20Marquis&am=${grandTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${grandTotal}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" 
               height="130" 
               style="margin: 0 auto; display: block;" 
@@ -497,7 +497,7 @@ export default function CashierDashboard() {
           <!-- Footer -->
           <div class="text-center">
             <div class="footer-text">Thank you! Please visit again!</div>
-            <div class="powered-by">powered by Marquis POS</div>
+            <div class="powered-by">powered by Bliss POS</div>
           </div>
 
           <script>
@@ -693,9 +693,9 @@ export default function CashierDashboard() {
       </head>
       <body>
         <div class="text-center">
-          <div class="title">HOTEL MARQUIS</div>
+          <div class="title">HOTEL WHITE BLISS</div>
           <div style="font-weight: bold; color: #15803d; font-size: 10px;">PURE VEG MULTICUISINE & BANQUETS</div>
-          <div>Sula Vineyard Road, opp. Podar School, Nashik 422012</div>
+          <div>Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009</div>
           <div>GSTIN: 27AABCH1234F1Z5 • FSSAI: 11521034000123</div>
           <div class="divider"></div>
           <div class="badge">END-OF-DAY Z-REPORT</div>
@@ -764,7 +764,7 @@ export default function CashierDashboard() {
 
         <div class="divider"></div>
         <div class="text-center" style="font-size: 8.5px; color: #555; margin-top: 6px;">
-          Powered by Marquis POS • Petpooja-Grade Z-Report
+          Powered by Bliss POS • Petpooja-Grade Z-Report
         </div>
 
         <script>
@@ -1428,7 +1428,7 @@ export default function CashierDashboard() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    Hotel Marquis • Shift Date: <span className="font-bold text-gray-800">{dayCloseData?.date || new Date().toISOString().slice(0, 10)}</span>
+                    Hotel White Bliss • Shift Date: <span className="font-bold text-gray-800">{dayCloseData?.date || new Date().toISOString().slice(0, 10)}</span>
                   </p>
                 </div>
               </div>

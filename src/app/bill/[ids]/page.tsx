@@ -189,7 +189,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
     doc.setTextColor(30, 27, 22);
-    doc.text("HOTEL MARQUIS", 40, 11, { align: "center" });
+    doc.text("HOTEL WHITE BLISS", 40, 11, { align: "center" });
 
     // Subtitle & Address
     doc.setFontSize(6.5);
@@ -200,9 +200,9 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
     doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text("Sula Vineyard Road, opp. Podar School, Nashik 422012", 40, 19, { align: "center" });
+    doc.text("Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009", 40, 19, { align: "center" });
     doc.text("GSTIN: 27AABCH1234F1Z5  |  FSSAI: 11521045000123", 40, 22.5, { align: "center" });
-    doc.text("Contact: 0788 788 1769", 40, 26, { align: "center" });
+    doc.text("Contact: +91 7499934257", 40, 26, { align: "center" });
 
     // Divider Line
     doc.setDrawColor(215, 205, 190);
@@ -365,7 +365,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
     doc.setFontSize(6.5);
     doc.setFont("helvetica", "italic");
     doc.setTextColor(115, 100, 80);
-    doc.text("Thank you for dining with us at Hotel Marquis! 🙏", 40, curY, {
+    doc.text("Thank you for dining with us at Hotel White Bliss! 🙏", 40, curY, {
       align: "center",
     });
 
@@ -415,7 +415,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
       <div className="min-h-screen bg-stone-100 flex items-center justify-center p-4">
         <div className="bg-white p-8 rounded-2xl shadow-xl max-w-sm w-full text-center border border-stone-200">
           <div className="animate-spin h-10 w-10 border-4 border-[#A18D6D] border-t-transparent rounded-full mx-auto mb-4"></div>
-          <h2 className="text-lg font-bold text-stone-900 tracking-wider">HOTEL MARQUIS</h2>
+          <h2 className="text-lg font-bold text-stone-900 tracking-wider">HOTEL WHITE BLISS</h2>
           <p className="text-xs text-stone-500 mt-1">Generating official dining receipt...</p>
         </div>
       </div>
@@ -444,7 +444,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
           </div>
           <div>
             <div className="text-xs uppercase tracking-widest text-[#A18D6D] font-bold">
-              Hotel Marquis
+              Hotel White Bliss
             </div>
             <div className="text-[11px] text-stone-400">Official Dining Bill</div>
           </div>
@@ -454,7 +454,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
           {pdfUrl && (
             <a
               href={pdfUrl}
-              download={`Hotel_Marquis_Bill_${billData.orderIds}.pdf`}
+              download={`Hotel_White Bliss_Bill_${billData.orderIds}.pdf`}
               className="bg-[#A18D6D] hover:bg-[#8F7C5D] text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow transition-all active:scale-95"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -493,7 +493,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
             👑
           </div>
           <h1 className="font-playfair text-2xl font-bold tracking-wider text-[#F3EFE6]">
-            HOTEL MARQUIS
+            HOTEL WHITE BLISS
           </h1>
           <p className="text-[11px] font-semibold text-[#A18D6D] tracking-widest uppercase mt-0.5">
             Pure Veg Multicuisine Restaurant & Banquets
@@ -506,7 +506,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
             <span>•</span>
             <span>FSSAI: 11521045000123</span>
           </div>
-          <div className="text-[10px] text-stone-300 font-semibold mt-1">📞 Helpline: 0788 788 1769</div>
+          <div className="text-[10px] text-stone-300 font-semibold mt-1">📞 Helpline: +91 7499934257</div>
 
           <div className="mt-4 pt-3 border-t border-stone-800 flex items-center justify-between text-xs">
             <span className="bg-[#A18D6D]/20 text-[#A18D6D] px-2.5 py-1 rounded-md font-semibold tracking-wide border border-[#A18D6D]/30">
@@ -643,7 +643,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         {/* Footer & Feedback Actions */}
         <div className="bg-[#1E1B16] text-white p-5 text-center">
           <p className="font-playfair text-sm italic text-[#E5DFD3]">
-            Thank you for dining with us at Hotel Marquis! 🙏
+            Thank you for dining with us at Hotel White Bliss! 🙏
           </p>
           <p className="text-[10px] text-stone-400 mt-1">
             FSSAI Lic No: 11521045000123 • We look forward to hosting you again
@@ -651,7 +651,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
 
           <div className="mt-4 pt-4 border-t border-stone-800 flex flex-col sm:flex-row gap-2 justify-center print:hidden">
             <a
-              href="https://www.google.com/search?q=Hotel+Marquis"
+              href="https://www.google.com/search?q=Hotel+White Bliss"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#A18D6D] hover:bg-[#8F7C5D] text-white font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
@@ -662,7 +662,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
             {pdfUrl && (
               <a
                 href={pdfUrl}
-                download={`Hotel_Marquis_Bill_${billData.orderIds}.pdf`}
+                download={`Hotel_White Bliss_Bill_${billData.orderIds}.pdf`}
                 className="bg-stone-800 hover:bg-stone-700 text-stone-200 font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 border border-stone-700 transition-all active:scale-95"
               >
                 <span>📥</span> Download PDF Invoice

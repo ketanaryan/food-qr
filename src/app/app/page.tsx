@@ -62,7 +62,7 @@ export default function AppDownloadPage() {
             </div>
           </div>
           <div>
-            <h1 className="font-semibold text-sm tracking-tight text-zinc-100">Hotel Marquis</h1>
+            <h1 className="font-semibold text-sm tracking-tight text-zinc-100">Hotel White Bliss</h1>
             <p className="text-[11px] text-zinc-400">Official Mobile App & POS Client</p>
           </div>
         </div>
@@ -87,7 +87,7 @@ export default function AppDownloadPage() {
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-serif font-normal tracking-tight text-zinc-100">
-            Hotel Marquis <br />
+            Hotel White Bliss <br />
             <span className="italic font-light text-amber-400">Mobile App Suite</span>
           </h2>
 
@@ -114,7 +114,7 @@ export default function AppDownloadPage() {
               <div>
                 <h3 className="text-lg font-semibold text-zinc-100">PWA Web App (Android & iOS)</h3>
                 <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                  Adds full-screen Hotel Marquis app icon directly to your home screen. Opens with 0 browser bars, full offline caching, and instantaneous loading.
+                  Adds full-screen Hotel White Bliss app icon directly to your home screen. Opens with 0 browser bars, full offline caching, and instantaneous loading.
                 </p>
               </div>
 
@@ -272,7 +272,7 @@ export default function AppDownloadPage() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
-        Hotel Marquis · Complete Digital Restaurant Platform · Built for High-Performance Floor Operations
+        Hotel White Bliss · Complete Digital Restaurant Platform · Built for High-Performance Floor Operations
       </footer>
     </div>
   );
