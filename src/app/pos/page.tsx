@@ -14,6 +14,7 @@ import toast from "react-hot-toast";
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
 import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers, getSectionNameForTable } from "@/lib/tableConfig";
 import { openWhatsApp, formatBillWhatsAppMessage } from "@/lib/whatsapp";
+import StationSecurityGuard, { lockCurrentStation } from "@/components/common/StationSecurityGuard";
 
 const DEFAULT_CAPTAINS = [
   "Cashier Counter",
@@ -991,17 +992,18 @@ export default function PetpoojaPOSPage() {
   });
 
   return (
-    <div className="h-screen h-[100dvh] overflow-hidden bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
-      <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
+    <StationSecurityGuard stationName="POS & Billing Desk" stationRole="Cashier & Counter Staff">
+      <div className="h-screen h-[100dvh] overflow-hidden bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
+        <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
 
-      {/* TOP RESPONSIVE PETPOOJA PRO NAVIGATION BAR */}
-      <header className="bg-[#1E1B16] text-white px-3 sm:px-4 py-2 sticky top-0 z-50 shadow-md border-b border-[#322c24] flex items-center justify-between gap-2">
-        
-        {/* Brand & Status */}
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center font-black text-white text-sm sm:text-base shadow shrink-0">
-            HM
-          </div>
+        {/* TOP RESPONSIVE PETPOOJA PRO NAVIGATION BAR */}
+        <header className="bg-[#1E1B16] text-white px-3 sm:px-4 py-2 sticky top-0 z-50 shadow-md border-b border-[#322c24] flex items-center justify-between gap-2">
+          
+          {/* Brand & Status */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#A18D6D] to-[#6F624E] flex items-center justify-center font-black text-white text-sm sm:text-base shadow shrink-0">
+              WB
+            </div>
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 flex-wrap">
               <h1 className="font-playfair font-bold text-sm sm:text-base tracking-wide text-white truncate">
@@ -1111,6 +1113,15 @@ export default function PetpoojaPOSPage() {
             <Smartphone size={14} />
             <span className="hidden xl:inline">Waiter</span>
           </a>
+
+          <button
+            onClick={() => lockCurrentStation()}
+            className="p-1.5 sm:p-2 bg-red-500/20 hover:bg-red-500/30 active:scale-95 text-red-300 hover:text-red-200 rounded-xl text-xs font-bold flex items-center gap-1 border border-red-500/30 transition"
+            title="Lock POS terminal immediately"
+          >
+            <Lock size={13} />
+            <span className="hidden sm:inline">Lock</span>
+          </button>
 
           <a
             href="/staff"
@@ -3061,6 +3072,7 @@ export default function PetpoojaPOSPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </StationSecurityGuard>
   );
 }

@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Menu, X } from "lucide-react"
+import { Menu, X, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -52,9 +52,11 @@ function NavBar() {
             <div className="hidden lg:flex items-center gap-3">
               <Link 
                 href="/staff" 
-                className="text-xs font-bold text-[#1E1B16] hover:text-[#A18D6D] px-4 py-2 rounded-lg border border-[#e8dfd3] bg-[#FAF7F2] hover:bg-[#F2ECE1] transition tracking-wider uppercase flex items-center gap-1.5"
+                className="text-xs font-bold text-[#1E1B16] hover:text-[#A18D6D] px-3.5 py-2 rounded-lg border border-[#e8dfd3] bg-[#FAF7F2] hover:bg-[#F2ECE1] transition tracking-wider uppercase flex items-center gap-1.5"
+                title="Staff Portal (Restricted to Authorized Hotel Staff)"
               >
-                <span>Staff Login</span>
+                <Lock size={12} className="text-[#A18D6D]" />
+                <span>Staff Portal</span>
               </Link>
               <Link href="/#reservation" className="border border-[#A18D6D] bg-[#A18D6D] text-white px-6 py-2 text-xs font-semibold hover:bg-black hover:border-black transition-colors tracking-widest uppercase">
                 Book A Table
@@ -70,9 +72,10 @@ function NavBar() {
             ) : (
               <Link
                 href="/staff"
-                className="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#e8dfd3] text-[#1E1B16] active:scale-95 transition"
+                className="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#e8dfd3] text-[#1E1B16] active:scale-95 transition flex items-center gap-1"
               >
-                Staff
+                <Lock size={11} className="text-[#A18D6D]" />
+                <span>Staff</span>
               </Link>
             )}
             <Button

@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import NavBar from "@/components/common/NavBar";
+import StationSecurityGuard, { lockCurrentStation } from "@/components/common/StationSecurityGuard";
+import { Lock } from "lucide-react";
 
 // Captains List
 import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu";
@@ -456,46 +458,56 @@ export default function CaptainPortal() {
   const selectedGroup = selectedTable ? tableGroups[selectedTable] : null;
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col">
-      {/* Top Header Bar */}
-      <div className="bg-[#1E1B16] text-white sticky top-0 z-40 px-4 py-3 shadow-md flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-zinc-800 text-white flex items-center justify-center font-bold text-lg shadow-xs border border-zinc-700">
-            <ChefHat size={20} strokeWidth={1.75} />
+    <StationSecurityGuard stationName="Captain / Waiter App" stationRole="Waiters & Floor Stewards">
+      <div className="min-h-screen bg-gray-100 flex flex-col">
+        {/* Top Header Bar */}
+        <div className="bg-[#1E1B16] text-white sticky top-0 z-40 px-4 py-3 shadow-md flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800 text-white flex items-center justify-center font-bold text-lg shadow-xs border border-zinc-700">
+              <ChefHat size={20} strokeWidth={1.75} />
+            </div>
+            <div>
+              <h1 className="font-playfair font-bold text-base tracking-wide flex items-center gap-2">
+                Captain Portal
+                <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-sans font-bold">
+                  LIVE
+                </span>
+              </h1>
+              <p className="text-[11px] text-gray-400">Hotel White Bliss • Waiter POS</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-playfair font-bold text-base tracking-wide flex items-center gap-2">
-              Captain Portal
-              <span className="text-[10px] bg-green-500/20 text-green-400 border border-green-500/30 px-2 py-0.5 rounded-full font-sans font-bold">
-                LIVE
-              </span>
-            </h1>
-            <p className="text-[11px] text-gray-400">Hotel White Bliss • Waiter POS</p>
-          </div>
-        </div>
 
-        {/* Captain Selector */}
-        <div className="flex items-center gap-2">
-          <select
-            value={selectedCaptain}
-            onChange={e => {
-              const val = e.target.value;
-              setSelectedCaptain(val);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('wb_selected_captain', val);
-              }
-              toast.success(`Active Captain: ${val}`, { icon: "👤" });
-            }}
-            className="bg-white/10 text-white text-xs font-bold py-1.5 px-3 rounded-xl border border-white/20 focus:outline-none focus:ring-1 focus:ring-[#A18D6D] cursor-pointer"
-          >
-            {captainsList.map(c => (
-              <option key={c} value={c} className="bg-gray-900 text-white">
-                {c}
-              </option>
-            ))}
-          </select>
+          {/* Captain Selector & Lock Station */}
+          <div className="flex items-center gap-2">
+            <select
+              value={selectedCaptain}
+              onChange={e => {
+                const val = e.target.value;
+                setSelectedCaptain(val);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('wb_selected_captain', val);
+                }
+                toast.success(`Active Captain: ${val}`, { icon: "👤" });
+              }}
+              className="bg-white/10 text-white text-xs font-bold py-1.5 px-3 rounded-xl border border-white/20 focus:outline-none focus:ring-1 focus:ring-[#A18D6D] cursor-pointer"
+            >
+              {captainsList.map(c => (
+                <option key={c} value={c} className="bg-gray-900 text-white">
+                  {c}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => lockCurrentStation()}
+              className="flex items-center gap-1 py-1.5 px-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-xl text-xs font-bold transition active:scale-95"
+              title="Lock tablet station immediately"
+            >
+              <Lock size={13} />
+              <span className="hidden sm:inline">Lock</span>
+            </button>
+          </div>
         </div>
-      </div>
 
       {/* VIEW 1: TABLE FLOOR OVERVIEW (When no table selected) */}
       {!selectedTable && (
@@ -1299,6 +1311,7 @@ export default function CaptainPortal() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </StationSecurityGuard>
   );
 }

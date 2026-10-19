@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react";
-import { supabase } from "@/lib/supabase";
-import { Bell, Clock, CheckCircle, Printer, ChefHat, ArrowLeft } from "lucide-react";
+import { Bell, Clock, CheckCircle, Printer, ChefHat, ArrowLeft, Lock } from "lucide-react";
+import StationSecurityGuard, { lockCurrentStation } from "@/components/common/StationSecurityGuard";
 
 function escapeHtml(str: any): string {
   return String(str || '')
@@ -395,7 +395,7 @@ export default function KitchenDashboard() {
   const columns = ["received", "preparing", "ready", "served"] as const;
 
   return (
-    <>
+    <StationSecurityGuard stationName="Kitchen Display (KDS)" stationRole="Head Chef & Kitchen Crew">
       <div className="min-h-screen bg-gray-100 p-3 pt-3 sm:p-6 sm:pt-6 font-sans relative">
       
       {!isOnline && (
@@ -460,6 +460,16 @@ export default function KitchenDashboard() {
           >
             <Bell size={16} />
             <span>{audioEnabled ? "Voice Alerts: ON" : "Muted"}</span>
+          </button>
+
+          {/* Lock KDS Terminal */}
+          <button
+            onClick={() => lockCurrentStation()}
+            className="p-2 sm:px-3 sm:py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-xl text-xs font-bold transition border border-red-500/30 flex items-center gap-1.5 active:scale-95"
+            title="Lock Kitchen screen immediately"
+          >
+            <Lock size={14} />
+            <span className="hidden sm:inline">Lock</span>
           </button>
 
           {/* Back to POS Counter */}
@@ -632,7 +642,7 @@ export default function KitchenDashboard() {
           );
         })}
       </div>
-    </div>
-    </>
+      </div>
+    </StationSecurityGuard>
   );
 }
