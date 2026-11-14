@@ -34,6 +34,9 @@ function StaffLoginContent() {
 
       const data = await res.json();
       if (res.ok && data.success) {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("wb_station_unlocked", "true");
+        }
         // Redirect to intended workstation (Captain, POS, Kitchen, etc.)
         window.location.href = redirectTarget;
       } else {

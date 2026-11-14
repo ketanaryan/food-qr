@@ -58,9 +58,8 @@ function Footer() {
                     </h3>
                     <ul className="space-y-2 text-sm text-[#5e5240]">
                         <li className="font-semibold text-stone-900">Hotel White Bliss</li>
-                        <li>Sula Vineyard Road, opp. Podar International School</li>
-                        <li>off Gangapur Road, Govardhan</li>
-                        <li>Nashik, Maharashtra 422012</li>
+                        <li>Dnyaneshwar Nagar, Pathardi Phata</li>
+                        <li>Nashik, Maharashtra 422010</li>
                         <li className="pt-1.5 font-bold text-stone-800">📞 +91 7499934257</li>
                         <li className="font-medium text-stone-600">Open: 11:00 AM - 11:00 PM</li>
                     </ul>
@@ -106,3 +105,4 @@ function Footer() {
 }
 
 export default Footer
+

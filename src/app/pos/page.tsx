@@ -73,7 +73,9 @@ function getSettledOrderFinancials(ord: any) {
     netSubtotal,
     gst,
     serviceCharge,
-    grandTotal
+    grandTotal,
+    splitCash: sInfo?.split_cash,
+    splitUpi: sInfo?.split_upi
   };
 }
 
@@ -523,8 +525,10 @@ export default function PetpoojaPOSPage() {
       setCookingNotes("");
       fetchOrders();
       setMobilePunchView('cart');
+      return data.order?.id || null;
     } catch (err: any) {
       toast.error(err.message || "Failed to punch KOT");
+      return null;
     } finally {
       setIsPunching(false);
     }
@@ -641,7 +645,7 @@ export default function PetpoojaPOSPage() {
     const orderNum = firstOrder?.order_number || firstOrder?.id || 101;
     const invoiceNo = `HWB-${String(orderNum).padStart(4, '0')}`;
 
-    const isDelivery = tableNumber.match(/^(Swiggy|Zomato|Takeaway)/i);
+    const isDelivery = String(tableNumber || '').match(/^(Swiggy|Zomato|Takeaway)/i);
     const orderType = isDelivery ? tableNumber : 'Dine-in';
     const location = isDelivery ? 'Counter' : `Table ${tableNumber}`;
 
@@ -764,7 +768,7 @@ export default function PetpoojaPOSPage() {
             <div style="font-size: 10px; font-weight: bold; margin-bottom: 4px;">${payMethod === 'SPLIT' ? 'SCAN TO PAY UPI BALANCE' : 'SCAN TO PAY VIA UPI'}</div>
             <img 
               id="qrImg"
-              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
+              src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${upiPayAmt}&cu=INR&tn=${invoiceNo}%20${location}`)}" 
               width="130" height="130" style="margin: 0 auto; display: block;" alt="UPI QR"
             />
             <div style="font-size: 11px; font-weight: bold; margin-top: 4px;">Exact Amount: ₹${upiPayAmt}</div>
@@ -820,7 +824,10 @@ export default function PetpoojaPOSPage() {
   // 5. PRINT 80MM KOT SLIP (Kitchen Order Ticket)
   const printKOTSlip = (tableNumber: string, orderNumber: number, items: any[], notes: string, captain: string) => {
     const printWindow = window.open('', '', 'width=380,height=500');
-    if (!printWindow) return;
+    if (!printWindow) {
+      toast.error("Please allow popups to print KOT slips");
+      return;
+    }
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -994,7 +1001,7 @@ export default function PetpoojaPOSPage() {
   return (
     <StationSecurityGuard stationName="POS & Billing Desk" stationRole="Cashier & Counter Staff">
       <div className="h-screen h-[100dvh] overflow-hidden bg-[#F4F1EA] text-[#1E1B16] flex flex-col font-sans select-none">
-        <audio ref={audioRef} src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_0625c1539c.mp3?filename=service-bell-ring-14610.mp3" preload="auto" />
+        <audio ref={audioRef} src="https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg" preload="auto" />
 
         {/* TOP RESPONSIVE PETPOOJA PRO NAVIGATION BAR */}
         <header className="bg-[#1E1B16] text-white px-3 sm:px-4 py-2 sticky top-0 z-50 shadow-md border-b border-[#322c24] flex items-center justify-between gap-2">
@@ -2161,10 +2168,11 @@ export default function PetpoojaPOSPage() {
                       {selectedTable?.toLowerCase().includes('swiggy') ? (
                         <button
                           onClick={async () => {
-                            await handlePunchKOT(false);
+                            const newId = await handlePunchKOT(false);
                             const group = tableGroups[selectedTable || ''];
-                            if (group) {
-                              markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'SWIGGY');
+                            const ids = Array.from(new Set([...(group ? group.orders.map((o: any) => o.id) : []), ...(newId ? [newId] : [])]));
+                            if (ids.length > 0) {
+                              markPaid(selectedTable || '', ids, 'SWIGGY');
                             }
                           }}
                           className="col-span-2 py-2.5 bg-[#FC8019] hover:bg-[#e06f14] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
@@ -2174,10 +2182,11 @@ export default function PetpoojaPOSPage() {
                       ) : selectedTable?.toLowerCase().includes('zomato') ? (
                         <button
                           onClick={async () => {
-                            await handlePunchKOT(false);
+                            const newId = await handlePunchKOT(false);
                             const group = tableGroups[selectedTable || ''];
-                            if (group) {
-                              markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'ZOMATO');
+                            const ids = Array.from(new Set([...(group ? group.orders.map((o: any) => o.id) : []), ...(newId ? [newId] : [])]));
+                            if (ids.length > 0) {
+                              markPaid(selectedTable || '', ids, 'ZOMATO');
                             }
                           }}
                           className="col-span-2 py-2.5 bg-[#E23744] hover:bg-[#c92b37] text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1.5"
@@ -2188,10 +2197,11 @@ export default function PetpoojaPOSPage() {
                         <>
                           <button
                             onClick={async () => {
-                              await handlePunchKOT(false);
+                              const newId = await handlePunchKOT(false);
                               const group = tableGroups[selectedTable || ''];
-                              if (group) {
-                                markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'CASH');
+                              const ids = Array.from(new Set([...(group ? group.orders.map((o: any) => o.id) : []), ...(newId ? [newId] : [])]));
+                              if (ids.length > 0) {
+                                markPaid(selectedTable || '', ids, 'CASH');
                               }
                             }}
                             className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
@@ -2200,10 +2210,11 @@ export default function PetpoojaPOSPage() {
                           </button>
                           <button
                             onClick={async () => {
-                              await handlePunchKOT(false);
+                              const newId = await handlePunchKOT(false);
                               const group = tableGroups[selectedTable || ''];
-                              if (group) {
-                                markPaid(selectedTable || '', group.orders.map((o: any) => o.id), 'UPI');
+                              const ids = Array.from(new Set([...(group ? group.orders.map((o: any) => o.id) : []), ...(newId ? [newId] : [])]));
+                              if (ids.length > 0) {
+                                markPaid(selectedTable || '', ids, 'UPI');
                               }
                             }}
                             className="py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs uppercase rounded-xl transition shadow-md flex items-center justify-center gap-1"
@@ -2266,7 +2277,7 @@ export default function PetpoojaPOSPage() {
                     <div className="flex items-start justify-between border-b pb-2">
                       <div>
                         <span className="text-base font-black text-gray-900">
-                          {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
+                          {String(ord.table_number || '').match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
                         </span>
                         <div className="text-[10px] text-gray-400 font-mono">
                           KOT #{ord.order_number || ord.id} • {minsAgo}m ago
@@ -2331,6 +2342,11 @@ export default function PetpoojaPOSPage() {
             acc.totalTaxAndCharges += (fin.gst + fin.serviceCharge);
             if (fin.payMode === 'UPI') {
               acc.upiSales += fin.grandTotal;
+            } else if (fin.payMode === 'SPLIT') {
+              const cashPart = fin.splitCash !== undefined ? Number(fin.splitCash) : Math.round(fin.grandTotal / 2);
+              const upiPart = fin.splitUpi !== undefined ? Number(fin.splitUpi) : Math.max(0, fin.grandTotal - cashPart);
+              acc.cashSales += cashPart;
+              acc.upiSales += upiPart;
             } else {
               acc.cashSales += fin.grandTotal;
             }
@@ -2425,7 +2441,7 @@ export default function PetpoojaPOSPage() {
                           <tr key={ord.id} className="hover:bg-gray-50 transition">
                             <td className="p-2.5 font-mono font-bold text-gray-900">#{ord.order_number || ord.id}</td>
                             <td className="p-2.5 font-medium text-gray-800">
-                              {ord.table_number.match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
+                              {String(ord.table_number || '').match(/^(Swiggy|Zomato|Takeaway)/i) ? ord.table_number : `Table ${ord.table_number}`}
                             </td>
                             <td className="p-2.5 text-gray-500 font-mono">{timeStr}</td>
                             <td className="p-2.5">
@@ -2682,7 +2698,7 @@ export default function PetpoojaPOSPage() {
                 <div className="bg-purple-50 border border-purple-200 p-3 rounded-2xl flex flex-col items-center text-center">
                   <span className="text-xs font-bold text-purple-900 mb-1">Customer Counter Scan QR</span>
                   <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${waModal.data.grandTotal}&cu=INR&tn=Table%20${waModal.data.tableNumber}`)}`}
                     alt="UPI QR Code"
                     className="w-36 h-36 my-1 border p-1 rounded-xl shadow-xs bg-white"
                   />

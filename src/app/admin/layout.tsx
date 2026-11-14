@@ -185,18 +185,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // IF NOT AUTHENTICATED: RENDER LUXURY OWNER SECURITY LOGIN SCREEN
   if (!isAuthenticated) {
     return (
-      <>
-        <head>
-          <title>White Bliss Owner App</title>
-          <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-          <meta name="apple-mobile-web-app-title" content="White Bliss Owner" />
-          <meta name="application-name" content="White Bliss Owner" />
-          <meta name="theme-color" content="#14120E" />
-          <link rel="manifest" href="/manifest-owner.json" />
-          <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
-        </head>
-        <div className="min-h-screen bg-[#14120E] text-white flex flex-col justify-center items-center p-4 selection:bg-[#A18D6D] selection:text-white">
+      <div className="min-h-screen bg-[#14120E] text-white flex flex-col justify-center items-center p-4 selection:bg-[#A18D6D] selection:text-white">
         <div className="w-full max-w-sm bg-[#1E1B16] border border-[#3A3328] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 animate-in fade-in zoom-in-95 duration-200">
           
           {/* Header & Badge */}
@@ -328,23 +317,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
         </div>
       </div>
-    </>
     );
   }
 
   return (
-    <>
-      <head>
-        <title>White Bliss Owner App</title>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="White Bliss Owner" />
-        <meta name="application-name" content="White Bliss Owner" />
-        <meta name="theme-color" content="#14120E" />
-        <link rel="manifest" href="/manifest-owner.json" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon-owner.png" />
-      </head>
-      <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 w-full bg-[#1E1B16] text-white z-50 flex items-center justify-between p-4 print:hidden border-b border-white/10">
         <div className="flex items-center gap-2">
@@ -391,7 +368,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         <div className="flex h-20 items-center justify-between px-6 border-b border-white/10">
           {!collapsed && (
-            <Link href="/" className="font-playfair font-bold text-xl tracking-widest text-[#A18D6D]">
+            <Link href="/admin/dashboard" className="font-playfair font-bold text-xl tracking-widest text-[#A18D6D]">
               ADMIN
             </Link>
           )}
@@ -611,6 +588,5 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       )}
     </div>
-    </>
   );
 }

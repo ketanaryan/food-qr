@@ -44,8 +44,8 @@ export async function POST(req: Request) {
       const { error } = await supabaseAdmin.from('menu').insert([sanitized]);
       if (error) throw error;
     } else if (action === 'update') {
-      const cleanId = parseInt(String(id), 10);
-      if (isNaN(cleanId) || cleanId <= 0) {
+      const cleanId = String(id || '').trim();
+      if (!cleanId) {
         return NextResponse.json({ success: false, message: 'Invalid menu item ID' }, { status: 400 });
       }
       const sanitized = sanitizeMenuData(data);
@@ -55,8 +55,8 @@ export async function POST(req: Request) {
       const { error } = await supabaseAdmin.from('menu').update(sanitized).eq('id', cleanId);
       if (error) throw error;
     } else if (action === 'delete') {
-      const cleanId = parseInt(String(id), 10);
-      if (isNaN(cleanId) || cleanId <= 0) {
+      const cleanId = String(id || '').trim();
+      if (!cleanId) {
         return NextResponse.json({ success: false, message: 'Invalid menu item ID' }, { status: 400 });
       }
       const { error } = await supabaseAdmin.from('menu').delete().eq('id', cleanId);

@@ -104,7 +104,7 @@ export default function PwaInstallPrompt() {
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-700 p-0.5 shadow-md flex-shrink-0">
                 <div className="w-full h-full bg-zinc-950 rounded-[10px] flex items-center justify-center font-serif font-bold text-amber-400 text-sm tracking-wider">
-                  HM
+                  WB
                 </div>
               </div>
               <div>

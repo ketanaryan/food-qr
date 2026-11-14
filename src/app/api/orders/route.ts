@@ -5,6 +5,7 @@ import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
 import { insertLocalOrder } from '@/lib/ordersStore';
 import { depleteStockForOrderItems } from '@/lib/inventoryStore';
+import { DEFAULT_MENU_ITEMS } from '@/lib/defaultMenu';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -89,9 +90,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'Too many items in a single order' }, { status: 400 });
     }
 
-    // 5. Server-Side Price Verification (Fetch legitimate prices directly from DB)
-    const { data: menuData } = await supabaseAdmin.from('menu').select('*');
-    const menuItemsList = menuData || [];
+    // 5. Server-Side Price Verification (Fetch legitimate prices directly from DB or fallback)
+    let menuItemsList: any[] = [];
+    try {
+      const { data: menuData } = await supabaseAdmin.from('menu').select('*');
+      if (menuData && menuData.length > 0) {
+        menuItemsList = menuData;
+      } else {
+        menuItemsList = DEFAULT_MENU_ITEMS;
+      }
+    } catch {
+      menuItemsList = DEFAULT_MENU_ITEMS;
+    }
 
     let totalAmount = 0;
     const validatedItems = [];

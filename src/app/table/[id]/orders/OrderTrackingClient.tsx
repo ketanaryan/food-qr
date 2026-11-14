@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import Link from "next/link"
-import { CheckCircle, Clock, Utensils, ReceiptText, ArrowLeft, Star } from "lucide-react"
+import { CheckCircle, Clock, Utensils, ReceiptText, ArrowLeft, Star, Bell, Receipt } from "lucide-react"
 import toast from "react-hot-toast"
 import { useSearchParams } from "next/navigation"
 import { QRCode } from "react-qrcode-logo"
@@ -14,6 +14,27 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   const token = searchParams.get('token')
 
   const [showReview, setShowReview] = useState(false)
+  const [callingWaiter, setCallingWaiter] = useState(false)
+
+  const handleCallWaiter = () => {
+    if (callingWaiter) return;
+    setCallingWaiter(true);
+    toast.success(`Waiter has been notified! Steward is on the way to Table #${tableId}.`, { icon: "🔔" });
+    const ch = supabase.channel('cashier-alerts');
+    ch.subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        ch.send({
+          type: 'broadcast',
+          event: 'waiter_called',
+          payload: { table: tableId },
+        });
+      }
+    });
+    setTimeout(() => {
+      supabase.removeChannel(ch);
+      setCallingWaiter(false);
+    }, 4000);
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -22,7 +43,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           .from('orders')
           .select('*')
           .eq('table_number', tableId)
-          .in('status', ['received', 'preparing', 'ready', 'served', 'rejected', 'billing'])
+          .in('status', ['received', 'preparing', 'ready', 'served', 'rejected', 'billing', 'completed'])
           .order('created_at', { ascending: false })
           .limit(10)
 
@@ -96,7 +117,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
              {'★'.repeat(5)}
           </div>
           <a 
-            href="https://www.google.com/search?q=Hotel+White Bliss" 
+            href="https://www.google.com/search?q=Hotel+White+Bliss" 
             target="_blank" 
             rel="noreferrer"
             className="block w-full bg-[#1E1B16] text-[#F8F5F0] font-bold py-3.5 rounded-xl shadow-md hover:bg-black transition text-xs uppercase tracking-widest"
@@ -105,6 +126,16 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           </a>
         </div>
         
+        {orders.length > 0 && (
+          <Link
+            href={`/bill/${orders.map(o => o.id).join('-')}`}
+            target="_blank"
+            className="inline-flex items-center justify-center gap-1.5 w-full bg-[#FAF7F2] border border-[#e8dfd3] hover:border-[#A18D6D] text-[#1E1B16] font-bold py-3.5 rounded-xl shadow-xs transition text-xs uppercase tracking-wider mb-4"
+          >
+            <Receipt size={14} className="text-[#A18D6D]" />
+            <span>View Official Tax Invoice (GST)</span>
+          </Link>
+        )}
         <Link href={`/table/${tableId}?token=${token || ''}`} className="text-[#A18D6D] text-xs font-bold tracking-wider uppercase underline underline-offset-4">
           Return to Menu
         </Link>
@@ -160,7 +191,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   });
 
   const isBilling = orders.some(o => o.status === 'billing');
-  const upiUrl = `upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${grandTotal}&cu=INR&tn=Table%20${tableId}%20Bill`;
+  const upiUrl = `upi://pay?pa=7499934257@okaxis&pn=${encodeURIComponent('Hotel White Bliss')}&am=${grandTotal}&cu=INR&tn=${encodeURIComponent('Table ' + tableId + ' Bill')}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiUrl)}`;
 
   // 2. Loading State
@@ -350,7 +381,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
             {'★'.repeat(5)}
           </div>
           <a 
-            href="https://www.google.com/search?q=Hotel+White Bliss" 
+            href="https://www.google.com/search?q=Hotel+White+Bliss" 
             target="_blank" 
             rel="noreferrer"
             className="inline-flex items-center justify-center gap-2 w-full bg-[#FAF7F2] border border-[#e8dfd3] hover:border-amber-400 text-[#1E1B16] py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider shadow-2xs transition active:scale-95"
@@ -380,12 +411,23 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
           <h1 className="text-2xl font-bold font-playfair text-[#1E1B16]">Your Orders</h1>
           <p className="text-xs text-[#6F624E]">Table #{tableId} • Live Kitchen Status</p>
         </div>
-        <Link 
-          href={`/table/${tableId}?token=${token || ''}`} 
-          className="text-xs font-bold tracking-wider uppercase text-[#A18D6D] hover:text-[#1E1B16] py-1.5 px-3.5 rounded-full border border-[#A18D6D]/40 bg-white shadow-2xs transition"
-        >
-          + Add Items
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleCallWaiter}
+            disabled={callingWaiter}
+            className="text-xs font-bold tracking-wider uppercase text-[#6F624E] hover:text-[#1E1B16] py-1.5 px-3 rounded-full border border-gray-200 bg-white shadow-2xs transition flex items-center gap-1 active:scale-95 disabled:opacity-50"
+            title="Call steward to your table"
+          >
+            <Bell size={12} className={callingWaiter ? "animate-bounce text-amber-500" : "text-[#A18D6D]"} />
+            <span>{callingWaiter ? "Calling..." : "Call Waiter"}</span>
+          </button>
+          <Link 
+            href={`/table/${tableId}?token=${token || ''}`} 
+            className="text-xs font-bold tracking-wider uppercase text-[#A18D6D] hover:text-[#1E1B16] py-1.5 px-3.5 rounded-full border border-[#A18D6D]/40 bg-white shadow-2xs transition"
+          >
+            + Add Items
+          </Link>
+        </div>
       </div>
 
       <div className="space-y-4 mb-8">

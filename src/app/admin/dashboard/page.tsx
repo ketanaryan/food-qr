@@ -27,6 +27,7 @@ export default function Dashboard() {
 
   const fetchAnalytics = async () => {
     setLoading(true);
+    try {
     
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
@@ -63,9 +64,13 @@ export default function Dashboard() {
         netSales += Math.max(0, b.subtotal - (b.discount || 0));
         gstAmt += b.gst;
         scAmt += (b.service_charge || 0);
-        b.items.forEach(item => {
-          itemsCount[item.name] = (itemsCount[item.name] || 0) + item.qty;
-        });
+        if (Array.isArray(b.items)) {
+          b.items.forEach(item => {
+            if (item && item.name && item.id !== 'NOTE') {
+              itemsCount[item.name] = (itemsCount[item.name] || 0) + (item.qty || 1);
+            }
+          });
+        }
       });
 
       let top = "-";
@@ -115,7 +120,11 @@ export default function Dashboard() {
       // 3. Recent Orders: Top 5 Consolidated Bills
       setRecentOrders(consolidatedBills.slice(0, 5));
     }
-    setLoading(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const exportTodayCsv = () => {

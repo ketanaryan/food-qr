@@ -9,7 +9,6 @@ import {
   Bell, DollarSign, Smartphone, QrCode, X
 } from "lucide-react";
 import toast from "react-hot-toast";
-import NavBar from "@/components/common/NavBar";
 import StationSecurityGuard, { lockCurrentStation } from "@/components/common/StationSecurityGuard";
 import { Lock } from "lucide-react";
 
@@ -796,7 +795,7 @@ export default function CaptainPortal() {
                     return (
                       <div key={ord.id} className="bg-gray-50 p-2.5 rounded-xl text-xs space-y-1">
                         <div className="flex justify-between font-bold text-gray-500 text-[11px]">
-                          <span>KOT #{ord.order_number || ord.id.slice(0, 4)}</span>
+                          <span>KOT #{ord.order_number || String(ord.id).slice(0, 4)}</span>
                           <span className="uppercase text-blue-600 font-extrabold">{ord.status}</span>
                         </div>
                         {Array.isArray(items) && items.filter(i => i.id !== "NOTE").map((it, idx) => (
@@ -1162,7 +1161,7 @@ export default function CaptainPortal() {
                         Scan UPI QR with Any Mobile App:
                       </span>
                       <img
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White Bliss&am=${bTotal}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`upi://pay?pa=7499934257@okaxis&pn=Hotel%20White%20Bliss&am=${bTotal}&cu=INR&tn=Table%20${selectedTable}%20Bill`)}`}
                         alt="UPI QR Code"
                         className="w-44 h-44 my-2 border p-1 rounded-xl shadow-xs"
                       />

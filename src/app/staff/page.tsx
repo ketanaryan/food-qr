@@ -36,6 +36,37 @@ export default function StaffHubPage() {
     }
   }, []);
 
+  // Enable physical keyboard numpad input when station PIN modal is open
+  useEffect(() => {
+    if (!selectedStation) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key >= "0" && e.key <= "9") {
+        setPinInput((prev) => {
+          if (prev.length >= 4) return prev;
+          const next = prev + e.key;
+          if (next.length === 4) {
+            setTimeout(() => handleVerifyPin(next), 50);
+          }
+          return next;
+        });
+        setPinError("");
+      } else if (e.key === "Backspace") {
+        setPinInput((prev) => prev.slice(0, -1));
+        setPinError("");
+      } else if (e.key === "Escape") {
+        setSelectedStation(null);
+        setPinInput("");
+        setPinError("");
+      } else if (e.key === "Enter" && pinInput.length > 0) {
+        handleVerifyPin();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedStation, pinInput]);
+
   const stations: Station[] = [
     {
       title: "POS & Billing Desk",
@@ -107,6 +138,7 @@ export default function StaffHubPage() {
   };
 
   const handleVerifyPin = async (codeOverride?: string) => {
+    if (pinLoading) return;
     const code = codeOverride !== undefined ? codeOverride : pinInput;
     if (!code.trim()) {
       setPinError("Please enter 4-digit Staff PIN.");

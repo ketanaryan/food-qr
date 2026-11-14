@@ -66,7 +66,9 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
         throw new Error("Bill not found. Please contact restaurant staff.");
       }
 
-      const tableNumber = orders[0].table_number || "Counter";
+      const validOrders = orders.filter((o: any) => o.status !== 'rejected');
+      const ordersToProcess = validOrders.length > 0 ? validOrders : orders;
+      const tableNumber = ordersToProcess[0].table_number || "Counter";
       let calculatedSubtotal = 0;
 
       let storedSubtotal: number | undefined;
@@ -234,7 +236,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
     doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(80, 80, 80);
-    doc.text(`Bill No: HM-${bill.orderIds}`, 5, 36.5);
+    doc.text(`Bill No: WB-${bill.orderIds}`, 5, 36.5);
     doc.text(`${dateFormatted} ${timeFormatted}`, 75, 36.5, { align: "right" });
 
     doc.setFont("helvetica", "bold");
@@ -499,7 +501,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
             Pure Veg Multicuisine Restaurant & Banquets
           </p>
           <p className="text-[11px] text-stone-400 mt-2 max-w-xs mx-auto leading-relaxed">
-            Sula Vineyard Road, opp. Podar International School, off Gangapur Road, Govardhan, Nashik 422012
+            Dnyaneshwar Nagar, Pathardi Phata, Nashik 422009
           </p>
           <div className="text-[10px] text-stone-400 mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1">
             <span>GSTIN: 27AABCH1234F1Z5</span>
@@ -525,7 +527,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
               Invoice Reference
             </div>
             <div className="font-mono font-bold text-stone-800 mt-0.5">
-              HM-{billData.orderIds}
+              WB-{billData.orderIds}
             </div>
           </div>
           <div className="text-right">
@@ -651,7 +653,7 @@ export default function BillViewer({ params }: { params: Promise<{ ids: string }
 
           <div className="mt-4 pt-4 border-t border-stone-800 flex flex-col sm:flex-row gap-2 justify-center print:hidden">
             <a
-              href="https://www.google.com/search?q=Hotel+White Bliss"
+              href="https://www.google.com/search?q=Hotel+White+Bliss"
               target="_blank"
               rel="noopener noreferrer"
               className="bg-[#A18D6D] hover:bg-[#8F7C5D] text-white font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"

@@ -170,6 +170,7 @@ export default function SalesReport() {
 
   const fetchSales = async () => {
     setLoading(true);
+    try {
     
     // We need to fetch up to the end of the selected end date
     const [sY, sM, sD] = startDate.split('-').map(Number);
@@ -228,7 +229,11 @@ export default function SalesReport() {
       setTotalOrders(consolidated.length);
     }
     
-    setLoading(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const exportCSV = () => {
@@ -254,7 +259,7 @@ export default function SalesReport() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Hotel_White Bliss_GST_Sales_${startDate}_to_${endDate}.csv`);
+    link.setAttribute("download", `Hotel_White_Bliss_GST_Sales_${startDate}_to_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

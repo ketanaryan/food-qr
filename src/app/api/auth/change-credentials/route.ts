@@ -48,7 +48,8 @@ export async function POST(req: NextRequest) {
 
     // Verify current password against dynamic scrypt hash or allowed owner passwords
     const dynamicCreds = await fetchDynamicOwnerCredentials();
-    const currentOwnerEmail = dynamicCreds?.email || 'owner@hotelwhitebliss.com';
+    const { primaryEmail } = getExpectedOwnerCredentials();
+    const currentOwnerEmail = dynamicCreds?.email || primaryEmail;
     const isCurrentPasswordCorrect = await verifyOwnerCredentialsAsync(currentOwnerEmail, currentPassword.trim());
 
     if (!isCurrentPasswordCorrect) {

@@ -59,6 +59,7 @@ export default function StationSecurityGuard({
   }, [handleLock]);
 
   const handleVerify = async (codeOverride?: string) => {
+    if (loading) return;
     const code = codeOverride !== undefined ? codeOverride : pinInput;
     if (!code.trim()) {
       setErrorMsg("Please enter 4-digit Staff PIN.");

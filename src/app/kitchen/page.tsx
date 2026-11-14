@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 import { Bell, Clock, CheckCircle, Printer, ChefHat, ArrowLeft, Lock } from "lucide-react";
 import StationSecurityGuard, { lockCurrentStation } from "@/components/common/StationSecurityGuard";
 
@@ -90,7 +91,10 @@ export default function KitchenDashboard() {
     const foodItems = items.filter((i: any) => i.id !== 'NOTE');
 
     const printWindow = window.open('', '', 'width=380,height=520');
-    if (!printWindow) return;
+    if (!printWindow) {
+      console.warn("Popups blocked for KOT print");
+      return;
+    }
 
     const now = new Date(order.created_at || Date.now());
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -265,56 +269,62 @@ export default function KitchenDashboard() {
                 if (!Array.isArray(itemsArray)) itemsArray = [];
 
                 const dishCounts = itemsArray
-                  .filter((i:any) => i.id !== 'NOTE')
-                  .map((i:any) => `${i.qty} ${i.name}`)
+                  .filter((i:any) => i && i.id !== 'NOTE')
+                  .map((i:any) => `${i.qty || 1} ${i.name || 'Dish'}`)
                   .join(", ");
                   
-                const tableNameMatch = newOrder.table_number.match(/^(Swiggy|Zomato|Takeaway)/i);
-                const tableNameStr = tableNameMatch ? newOrder.table_number : `Table ${newOrder.table_number}`;
+                const tableNameMatch = String(newOrder.table_number || '').match(/^(Swiggy|Zomato|Takeaway)/i);
+                const tableNameStr = tableNameMatch ? newOrder.table_number : `Table ${newOrder.table_number || ''}`;
                 
                 const textToSpeak = `New order. ${tableNameStr}. ${dishCounts}.`;
                 
-                // Clear any stuck speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                utterance.volume = 1.0; // Max Volume
-                utterance.rate = 0.9; 
-                utterance.pitch = 1.2; // Slightly higher pitch for a more pleasant female tone
-                
-                const voices = window.speechSynthesis.getVoices();
-                if (voices && voices.length > 0) {
-                  const femaleVoices = voices.filter(v => 
-                    v.name.toLowerCase().includes('female') || 
-                    v.name.includes('Zira') || 
-                    v.name.includes('Samantha') || 
-                    v.name.includes('Google UK English Female') || 
-                    v.name.includes('Google US English') ||
-                    v.name.includes('Rishi') === false // Avoid common male voices
-                  );
+                // Clear any stuck speech safely
+                if (typeof window !== 'undefined' && 'speechSynthesis' in window && window.speechSynthesis) {
+                  window.speechSynthesis.cancel();
                   
-                  const indianFemale = femaleVoices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                  const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                  utterance.volume = 1.0; // Max Volume
+                  utterance.rate = 0.9; 
+                  utterance.pitch = 1.2;
                   
-                  if (indianFemale) {
-                    utterance.voice = indianFemale;
-                  } else if (femaleVoices.length > 0) {
-                    utterance.voice = femaleVoices[0];
-                  } else {
-                    const fallback = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
-                    if (fallback) utterance.voice = fallback;
+                  const voices = window.speechSynthesis.getVoices();
+                  if (voices && voices.length > 0) {
+                    const femaleVoices = voices.filter(v => 
+                      v.name.toLowerCase().includes('female') || 
+                      v.name.includes('Zira') || 
+                      v.name.includes('Samantha') || 
+                      v.name.includes('Google UK English Female') || 
+                      v.name.includes('Google US English') ||
+                      v.name.includes('Rishi') === false
+                    );
+                    
+                    const indianFemale = femaleVoices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                    
+                    if (indianFemale) {
+                      utterance.voice = indianFemale;
+                    } else if (femaleVoices.length > 0) {
+                      utterance.voice = femaleVoices[0];
+                    } else {
+                      const fallback = voices.find(v => v.lang.includes('en-IN') || v.lang.includes('hi-IN'));
+                      if (fallback) utterance.voice = fallback;
+                    }
                   }
-                }
-                
-                if (audioRef.current) {
-                   audioRef.current.volume = 1.0;
-                   audioRef.current.play().then(() => {
-                     // Wait a bit for the beep to finish
-                     setTimeout(() => window.speechSynthesis.speak(utterance), 1200);
-                   }).catch(() => {
-                     window.speechSynthesis.speak(utterance);
-                   });
-                } else {
-                   window.speechSynthesis.speak(utterance);
+
+                  if (audioRef.current) {
+                    audioRef.current.volume = 1.0;
+                    audioRef.current.play().then(() => {
+                      setTimeout(() => {
+                        if (window.speechSynthesis) window.speechSynthesis.speak(utterance);
+                      }, 1200);
+                    }).catch(() => {
+                      if (window.speechSynthesis) window.speechSynthesis.speak(utterance);
+                    });
+                  } else {
+                    window.speechSynthesis.speak(utterance);
+                  }
+                } else if (audioRef.current) {
+                  audioRef.current.volume = 1.0;
+                  audioRef.current.play().catch(() => {});
                 }
               } catch (err) {
                 console.error("Speech error", err);

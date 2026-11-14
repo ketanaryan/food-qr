@@ -29,7 +29,11 @@ function ItemNotch({ merchantId, isPosMode }: { merchantId?: string, isPosMode?:
     if (isPosMode && merchantId) {
       router.push(`/pos/checkout?table=${merchantId}`)
     } else {
-      router.push(`${pathname}/checkout?token=${token || ''}`)
+      if (pathname && pathname.startsWith('/table/')) {
+        router.push(pathname + '/checkout?token=' + (token || ''));
+      } else {
+        router.push('/table/1/checkout?token=' + (token || ''));
+      }
     }
   }
 

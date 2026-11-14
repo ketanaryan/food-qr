@@ -7,12 +7,12 @@ export async function POST(req: NextRequest) {
     message: 'Staff session locked and logged out successfully.'
   });
 
-  const isProd = process.env.NODE_ENV === 'production';
+  const isSecure = process.env.NODE_ENV === 'production' && !req.url.includes('localhost') && !req.url.includes('127.0.0.1');
 
   // Clear staff_session cookie
   response.cookies.set('staff_session', '', {
     httpOnly: true,
-    secure: isProd,
+    secure: isSecure,
     sameSite: 'lax',
     maxAge: 0,
     path: '/'
