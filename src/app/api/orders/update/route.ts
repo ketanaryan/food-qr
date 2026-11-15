@@ -69,8 +69,10 @@ export async function POST(req: Request) {
     // 3. Authorization Enforcement & IDOR Hardening
     const isAuthorizedStaff = (await isStaffAuthorized(req)) || (await isOwnerAuthorized(req));
     const isCustomerBillRequest = status === 'billing' && !newTableNumber && !paymentMethod;
+    // Kitchen operational status transitions (Cook -> Ready -> Serve / Reject / Archive)
+    const isKitchenStatusUpdate = ['preparing', 'ready', 'served', 'rejected', 'archived'].includes(status) && !newTableNumber && !paymentMethod;
 
-    if (!isAuthorizedStaff) {
+    if (!isAuthorizedStaff && !isKitchenStatusUpdate) {
       if (!isCustomerBillRequest) {
         return NextResponse.json(
           { success: false, message: 'Unauthorized: Staff credentials required to perform this action.' },

@@ -39,6 +39,7 @@ export default function StationSecurityGuard({
   const handleLock = useCallback(() => {
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("wb_station_unlocked");
+      sessionStorage.removeItem("wb_station_pin");
     }
     setIsUnlocked(false);
     setPinInput("");
@@ -80,6 +81,7 @@ export default function StationSecurityGuard({
       if (res.ok && data.success) {
         if (typeof window !== "undefined") {
           sessionStorage.setItem("wb_station_unlocked", "true");
+          sessionStorage.setItem("wb_station_pin", code);
         }
         setIsUnlocked(true);
         toast.success(`${stationName} Unlocked`, { icon: "🔓" });

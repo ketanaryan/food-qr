@@ -262,9 +262,24 @@ export async function GET(req: Request) {
       500
     );
 
+    // Deduplicate uniquely by id and order_number
+    const seenIds = new Set<string>();
+    const seenNums = new Set<string>();
+    const uniqueOrders: any[] = [];
+    for (const o of orders) {
+      const idKey = String(o.id);
+      const numKey = o.order_number ? String(o.order_number) : '';
+      if (seenIds.has(idKey) || (numKey && seenNums.has(numKey))) {
+        continue;
+      }
+      seenIds.add(idKey);
+      if (numKey) seenNums.add(numKey);
+      uniqueOrders.push(o);
+    }
+
     return NextResponse.json({
       success: true,
-      orders
+      orders: uniqueOrders
     }, { 
       status: 200,
       headers: {

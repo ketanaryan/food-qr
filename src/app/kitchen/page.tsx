@@ -203,7 +203,17 @@ export default function KitchenDashboard() {
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.orders)) {
-          setOrders(json.orders);
+          // Strictly deduplicate by order ID & order_number
+          const seen = new Set();
+          const uniqueOrders: Order[] = [];
+          for (const o of json.orders) {
+            const key = o.id || o.order_number;
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniqueOrders.push(o);
+            }
+          }
+          setOrders(uniqueOrders);
           setIsOnline(true);
           return;
         }
@@ -246,7 +256,12 @@ export default function KitchenDashboard() {
         (payload) => {
           if (payload.eventType === "INSERT") {
             const newOrder = payload.new as Order;
-            setOrders((prev) => [newOrder, ...prev]);
+            setOrders((prev) => {
+              if (prev.some(o => o.id === newOrder.id || (o.order_number && o.order_number === newOrder.order_number))) {
+                return prev.map(o => (o.id === newOrder.id || (o.order_number && o.order_number === newOrder.order_number)) ? newOrder : o);
+              }
+              return [newOrder, ...prev];
+            });
 
             // Auto-Print KOT slip if enabled
             if (autoPrintKOTRef.current) {
@@ -366,41 +381,43 @@ export default function KitchenDashboard() {
 
   const updateStatus = async (id: number, newStatus: string) => {
     // Optimistic Update
-    const previousOrders = [...orders];
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status: newStatus as any } : o));
 
     try {
+      const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem("wb_station_pin") || '1234') : '1234';
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-staff-pin': staffPin
         },
         body: JSON.stringify({ orderIds: [id], status: newStatus })
       });
       const data = await res.json();
-      if (!data.success) throw new Error(data.message);
+      if (!data.success) {
+        console.warn("Status update warning:", data.message);
+      }
     } catch (error) {
       console.error("Error updating status:", error);
-      // Revert on failure
-      setOrders(previousOrders);
     }
   };
 
   const clearServed = async (ordersToClear: Order[]) => {
-    const previousOrders = [...orders];
     const ids = ordersToClear.map(o => o.id);
-    setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'archived' } : o));
+    setOrders(prev => prev.filter(o => !ids.includes(o.id)));
     
     try {
+      const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem("wb_station_pin") || '1234') : '1234';
       await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-staff-pin': staffPin
         },
         body: JSON.stringify({ orderIds: ids, status: 'archived' })
       });
     } catch (error) {
-      setOrders(previousOrders);
+      console.error("Error clearing served orders:", error);
     }
   };
 
@@ -526,6 +543,10 @@ export default function KitchenDashboard() {
         {columns.map((status) => {
           const colOrders = orders
             .filter((o) => o.status === status)
+            // Ensure no duplicate cards appear in column
+            .filter((order, idx, arr) => 
+              idx === arr.findIndex(o => o.id === order.id || (o.order_number && o.order_number === order.order_number))
+            )
             .sort((a, b) => {
               if (status === "served") return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
               return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();

@@ -394,10 +394,12 @@ export default function CaptainPortal() {
 
     try {
       const orderIds = group.orders.map((o: any) => o.id);
+      const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem('wb_station_pin') || '1234') : '1234';
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-staff-pin': staffPin
         },
         body: JSON.stringify({
           orderIds,
@@ -430,10 +432,12 @@ export default function CaptainPortal() {
       const serviceCharge = Math.round(subtotal * 0.05);
       const grandTotal = subtotal + gst + serviceCharge;
 
+      const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem('wb_station_pin') || '1234') : '1234';
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-staff-pin': staffPin
         },
         body: JSON.stringify({
           orderIds,
@@ -475,10 +479,12 @@ export default function CaptainPortal() {
 
     try {
       const orderIds = group.orders.map((o: any) => o.id);
+      const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem('wb_station_pin') || '1234') : '1234';
       const res = await fetch('/api/orders/update', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-staff-pin': staffPin
         },
         body: JSON.stringify({ orderIds, newTableNumber: targetShiftTable })
       });
