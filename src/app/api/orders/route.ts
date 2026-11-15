@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
-import { insertLocalOrder } from '@/lib/ordersStore';
+import { insertLocalOrder, getLocalOrders } from '@/lib/ordersStore';
 import { depleteStockForOrderItems } from '@/lib/inventoryStore';
 import { DEFAULT_MENU_ITEMS } from '@/lib/defaultMenu';
 
@@ -206,5 +206,72 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error('Checkout API error:', error);
     return NextResponse.json({ success: false, message: 'Server error' }, { status: 500 });
+  }
+}
+
+export async function GET(req: Request) {
+  try {
+    const isStaff = (await isStaffAuthorized(req)) || (await isOwnerAuthorized(req));
+    const url = new URL(req.url);
+    const table = url.searchParams.get('table');
+    const statusParam = url.searchParams.get('status');
+    const orderIdParam = url.searchParams.get('id');
+
+    let orders: any[] = [];
+
+    // 1. Try Supabase first
+    try {
+      let query = supabaseAdmin
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (orderIdParam) {
+        query = query.eq('id', orderIdParam);
+      }
+      if (table) {
+        query = query.eq('table_number', table);
+      }
+      if (statusParam) {
+        const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean);
+        if (statuses.length > 0) {
+          query = query.in('status', statuses);
+        }
+      }
+
+      const { data, error } = await query;
+      if (!error && Array.isArray(data)) {
+        orders = data;
+      }
+    } catch (e: any) {
+      console.warn('Supabase orders fetch notice:', e.message);
+    }
+
+    // 2. Hybrid Resilient Fallback: If Supabase failed or returned empty, merge from resilient local store
+    const localOrders = getLocalOrders();
+    if (orders.length === 0 && localOrders.length > 0) {
+      let filtered = [...localOrders];
+      if (orderIdParam) {
+        filtered = filtered.filter(o => String(o.id) === String(orderIdParam));
+      }
+      if (table) {
+        filtered = filtered.filter(o => String(o.table_number) === String(table));
+      }
+      if (statusParam) {
+        const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean);
+        if (statuses.length > 0) {
+          filtered = filtered.filter(o => statuses.includes(o.status));
+        }
+      }
+      orders = filtered;
+    }
+
+    return NextResponse.json({
+      success: true,
+      orders
+    }, { status: 200 });
+  } catch (error: any) {
+    console.error('GET /api/orders error:', error);
+    return NextResponse.json({ success: false, orders: [], error: 'Failed to fetch orders' }, { status: 500 });
   }
 }

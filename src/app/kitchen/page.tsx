@@ -198,35 +198,64 @@ export default function KitchenDashboard() {
 
   const fetchOrders = async () => {
     try {
-      // Fetch active orders
-      const { data: activeData, error: activeError } = await supabase
-        .from("orders")
-        .select("*")
-        .in("status", ["received", "pending", "preparing", "ready"])
-        .order("created_at", { ascending: false });
-
-      // Fetch limited served orders to prevent memory leak
-      const { data: servedData, error: servedError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("status", "served")
-        .order("created_at", { ascending: false })
-        .limit(30);
-
-      if (!activeError && !servedError && activeData && servedData) {
-        setOrders([...activeData, ...servedData]);
+      // 1. Try Next.js internal API first (which has hybrid Supabase + resilient local store fallback)
+      let fetchedOrders: Order[] = [];
+      try {
+        const res = await fetch("/api/orders?status=received,pending,preparing,ready,served");
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.orders)) {
+            fetchedOrders = json.orders;
+          }
+        }
+      } catch (apiErr) {
+        // Fallback to direct supabase query
       }
+
+      // 2. Direct Supabase query as fallback if API route returned empty
+      if (fetchedOrders.length === 0) {
+        try {
+          const { data: activeData, error: activeError } = await supabase
+            .from("orders")
+            .select("*")
+            .in("status", ["received", "pending", "preparing", "ready"])
+            .order("created_at", { ascending: false });
+
+          const { data: servedData, error: servedError } = await supabase
+            .from("orders")
+            .select("*")
+            .eq("status", "served")
+            .order("created_at", { ascending: false })
+            .limit(30);
+
+          if (!activeError && !servedError && activeData && servedData) {
+            fetchedOrders = [...activeData, ...servedData];
+          }
+        } catch (sbErr) {}
+      }
+
+      if (fetchedOrders.length > 0) {
+        setOrders(fetchedOrders);
+      }
+      setIsOnline(true);
     } catch (e) {
       console.error("fetchOrders error:", e);
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        setIsOnline(false);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      setIsOnline(navigator.onLine);
+    }
     fetchOrders();
 
-    const interval = setInterval(fetchOrders, 30000);
+    // 4-second reactive polling fallback for commercial kitchen operations
+    const interval = setInterval(fetchOrders, 4000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchOrders();
     };
@@ -344,8 +373,15 @@ export default function KitchenDashboard() {
         }
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') setIsOnline(true);
-        if (status === 'CLOSED' || status === 'CHANNEL_ERROR') setIsOnline(false);
+        if (status === 'SUBSCRIBED') {
+          setIsOnline(true);
+        }
+        // Only set offline if device itself actually lost internet connectivity
+        if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            setIsOnline(false);
+          }
+        }
       });
 
     return () => {

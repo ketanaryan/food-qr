@@ -133,32 +133,61 @@ export default function CaptainPortal() {
   }, []);
 
   const fetchOrders = async () => {
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .neq("status", "archived")
-      .neq("status", "completed")
-      .neq("status", "rejected")
-      .order("created_at", { ascending: false });
+    try {
+      const res = await fetch("/api/orders?status=received,pending,preparing,ready,served,billing");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.orders)) {
+          setOrders(json.orders);
+          setLoading(false);
+          return;
+        }
+      }
+    } catch {}
 
-    if (data) setOrders(data);
+    try {
+      const { data } = await supabase
+        .from("orders")
+        .select("*")
+        .neq("status", "archived")
+        .neq("status", "completed")
+        .neq("status", "rejected")
+        .order("created_at", { ascending: false });
+
+      if (data) setOrders(data);
+    } catch {}
     setLoading(false);
   };
 
   const fetchMenu = async () => {
-    const { data } = await supabase.from("menu").select("*");
-    if (data && data.length > 0) {
-      const formatted = data.map(d => ({
+    try {
+      const { data } = await supabase.from("menu").select("*");
+      if (data && data.length > 0) {
+        const formatted = data.map(d => ({
+          id: d.id,
+          name: d.name,
+          category: d.section || d.category || "Main Course",
+          price: d.price,
+          isVeg: !d.name.toLowerCase().includes("chicken") && 
+                 !d.name.toLowerCase().includes("mutton") && 
+                 !d.name.toLowerCase().includes("egg") && 
+                 !d.name.toLowerCase().includes("fish") &&
+                 !d.name.toLowerCase().includes("prawn") &&
+                 !d.name.toLowerCase().includes("non veg")
+        }));
+        setMenuItems(formatted);
+        return;
+      }
+    } catch {}
+
+    // Resilient fallback to complete default menu catalog
+    if (DEFAULT_MENU_ITEMS && DEFAULT_MENU_ITEMS.length > 0) {
+      const formatted = DEFAULT_MENU_ITEMS.map((d: any) => ({
         id: d.id,
         name: d.name,
-        category: d.section || "Main Course",
+        category: d.category || "Main Course",
         price: d.price,
-        isVeg: !d.name.toLowerCase().includes("chicken") && 
-               !d.name.toLowerCase().includes("mutton") && 
-               !d.name.toLowerCase().includes("egg") && 
-               !d.name.toLowerCase().includes("fish") &&
-               !d.name.toLowerCase().includes("prawn") &&
-               !d.name.toLowerCase().includes("non veg")
+        isVeg: d.isVeg !== false
       }));
       setMenuItems(formatted);
     }

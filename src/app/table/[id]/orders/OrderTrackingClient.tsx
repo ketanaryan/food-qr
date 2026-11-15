@@ -39,6 +39,18 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        const res = await fetch(`/api/orders?table=${tableId}&status=received,preparing,ready,served,rejected,billing,completed`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.orders)) {
+            setOrders(json.orders);
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {}
+
+      try {
         const { data } = await supabase
           .from('orders')
           .select('*')
@@ -57,6 +69,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
     }
 
     fetchOrders()
+    const interval = setInterval(fetchOrders, 4000);
 
     const channel = supabase
       .channel(`table-orders-${tableId}`)
@@ -70,6 +83,7 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
 
     return () => {
       supabase.removeChannel(channel)
+      clearInterval(interval)
     }
   }, [tableId])
 
