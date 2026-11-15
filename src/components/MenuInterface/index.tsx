@@ -22,10 +22,69 @@ import {
 import { supabase } from "@/lib/supabase"
 import { IMenu } from "@/types/menu"
 import { motion, AnimatePresence } from "framer-motion"
+import { DEFAULT_MENU_ITEMS } from "@/lib/defaultMenu"
+
+function formatMenuItems(rawItems: any[], merchantId: string): IMenu[] {
+  return (rawItems || []).map(item => {
+    const lowerName = (item.name || '').toLowerCase();
+    const lowerSection = (item.section || item.category || '').toLowerCase();
+    const isExplicitVeg = 
+      lowerName.includes("steam rice") ||
+      lowerName.includes("jeera rice") ||
+      lowerName.includes("curd rice") ||
+      lowerSection.includes("veg special") ||
+      lowerSection.includes("paneer") ||
+      lowerSection.includes("vegetarian guests") ||
+      lowerSection.includes("roti") ||
+      lowerSection.includes("ice cream") ||
+      lowerSection.includes("sath") ||
+      lowerSection.includes("basmati") ||
+      lowerSection.includes("chinese rice & noodles");
+
+    const isNonVeg = 
+      !isExplicitVeg && (
+        lowerName.includes("chicken") ||
+        lowerName.includes("mutton") ||
+        lowerName.includes("egg") ||
+        lowerName.includes("fish") ||
+        lowerName.includes("prawn") ||
+        lowerName.includes("murg") ||
+        lowerName.includes("pomfret") ||
+        lowerName.includes("surmai") ||
+        lowerName.includes("bangda") ||
+        lowerName.includes("bombil") ||
+        lowerName.includes("tangdi") ||
+        lowerName.includes("non veg") ||
+        lowerSection.includes("non veg") ||
+        lowerSection.includes("meat lovers") ||
+        lowerSection.includes("gavathi") ||
+        lowerSection.includes("sea") ||
+        lowerSection.includes("chicken") ||
+        lowerSection.includes("soup")
+      );
+    const isVeg = item.isVeg !== undefined ? item.isVeg : !isNonVeg;
+
+    return {
+      _id: item.id,
+      merchantId: merchantId,
+      title: item.name,
+      description: item.description || '',
+      price: item.price,
+      quantity: 0,
+      originalPrice: item.original_price,
+      image: item.image_url || item.imageUrl || '/menu/default-food.jpg',
+      section: item.section || item.category || 'Main Course',
+      isVeg: isVeg,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as unknown as IMenu;
+  });
+}
 
 function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: string, token?: string, isPosMode?: boolean }) {
-  const [menu, setMenu] = useState<IMenu[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Pre-load default menu items immediately for instantaneous zero-latency mobile rendering
+  const [menu, setMenu] = useState<IMenu[]>(() => formatMenuItems(DEFAULT_MENU_ITEMS, merchantId));
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [vegFilter, setVegFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
@@ -35,65 +94,17 @@ function MerchantPage({ merchantId, token, isPosMode = false }: { merchantId: st
 
   useEffect(() => {
     const fetchMenu = async () => {
-      const { data, error } = await supabase.from('menu').select('*').eq('is_available', true);
-      if (data) {
-        const formattedMenu: IMenu[] = data.map(item => {
-          const lowerName = (item.name || '').toLowerCase();
-          const lowerSection = (item.section || '').toLowerCase();
-          const isExplicitVeg = 
-            lowerName.includes("steam rice") ||
-            lowerName.includes("jeera rice") ||
-            lowerName.includes("curd rice") ||
-            lowerSection.includes("veg special") ||
-            lowerSection.includes("paneer") ||
-            lowerSection.includes("vegetarian guests") ||
-            lowerSection.includes("roti") ||
-            lowerSection.includes("ice cream") ||
-            lowerSection.includes("sath") ||
-            lowerSection.includes("basmati") ||
-            lowerSection.includes("chinese rice & noodles");
-
-          const isNonVeg = 
-            !isExplicitVeg && (
-              lowerName.includes("chicken") ||
-              lowerName.includes("mutton") ||
-              lowerName.includes("egg") ||
-              lowerName.includes("fish") ||
-              lowerName.includes("prawn") ||
-              lowerName.includes("murg") ||
-              lowerName.includes("pomfret") ||
-              lowerName.includes("surmai") ||
-              lowerName.includes("bangda") ||
-              lowerName.includes("bombil") ||
-              lowerName.includes("tangdi") ||
-              lowerName.includes("non veg") ||
-              lowerSection.includes("non veg") ||
-              lowerSection.includes("meat lovers") ||
-              lowerSection.includes("gavathi") ||
-              lowerSection.includes("sea") ||
-              lowerSection.includes("chicken") ||
-              lowerSection.includes("soup")
-            );
-          const isVeg = !isNonVeg;
-
-          return {
-            _id: item.id,
-            merchantId: merchantId,
-            title: item.name,
-            description: item.description || '',
-            price: item.price,
-            quantity: 0,
-            originalPrice: item.original_price,
-            image: item.image_url || '/menu/default-food.jpg',
-            section: item.section || 'Main Course',
-            isVeg: isVeg,
-            createdAt: new Date(),
-            updatedAt: new Date()
-          } as unknown as IMenu;
-        });
-        setMenu(formattedMenu);
+      try {
+        const res = await fetch('/api/menu');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && Array.isArray(json.menu) && json.menu.length > 0) {
+            setMenu(formatMenuItems(json.menu, merchantId));
+          }
+        }
+      } catch (err) {
+        // High-speed fallback already active in initial state
       }
-      setLoading(false);
     };
     fetchMenu();
   }, [merchantId]);

@@ -198,44 +198,15 @@ export default function KitchenDashboard() {
 
   const fetchOrders = async () => {
     try {
-      // 1. Try Next.js internal API first (which has hybrid Supabase + resilient local store fallback)
-      let fetchedOrders: Order[] = [];
-      try {
-        const res = await fetch("/api/orders?status=received,pending,preparing,ready,served");
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && Array.isArray(json.orders)) {
-            fetchedOrders = json.orders;
-          }
+      // 1. Fetch from Next.js internal API (backed by high-speed circuit-breaker + local store fallback)
+      const res = await fetch("/api/orders?status=received,pending,preparing,ready,served");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.orders)) {
+          setOrders(json.orders);
+          setIsOnline(true);
+          return;
         }
-      } catch (apiErr) {
-        // Fallback to direct supabase query
-      }
-
-      // 2. Direct Supabase query as fallback if API route returned empty
-      if (fetchedOrders.length === 0) {
-        try {
-          const { data: activeData, error: activeError } = await supabase
-            .from("orders")
-            .select("*")
-            .in("status", ["received", "pending", "preparing", "ready"])
-            .order("created_at", { ascending: false });
-
-          const { data: servedData, error: servedError } = await supabase
-            .from("orders")
-            .select("*")
-            .eq("status", "served")
-            .order("created_at", { ascending: false })
-            .limit(30);
-
-          if (!activeError && !servedError && activeData && servedData) {
-            fetchedOrders = [...activeData, ...servedData];
-          }
-        } catch (sbErr) {}
-      }
-
-      if (fetchedOrders.length > 0) {
-        setOrders(fetchedOrders);
       }
       setIsOnline(true);
     } catch (e) {
@@ -254,8 +225,8 @@ export default function KitchenDashboard() {
     }
     fetchOrders();
 
-    // 4-second reactive polling fallback for commercial kitchen operations
-    const interval = setInterval(fetchOrders, 4000);
+    // 3-second high-speed polling for commercial kitchen operations
+    const interval = setInterval(fetchOrders, 3000);
     const handleVisibility = () => {
       if (document.visibilityState === "visible") fetchOrders();
     };

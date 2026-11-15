@@ -48,28 +48,13 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
             return;
           }
         }
-      } catch {}
-
-      try {
-        const { data } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('table_number', tableId)
-          .in('status', ['received', 'preparing', 'ready', 'served', 'rejected', 'billing', 'completed'])
-          .order('created_at', { ascending: false })
-          .limit(10)
-
-        if (data) {
-          setOrders(data)
-        }
-      } catch {
-      } finally {
-        setLoading(false)
+      } catch {} finally {
+        setLoading(false);
       }
     }
 
-    fetchOrders()
-    const interval = setInterval(fetchOrders, 4000);
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 2500);
 
     const channel = supabase
       .channel(`table-orders-${tableId}`)

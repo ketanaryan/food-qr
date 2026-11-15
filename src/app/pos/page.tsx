@@ -234,6 +234,11 @@ export default function PetpoojaPOSPage() {
     fetchSettledOrders();
     fetchMenu();
 
+    // 3-second resilient polling so billing desk live table statuses sync smoothly
+    const pollInterval = setInterval(() => {
+      fetchOrders();
+    }, 3000);
+
     // Fetch dynamic captains roster from admin API
     fetch("/api/admin/captains")
       .then(res => res.json())
@@ -274,6 +279,7 @@ export default function PetpoojaPOSPage() {
       .subscribe();
 
     return () => {
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -334,22 +340,20 @@ export default function PetpoojaPOSPage() {
 
   const fetchMenu = async () => {
     try {
-      const { data } = await supabase.from("menu").select("*");
-      if (data && data.length > 0) {
-        const formatted = data.map(d => ({
-          id: String(d.id),
-          name: d.name,
-          category: d.section || d.category || "Main Course",
-          price: Number(d.price),
-          isVeg: !d.name.toLowerCase().includes("chicken") && 
-                 !d.name.toLowerCase().includes("mutton") && 
-                 !d.name.toLowerCase().includes("egg") &&
-                 !d.name.toLowerCase().includes("fish") &&
-                 !d.name.toLowerCase().includes("prawn") &&
-                 !d.name.toLowerCase().includes("non veg")
-        }));
-        setMenuItems(formatted);
-        return;
+      const res = await fetch("/api/menu");
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.menu) && json.menu.length > 0) {
+          const formatted = json.menu.map((d: any) => ({
+            id: String(d.id),
+            name: d.name,
+            category: d.section || d.category || "Main Course",
+            price: Number(d.price),
+            isVeg: d.isVeg !== false
+          }));
+          setMenuItems(formatted);
+          return;
+        }
       }
     } catch {}
 

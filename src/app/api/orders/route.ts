@@ -6,6 +6,7 @@ import { verifyTableToken } from '@/lib/security';
 import { insertLocalOrder, getLocalOrders } from '@/lib/ordersStore';
 import { depleteStockForOrderItems } from '@/lib/inventoryStore';
 import { DEFAULT_MENU_ITEMS } from '@/lib/defaultMenu';
+import { runWithFastTimeout } from '@/lib/supabaseBreaker';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -91,20 +92,18 @@ export async function POST(req: Request) {
     }
 
     // 5. Server-Side Price Verification (Fetch legitimate prices directly from DB or fallback)
-    let menuItemsList: any[] = [];
-    try {
-      const { data: menuData } = await supabaseAdmin.from('menu').select('*');
-      if (menuData && menuData.length > 0) {
-        menuItemsList = menuData;
-      } else {
-        menuItemsList = DEFAULT_MENU_ITEMS;
-      }
-    } catch {
-      menuItemsList = DEFAULT_MENU_ITEMS;
-    }
+    const menuItemsList = await runWithFastTimeout(
+      async () => {
+        const { data: menuData } = await supabaseAdmin.from('menu').select('*');
+        if (menuData && menuData.length > 0) return menuData;
+        return DEFAULT_MENU_ITEMS;
+      },
+      () => DEFAULT_MENU_ITEMS,
+      600
+    );
 
     let totalAmount = 0;
-    const validatedItems = [];
+    const validatedItems: any[] = [];
 
     for (const item of items) {
       if (typeof item !== 'object' || !item.id) continue;
@@ -158,27 +157,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, message: 'No valid items found in order' }, { status: 400 });
     }
 
-    // 6. Secure Database Insert
+    // 6. Secure Database Insert with High-Speed Timeout Fallback
     const orderNumber = Math.floor(1000 + Math.random() * 9000).toString();
-    let createdOrder: any = null;
+    let createdOrder: any = await runWithFastTimeout(
+      async () => {
+        const { data, error } = await supabaseAdmin.from('orders').insert({
+          table_number: cleanTableNumber,
+          status: 'received',
+          items: JSON.stringify(validatedItems),
+          total_amount: totalAmount,
+          order_number: orderNumber,
+        }).select().single();
 
-    try {
-      const { data, error } = await supabaseAdmin.from('orders').insert({
-        table_number: cleanTableNumber,
-        status: 'received',
-        items: JSON.stringify(validatedItems),
-        total_amount: totalAmount,
-        order_number: orderNumber,
-      }).select().single();
-
-      if (!error && data) {
-        createdOrder = data;
-      } else if (error) {
-        console.warn('Supabase orders insert notice (using local store fallback):', error.message);
-      }
-    } catch (e: any) {
-      console.warn('Supabase orders insert exception:', e.message);
-    }
+        if (!error && data) return data;
+        return null;
+      },
+      () => null,
+      600
+    );
 
     if (!createdOrder) {
       createdOrder = insertLocalOrder({
@@ -217,39 +213,8 @@ export async function GET(req: Request) {
     const statusParam = url.searchParams.get('status');
     const orderIdParam = url.searchParams.get('id');
 
-    let orders: any[] = [];
-
-    // 1. Try Supabase first
-    try {
-      let query = supabaseAdmin
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (orderIdParam) {
-        query = query.eq('id', orderIdParam);
-      }
-      if (table) {
-        query = query.eq('table_number', table);
-      }
-      if (statusParam) {
-        const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean);
-        if (statuses.length > 0) {
-          query = query.in('status', statuses);
-        }
-      }
-
-      const { data, error } = await query;
-      if (!error && Array.isArray(data)) {
-        orders = data;
-      }
-    } catch (e: any) {
-      console.warn('Supabase orders fetch notice:', e.message);
-    }
-
-    // 2. Hybrid Resilient Fallback: If Supabase failed or returned empty, merge from resilient local store
-    const localOrders = getLocalOrders();
-    if (orders.length === 0 && localOrders.length > 0) {
+    const getLocalFilteredOrders = () => {
+      const localOrders = getLocalOrders();
       let filtered = [...localOrders];
       if (orderIdParam) {
         filtered = filtered.filter(o => String(o.id) === String(orderIdParam));
@@ -263,13 +228,49 @@ export async function GET(req: Request) {
           filtered = filtered.filter(o => statuses.includes(o.status));
         }
       }
-      orders = filtered;
-    }
+      return filtered;
+    };
+
+    // 1. High-Speed Hybrid Orders Fetch (Circuit Breaker Protected)
+    const orders = await runWithFastTimeout(
+      async () => {
+        let query = supabaseAdmin
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (orderIdParam) {
+          query = query.eq('id', orderIdParam);
+        }
+        if (table) {
+          query = query.eq('table_number', table);
+        }
+        if (statusParam) {
+          const statuses = statusParam.split(',').map(s => s.trim()).filter(Boolean);
+          if (statuses.length > 0) {
+            query = query.in('status', statuses);
+          }
+        }
+
+        const { data, error } = await query;
+        if (!error && Array.isArray(data) && data.length > 0) {
+          return data;
+        }
+        return getLocalFilteredOrders();
+      },
+      getLocalFilteredOrders,
+      500
+    );
 
     return NextResponse.json({
       success: true,
       orders
-    }, { status: 200 });
+    }, { 
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
+      }
+    });
   } catch (error: any) {
     console.error('GET /api/orders error:', error);
     return NextResponse.json({ success: false, orders: [], error: 'Failed to fetch orders' }, { status: 500 });

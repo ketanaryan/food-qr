@@ -4,6 +4,7 @@ import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { verifyTableToken } from '@/lib/security';
 import { getLocalOrders, updateLocalOrder } from '@/lib/ordersStore';
+import { runWithFastTimeout } from '@/lib/supabaseBreaker';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
@@ -94,10 +95,17 @@ export async function POST(req: Request) {
       }
 
       // IDOR Verification: Ensure all requested order IDs belong strictly to this customer's table
-      const { data: dbOrders } = await supabaseAdmin
-        .from('orders')
-        .select('id, table_number, status')
-        .in('id', cleanOrderIds);
+      const dbOrders = await runWithFastTimeout(
+        async () => {
+          const { data } = await supabaseAdmin
+            .from('orders')
+            .select('id, table_number, status')
+            .in('id', cleanOrderIds);
+          return data || [];
+        },
+        () => [],
+        500
+      );
 
       let verifiedOrders = dbOrders || [];
       if (verifiedOrders.length < cleanOrderIds.length) {
@@ -139,15 +147,20 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, message: 'Invalid target table number' }, { status: 400 });
       }
 
-      const { error: shiftError } = await supabaseAdmin
-        .from('orders')
-        .update({ table_number: cleanTargetTable })
-        .in('id', cleanOrderIds);
-
-      if (shiftError) {
-        console.error('Table shift error:', shiftError);
-        return NextResponse.json({ success: false, message: 'Failed to shift table' }, { status: 500 });
+      for (const id of cleanOrderIds) {
+        updateLocalOrder(id, { table_number: cleanTargetTable });
       }
+
+      await runWithFastTimeout(
+        async () => {
+          await supabaseAdmin
+            .from('orders')
+            .update({ table_number: cleanTargetTable })
+            .in('id', cleanOrderIds);
+        },
+        () => null,
+        500
+      );
 
       return NextResponse.json({ success: true, message: `Table shifted to ${cleanTargetTable}` }, { status: 200 });
     }
@@ -162,79 +175,100 @@ export async function POST(req: Request) {
 
     if (cleanPaymentMethod || cleanPhone || isCompleting) {
       for (const id of cleanOrderIds) {
-        const { data: orderData } = await supabaseAdmin
-          .from('orders')
-          .select('items')
-          .eq('id', id)
-          .single();
+        const localOrd = getLocalOrders().find(o => o.id === id);
+        let items: any[] = [];
 
-        if (orderData) {
-          let items: any[] = [];
+        if (localOrd?.items) {
           try {
-            items = typeof orderData.items === 'string' ? JSON.parse(orderData.items) : orderData.items;
+            items = typeof localOrd.items === 'string' ? JSON.parse(localOrd.items) : localOrd.items;
           } catch {
             items = [];
           }
-          if (!Array.isArray(items)) items = [];
-
-          // Clean previous metadata entries
-          items = items.filter(
-            (i: any) => i && i.id !== 'SETTLEMENT_INFO' && i.id !== 'PAYMENT_METHOD' && i.id !== 'CUSTOMER_INFO'
+        } else {
+          const dbOrder = await runWithFastTimeout(
+            async () => {
+              const { data } = await supabaseAdmin.from('orders').select('items').eq('id', id).single();
+              return data;
+            },
+            () => null,
+            500
           );
-
-          if (isCompleting || cleanPaymentMethod) {
-            items.push({
-              id: 'SETTLEMENT_INFO',
-              settled_at: settledAt,
-              bill_session_id: billSessionId,
-              payment_method: cleanPaymentMethod || 'CASH',
-              subtotal: typeof subtotal === 'number' ? Math.round(subtotal) : undefined,
-              discount: typeof discount === 'number' ? Math.round(discount) : undefined,
-              gst: typeof gst === 'number' ? Math.round(gst) : undefined,
-              service_charge: typeof serviceCharge === 'number' ? Math.round(serviceCharge) : undefined,
-              grand_total: typeof grandTotal === 'number' ? Math.round(grandTotal) : undefined,
-              split_cash: typeof splitCash === 'number' ? Math.round(splitCash) : undefined,
-              split_upi: typeof splitUpi === 'number' ? Math.round(splitUpi) : undefined
-            });
+          if (dbOrder?.items) {
+            try {
+              items = typeof dbOrder.items === 'string' ? JSON.parse(dbOrder.items) : dbOrder.items;
+            } catch {
+              items = [];
+            }
           }
+        }
+        if (!Array.isArray(items)) items = [];
 
-          if (cleanPaymentMethod) {
-            items.push({ id: 'PAYMENT_METHOD', method: cleanPaymentMethod });
-          }
-          if (cleanPhone) {
-            items.push({ id: 'CUSTOMER_INFO', phone: cleanPhone });
-          }
+        // Clean previous metadata entries
+        items = items.filter(
+          (i: any) => i && i.id !== 'SETTLEMENT_INFO' && i.id !== 'PAYMENT_METHOD' && i.id !== 'CUSTOMER_INFO'
+        );
 
-          try {
+        if (isCompleting || cleanPaymentMethod) {
+          items.push({
+            id: 'SETTLEMENT_INFO',
+            settled_at: settledAt,
+            bill_session_id: billSessionId,
+            payment_method: cleanPaymentMethod || 'CASH',
+            subtotal: typeof subtotal === 'number' ? Math.round(subtotal) : undefined,
+            discount: typeof discount === 'number' ? Math.round(discount) : undefined,
+            gst: typeof gst === 'number' ? Math.round(gst) : undefined,
+            service_charge: typeof serviceCharge === 'number' ? Math.round(serviceCharge) : undefined,
+            grand_total: typeof grandTotal === 'number' ? Math.round(grandTotal) : undefined,
+            split_cash: typeof splitCash === 'number' ? Math.round(splitCash) : undefined,
+            split_upi: typeof splitUpi === 'number' ? Math.round(splitUpi) : undefined
+          });
+        }
+
+        if (cleanPaymentMethod) {
+          items.push({ id: 'PAYMENT_METHOD', method: cleanPaymentMethod });
+        }
+        if (cleanPhone) {
+          items.push({ id: 'CUSTOMER_INFO', phone: cleanPhone });
+        }
+
+        updateLocalOrder(id, {
+          status: status || 'completed',
+          items: JSON.stringify(items),
+          settled_at: new Date().toISOString(),
+          payment_method: cleanPaymentMethod || 'CASH',
+          customer_phone: cleanPhone || undefined
+        });
+
+        // Sync with Supabase if online
+        await runWithFastTimeout(
+          async () => {
             await supabaseAdmin
               .from('orders')
               .update({ status: status || 'completed', items: JSON.stringify(items) })
               .eq('id', id);
-          } catch {}
-
-          updateLocalOrder(id, {
-            status: status || 'completed',
-            items: JSON.stringify(items),
-            settled_at: new Date().toISOString(),
-            payment_method: cleanPaymentMethod || 'CASH',
-            customer_phone: cleanPhone || undefined
-          });
-        }
+          },
+          () => null,
+          500
+        );
       }
     } else {
       const updatePayload: Record<string, any> = {};
       if (status) updatePayload.status = status;
 
-      try {
-        await supabaseAdmin
-          .from('orders')
-          .update(updatePayload)
-          .in('id', cleanOrderIds);
-      } catch {}
-
       for (const id of cleanOrderIds) {
         updateLocalOrder(id, updatePayload);
       }
+
+      await runWithFastTimeout(
+        async () => {
+          await supabaseAdmin
+            .from('orders')
+            .update(updatePayload)
+            .in('id', cleanOrderIds);
+        },
+        () => null,
+        500
+      );
     }
 
     return NextResponse.json({ success: true, message: 'Orders updated securely' }, { status: 200 });
