@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { 
   Users, Search, Plus, Minus, ArrowLeft, Send, Receipt, 
@@ -24,14 +24,16 @@ const DEFAULT_CAPTAINS = [
 ];
 
 const TOP_RUNNERS = [
-  { name: "Mineral Water", keyword: "water", price: 20, cat: "Beverages" },
-  { name: "Butter Roti", keyword: "butter roti", price: 30, cat: "Breads" },
-  { name: "Butter Naan", keyword: "butter naan", price: 50, cat: "Breads" },
-  { name: "Dal Tadka", keyword: "dal tadka", price: 180, cat: "Main Course" },
-  { name: "Paneer Butter Masala", keyword: "paneer butter", price: 260, cat: "Main Course" },
-  { name: "Jeera Rice", keyword: "jeera rice", price: 150, cat: "Rice" },
-  { name: "Masala Papad", keyword: "papad", price: 40, cat: "Starters" },
-  { name: "Gulab Jamun", keyword: "jamun", price: 60, cat: "Dessert" },
+  { name: "Mineral Water", keyword: "water", price: 20, cat: "Beverages", isVeg: true },
+  { name: "Butter Roti", keyword: "butter roti", price: 30, cat: "Breads", isVeg: true },
+  { name: "Butter Naan", keyword: "butter naan", price: 50, cat: "Breads", isVeg: true },
+  { name: "Dal Tadka", keyword: "dal tadka", price: 180, cat: "Main Course", isVeg: true },
+  { name: "Paneer Butter Masala", keyword: "paneer butter", price: 260, cat: "Main Course", isVeg: true },
+  { name: "Jeera Rice", keyword: "jeera rice", price: 150, cat: "Rice", isVeg: true },
+  { name: "Chicken Biryani", keyword: "chicken biryani", price: 340, cat: "Biryani (Non Veg)", isVeg: false },
+  { name: "Chicken Chilly", keyword: "chicken chilly", price: 280, cat: "Chinese Starter Non Veg", isVeg: false },
+  { name: "Masala Papad", keyword: "papad", price: 40, cat: "Starters", isVeg: true },
+  { name: "Gulab Jamun", keyword: "jamun", price: 60, cat: "Dessert", isVeg: true },
 ];
 
 export default function CaptainPortal() {
@@ -51,6 +53,7 @@ export default function CaptainPortal() {
   const [cookingNotes, setCookingNotes] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
+  const [vegFilter, setVegFilter] = useState<"ALL" | "VEG" | "NON_VEG">("ALL");
   const [guestCount, setGuestCount] = useState<number>(2);
   const [isPunching, setIsPunching] = useState(false);
 
@@ -261,8 +264,23 @@ export default function CaptainPortal() {
     return t.status === statusFilter;
   });
 
-  // Categories
-  const categories = ["ALL", ...Array.from(new Set(menuItems.map(m => m.category)))];
+  // Categories (dynamically filtered by current Veg/Non-Veg preference)
+  const categories = useMemo(() => {
+    const relevant = vegFilter === "ALL" 
+      ? menuItems 
+      : vegFilter === "VEG" 
+      ? menuItems.filter(m => m.isVeg) 
+      : menuItems.filter(m => !m.isVeg);
+    const unique = Array.from(new Set(relevant.map(m => m.category).filter(Boolean)));
+    return ["ALL", ...unique];
+  }, [menuItems, vegFilter]);
+
+  // Auto-reset category if it has no dishes in the current diet filter
+  useEffect(() => {
+    if (activeCategory !== "ALL" && !categories.includes(activeCategory)) {
+      setActiveCategory("ALL");
+    }
+  }, [categories, activeCategory]);
 
   // Cart Helpers
   const addToCart = (item: any) => {
@@ -476,11 +494,16 @@ export default function CaptainPortal() {
     }
   };
 
-  // Filtered Menu Items
+  // Filtered Menu Items (Category, Search Query & Veg/Non-Veg Toggle)
   const filteredMenuItems = menuItems.filter(item => {
     const matchesCategory = activeCategory === "ALL" || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    const matchesVeg = vegFilter === "ALL" 
+      ? true 
+      : vegFilter === "VEG" 
+      ? item.isVeg === true 
+      : item.isVeg === false;
+    return matchesCategory && matchesSearch && matchesVeg;
   });
 
   const selectedGroup = selectedTable ? tableGroups[selectedTable] : null;
@@ -853,6 +876,51 @@ export default function CaptainPortal() {
                 />
               </div>
 
+              {/* Veg / Non-Veg Quick Switcher Bar */}
+              <div className="flex items-center justify-between gap-2 pt-0.5">
+                <div className="flex items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setVegFilter("ALL")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      vegFilter === "ALL"
+                        ? "bg-gray-900 text-white shadow-xs"
+                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVegFilter("VEG")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      vegFilter === "VEG"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "text-emerald-700 hover:bg-emerald-50"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-200"></span>
+                    Veg Only 🟢
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVegFilter("NON_VEG")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      vegFilter === "NON_VEG"
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "text-rose-700 hover:bg-rose-50"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-rose-400 ring-2 ring-rose-200"></span>
+                    Non-Veg 🔴
+                  </button>
+                </div>
+
+                <div className="text-[11px] font-bold text-gray-500 bg-white border border-gray-200 px-2.5 py-1.5 rounded-xl shadow-2xs shrink-0">
+                  <strong className="text-gray-900">{filteredMenuItems.length}</strong> dishes
+                </div>
+              </div>
+
               {/* Quick 8 Top Favorites / High-Runners Strip */}
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-[11px] font-bold text-gray-500 uppercase tracking-wider">
@@ -860,7 +928,7 @@ export default function CaptainPortal() {
                   <span className="text-[10px] text-gray-400">1-Tap Fast Add</span>
                 </div>
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 no-scrollbar">
-                  {TOP_RUNNERS.map(runner => (
+                  {TOP_RUNNERS.filter(r => vegFilter === "ALL" || (vegFilter === "VEG" ? r.isVeg : !r.isVeg)).map(runner => (
                     <button
                       key={runner.name}
                       type="button"
@@ -879,6 +947,7 @@ export default function CaptainPortal() {
                       }}
                       className="shrink-0 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold transition active:scale-95 flex items-center gap-1.5 shadow-2xs"
                     >
+                      <span className={`w-2 h-2 rounded-full ${runner.isVeg ? "bg-emerald-500" : "bg-rose-500"}`}></span>
                       <span>{runner.name}</span>
                       <span className="text-[10px] bg-amber-200/80 px-1.5 py-0.5 rounded-md font-mono text-amber-950">₹{runner.price}</span>
                     </button>
@@ -910,7 +979,25 @@ export default function CaptainPortal() {
                 Select Items to Add
               </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {filteredMenuItems.map(item => {
+                {filteredMenuItems.length === 0 ? (
+                  <div className="col-span-full p-8 text-center bg-white rounded-2xl border border-gray-200">
+                    <Utensils size={32} className="mx-auto text-gray-300 mb-2" />
+                    <div className="font-bold text-gray-700 text-sm">
+                      No {vegFilter === "VEG" ? "Pure Veg" : vegFilter === "NON_VEG" ? "Non-Veg" : ""} dishes found
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Try selecting another category or clearing search filters.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { setVegFilter("ALL"); setActiveCategory("ALL"); setSearchQuery(""); }}
+                      className="mt-3 px-3.5 py-1.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-black transition shadow-xs"
+                    >
+                      Show All Dishes
+                    </button>
+                  </div>
+                ) : (
+                  filteredMenuItems.map(item => {
                   const qtyInCart = cart[item.id]?.qty || 0;
 
                   return (
@@ -992,7 +1079,7 @@ export default function CaptainPortal() {
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
             </div>
 
