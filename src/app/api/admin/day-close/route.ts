@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { consolidateOrders, ConsolidatedBill } from '@/lib/orderConsolidation';
@@ -11,13 +12,24 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_key';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const dataFilePath = path.join(process.cwd(), 'data', 'day-close-reports.json');
+const staticDataFilePath = path.join(process.cwd(), 'data', 'day-close-reports.json');
+const writableDataFilePath = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  ? path.join(os.tmpdir(), 'day-close-reports.json')
+  : staticDataFilePath;
 let memoryReports: DayCloseReport[] = [];
 
 function readLocalReports(): DayCloseReport[] {
   try {
-    if (fs.existsSync(dataFilePath)) {
-      const content = fs.readFileSync(dataFilePath, 'utf-8');
+    if (fs.existsSync(writableDataFilePath)) {
+      const content = fs.readFileSync(writableDataFilePath, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryReports = parsed;
+        return parsed;
+      }
+    }
+    if (fs.existsSync(staticDataFilePath)) {
+      const content = fs.readFileSync(staticDataFilePath, 'utf-8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed)) {
         memoryReports = parsed;
@@ -31,11 +43,11 @@ function readLocalReports(): DayCloseReport[] {
 function saveLocalReports(reports: DayCloseReport[]) {
   memoryReports = reports;
   try {
-    const dir = path.dirname(dataFilePath);
+    const dir = path.dirname(writableDataFilePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(dataFilePath, JSON.stringify(reports, null, 2), 'utf-8');
+    fs.writeFileSync(writableDataFilePath, JSON.stringify(reports, null, 2), 'utf-8');
   } catch {}
 }
 

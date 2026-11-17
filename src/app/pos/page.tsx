@@ -290,9 +290,38 @@ export default function PetpoojaPOSPage() {
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.orders)) {
-          setOrders(json.orders);
-          setLoading(false);
-          return;
+          if (json.orders.length > 0) {
+            setOrders(json.orders);
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('wb_pos_active_backup', JSON.stringify(json.orders));
+              } catch {}
+            }
+            setLoading(false);
+            return;
+          } else {
+            if (typeof window !== 'undefined') {
+              try {
+                const cached = localStorage.getItem('wb_pos_active_backup');
+                if (cached) {
+                  const parsed = JSON.parse(cached);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    setOrders(parsed);
+                    fetch('/api/orders/sync', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ orders: parsed })
+                    }).catch(() => {});
+                    setLoading(false);
+                    return;
+                  }
+                }
+              } catch {}
+            }
+            setOrders([]);
+            setLoading(false);
+            return;
+          }
         }
       }
     } catch {}
@@ -598,7 +627,13 @@ export default function PetpoojaPOSPage() {
       upi?: number;
     }
   ) => {
-    setOrders(prev => prev.filter(o => o.table_number !== tableNumber));
+    setOrders(prev => {
+      const updated = prev.filter(o => o.table_number !== tableNumber);
+      if (typeof window !== 'undefined') {
+        try { localStorage.setItem('wb_pos_active_backup', JSON.stringify(updated)); } catch {}
+      }
+      return updated;
+    });
 
     try {
       const staffPin = typeof window !== 'undefined' ? (sessionStorage.getItem('wb_station_pin') || '1234') : '1234';

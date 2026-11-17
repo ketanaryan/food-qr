@@ -43,9 +43,36 @@ export default function OrderTrackingClient({ tableId }: { tableId: string }) {
         if (res.ok) {
           const json = await res.json();
           if (json.success && Array.isArray(json.orders)) {
-            setOrders(json.orders);
-            setLoading(false);
-            return;
+            if (json.orders.length > 0) {
+              setOrders(json.orders);
+              if (typeof window !== 'undefined') {
+                try { localStorage.setItem(`wb_table_${tableId}_orders`, JSON.stringify(json.orders)); } catch {}
+              }
+              setLoading(false);
+              return;
+            } else {
+              if (typeof window !== 'undefined') {
+                try {
+                  const cached = localStorage.getItem(`wb_table_${tableId}_orders`);
+                  if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                      setOrders(parsed);
+                      fetch('/api/orders/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orders: parsed })
+                      }).catch(() => {});
+                      setLoading(false);
+                      return;
+                    }
+                  }
+                } catch {}
+              }
+              setOrders([]);
+              setLoading(false);
+              return;
+            }
           }
         }
       } catch {} finally {

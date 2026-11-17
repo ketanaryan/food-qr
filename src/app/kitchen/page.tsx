@@ -203,19 +203,57 @@ export default function KitchenDashboard() {
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.orders)) {
-          // Strictly deduplicate by order ID & order_number
-          const seen = new Set();
-          const uniqueOrders: Order[] = [];
-          for (const o of json.orders) {
-            const key = o.id || o.order_number;
-            if (!seen.has(key)) {
-              seen.add(key);
-              uniqueOrders.push(o);
+          if (json.orders.length > 0) {
+            // Strictly deduplicate by order ID & order_number
+            const seen = new Set();
+            const uniqueOrders: Order[] = [];
+            for (const o of json.orders) {
+              const key = o.id || o.order_number;
+              if (!seen.has(key)) {
+                seen.add(key);
+                uniqueOrders.push(o);
+              }
             }
+            setOrders(uniqueOrders);
+            // Save client-side resilient backup so cold serverless container recycles never wipe screen
+            if (typeof window !== 'undefined') {
+              try {
+                localStorage.setItem('wb_active_orders_backup', JSON.stringify(uniqueOrders));
+              } catch {}
+            }
+            setIsOnline(true);
+            return;
+          } else {
+            // Server returned empty [] (e.g. cold Vercel serverless container restart)
+            // Check if client has active un-archived orders in local backup
+            if (typeof window !== 'undefined') {
+              try {
+                const cached = localStorage.getItem('wb_active_orders_backup');
+                if (cached) {
+                  const parsed = JSON.parse(cached);
+                  if (Array.isArray(parsed) && parsed.length > 0) {
+                    const activeCache = parsed.filter((o: Order) => 
+                      ['received', 'preparing', 'ready', 'served'].includes(o.status)
+                    );
+                    if (activeCache.length > 0) {
+                      setOrders(activeCache);
+                      // Auto re-sync back to the new serverless container
+                      fetch('/api/orders/sync', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orders: activeCache })
+                      }).catch(() => {});
+                      setIsOnline(true);
+                      return;
+                    }
+                  }
+                }
+              } catch {}
+            }
+            setOrders([]);
+            setIsOnline(true);
+            return;
           }
-          setOrders(uniqueOrders);
-          setIsOnline(true);
-          return;
         }
       }
       setIsOnline(true);

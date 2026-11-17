@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 const DEFAULT_CAPTAINS = [
   "Rahul (Lead Captain)",
@@ -10,12 +11,23 @@ const DEFAULT_CAPTAINS = [
 ];
 
 let memoryCaptains = [...DEFAULT_CAPTAINS];
-const filePath = path.join(process.cwd(), 'data', 'captains.json');
+const staticFilePath = path.join(process.cwd(), 'data', 'captains.json');
+const writableFilePath = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  ? path.join(os.tmpdir(), 'captains.json')
+  : staticFilePath;
 
 function readCaptains(): string[] {
   try {
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf-8');
+    if (fs.existsSync(writableFilePath)) {
+      const content = fs.readFileSync(writableFilePath, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memoryCaptains = parsed;
+        return parsed;
+      }
+    }
+    if (fs.existsSync(staticFilePath)) {
+      const content = fs.readFileSync(staticFilePath, 'utf-8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed) && parsed.length > 0) {
         memoryCaptains = parsed;
@@ -31,11 +43,11 @@ function readCaptains(): string[] {
 function saveCaptains(captains: string[]) {
   memoryCaptains = captains;
   try {
-    const dir = path.dirname(filePath);
+    const dir = path.dirname(writableFilePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(filePath, JSON.stringify(captains, null, 2), 'utf-8');
+    fs.writeFileSync(writableFilePath, JSON.stringify(captains, null, 2), 'utf-8');
   } catch {
     // In serverless environments, file write might fail, memory will retain
   }

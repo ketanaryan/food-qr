@@ -1,6 +1,7 @@
 // Hybrid Persistent Inventory Management Engine (Supabase + Local JSON Fallback)
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 export interface InventoryItem {
   id: string;
@@ -133,8 +134,12 @@ export interface InventoryStoreData {
   internalTransfers: InternalTransfer[];
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const STATIC_DATA_DIR = path.join(process.cwd(), 'data');
+const DATA_DIR = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  ? os.tmpdir()
+  : STATIC_DATA_DIR;
 const INVENTORY_FILE = path.join(DATA_DIR, 'inventory-store.json');
+const STATIC_INVENTORY_FILE = path.join(STATIC_DATA_DIR, 'inventory-store.json');
 
 // Default initial master data
 const DEFAULT_INVENTORY_ITEMS: InventoryItem[] = [
@@ -766,6 +771,15 @@ function ensureDataDirectory() {
 
 export function getInventoryStore(): InventoryStoreData {
   ensureDataDirectory();
+  if (!fs.existsSync(INVENTORY_FILE)) {
+    if (fs.existsSync(STATIC_INVENTORY_FILE)) {
+      try {
+        const seedRaw = fs.readFileSync(STATIC_INVENTORY_FILE, 'utf-8');
+        fs.writeFileSync(INVENTORY_FILE, seedRaw, 'utf-8');
+      } catch {}
+    }
+  }
+
   if (!fs.existsSync(INVENTORY_FILE)) {
     const initialData: InventoryStoreData = {
       items: DEFAULT_INVENTORY_ITEMS,

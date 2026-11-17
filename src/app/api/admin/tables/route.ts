@@ -2,19 +2,31 @@ import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { isStaffAuthorized } from '@/lib/staffAuth';
 import { isOwnerAuthorized } from '@/lib/ownerAuth';
 import { TableSection, DEFAULT_TABLE_SECTIONS, extractAllTableNumbers } from '@/lib/tableConfig';
 
 const SECRET_KEY = process.env.TABLE_SECRET_KEY || 'white-bliss-secure-key-2026';
-const configPath = path.join(process.cwd(), 'data', 'tables-config.json');
+const staticConfigPath = path.join(process.cwd(), 'data', 'tables-config.json');
+const writableConfigPath = (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+  ? path.join(os.tmpdir(), 'tables-config.json')
+  : staticConfigPath;
 
 let memorySections: TableSection[] = [...DEFAULT_TABLE_SECTIONS];
 
 function readSections(): TableSection[] {
   try {
-    if (fs.existsSync(configPath)) {
-      const content = fs.readFileSync(configPath, 'utf-8');
+    if (fs.existsSync(writableConfigPath)) {
+      const content = fs.readFileSync(writableConfigPath, 'utf-8');
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        memorySections = parsed;
+        return parsed;
+      }
+    }
+    if (fs.existsSync(staticConfigPath)) {
+      const content = fs.readFileSync(staticConfigPath, 'utf-8');
       const parsed = JSON.parse(content);
       if (Array.isArray(parsed) && parsed.length > 0) {
         memorySections = parsed;
@@ -30,11 +42,11 @@ function readSections(): TableSection[] {
 function saveSections(sections: TableSection[]) {
   memorySections = sections;
   try {
-    const dir = path.dirname(configPath);
+    const dir = path.dirname(writableConfigPath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    fs.writeFileSync(configPath, JSON.stringify(sections, null, 2), 'utf-8');
+    fs.writeFileSync(writableConfigPath, JSON.stringify(sections, null, 2), 'utf-8');
   } catch {
     // Fallback to memory in serverless environments
   }
